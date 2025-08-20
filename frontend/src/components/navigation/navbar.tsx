@@ -13,7 +13,7 @@ import { link as linkStyles } from "@heroui/theme";
 import clsx from "clsx";
 
 import { siteConfig } from "@/config/site";
-import { ThemeSwitch } from "@/components/theme-switch";
+import { ThemeSwitch } from "@/components/ui/theme-switch";
 import {
   TwitterIcon,
   GithubIcon,
@@ -23,8 +23,6 @@ import {
 import { Logo } from "@/components/icons";
 
 export const Navbar = () => {
-
-
   return (
     <HeroUINavbar maxWidth="xl" position="sticky">
       <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
