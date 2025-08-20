@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Button } from "@heroui/react";
 import { PlayIcon, PauseIcon, StopIcon, SpeakerWaveIcon, SpeakerXMarkIcon } from "@heroicons/react/24/outline";
-import { VoiceVisualizer } from "@/components/ui/voice-visualizer";
+import { CircularTapeVisualizer } from "@/components/ui/circular-tape-visualizer";
 
 interface AudioPlayerModalProps {
   isOpen: boolean;
@@ -134,23 +134,24 @@ export function AudioPlayerModal({ isOpen, onOpenChange, src, title, subtitle, a
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="lg">
       <ModalContent>
-        <ModalHeader className="flex flex-col gap-1">
-          <div className="text-base font-semibold">{title ?? "Audio Player"}</div>
-          {subtitle && <div className="text-xs text-default-500">{subtitle}</div>}
+        <ModalHeader className="flex flex-col gap-0">
+          <div className="text-lg font-semibold tracking-tight">{title ?? "Audio Player"}</div>
+          {subtitle && <div className="text-xs text-default-500 mt-0.5">{subtitle}</div>}
         </ModalHeader>
-        <ModalBody>
+        <ModalBody className="pt-2">
           <audio ref={audioRef} src={resolvedSrc} crossOrigin="anonymous" />
           {error && <div className="text-xs text-danger">{error}</div>}
 
-          <VoiceVisualizer
+          <CircularTapeVisualizer
             audioRef={audioRef}
             isActive={isPlaying}
-            height={140}
-            colors={["#22c55e", "#3b82f6"]}
-            className="mt-1"
+            size={260}
+            color="#ff7a00"
+            glowColor="#ffb566"
+            className="my-2"
           />
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 rounded-medium bg-content2/60 px-3 py-2">
             <Button size="sm" color="primary" onPress={togglePlay} aria-label={isPlaying ? "Pause" : "Play"}>
               {isPlaying ? <PauseIcon className="h-5 w-5" /> : <PlayIcon className="h-5 w-5" />}
             </Button>
@@ -167,7 +168,7 @@ export function AudioPlayerModal({ isOpen, onOpenChange, src, title, subtitle, a
               step={0.01}
               value={volume}
               onChange={(e) => setVolume(Number(e.target.value))}
-              className="w-24"
+              className="w-28"
               aria-label="Volume"
             />
             <div className="ml-auto text-xs text-default-500">
