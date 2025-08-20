@@ -132,7 +132,7 @@ export function AudioPlayerModal({ isOpen, onOpenChange, src, title, subtitle, a
   }
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="lg">
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="lg" hideCloseButton={true}>
       <ModalContent>
         <ModalHeader className="flex flex-col gap-0">
           <div className="text-lg font-semibold tracking-tight">{title ?? "Audio Player"}</div>
@@ -150,7 +150,15 @@ export function AudioPlayerModal({ isOpen, onOpenChange, src, title, subtitle, a
             glowColor="#ffb566"
             className="my-2"
           />
-
+          <input
+            type="range"
+            min={0}
+            max={duration || 0}
+            step={0.1}
+            value={currentTime}
+            onChange={(e) => seek(Number(e.target.value))}
+            className="w-full"
+          />
           <div className="flex items-center gap-3 rounded-medium bg-content2/60 px-3 py-2">
             <Button size="sm" color="primary" onPress={togglePlay} aria-label={isPlaying ? "Pause" : "Play"}>
               {isPlaying ? <PauseIcon className="h-5 w-5" /> : <PlayIcon className="h-5 w-5" />}
@@ -176,15 +184,7 @@ export function AudioPlayerModal({ isOpen, onOpenChange, src, title, subtitle, a
             </div>
           </div>
 
-          <input
-            type="range"
-            min={0}
-            max={duration || 0}
-            step={0.1}
-            value={currentTime}
-            onChange={(e) => seek(Number(e.target.value))}
-            className="w-full"
-          />
+
         </ModalBody>
         <ModalFooter>
           <Button variant="light" onPress={() => onOpenChange(false)}>
