@@ -23,6 +23,9 @@ import {
 } from "@heroui/react";
 import { enhanceVoiceLines, fetchScenario } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
+import { generateSingleTTS, getAudioUrl } from "@/lib/api.tts";
+import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
+import { PlayIcon, PlusIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 
 export default function ScenarioDetailPage() {
   const { id } = useParams();
@@ -32,6 +35,11 @@ export default function ScenarioDetailPage() {
   const [isEnhanceOpen, setIsEnhanceOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [enhancing, setEnhancing] = useState(false);
+  const [generating, setGenerating] = useState<Set<number>>(new Set());
+  const [isPlayerOpen, setIsPlayerOpen] = useState(false);
+  const [playerSrc, setPlayerSrc] = useState<string | null>(null);
+  const [playerTitle, setPlayerTitle] = useState<string>("");
+  const [playerLoading, setPlayerLoading] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
@@ -77,6 +85,55 @@ export default function ScenarioDetailPage() {
     }
   }
 
+  async function onOpenPlayer(voiceLineId: number) {
+    if (!scenario) return;
+    const vl = scenario.voice_lines.find((v) => v.id === voiceLineId);
+    if (!vl) return;
+    setPlayerLoading(true);
+    try {
+      // Always fetch a fresh signed URL to avoid expiry issues
+      const fresh = await getAudioUrl(voiceLineId);
+      const url = fresh?.signed_url || vl.storage_url;
+      if (!url) return;
+      setPlayerSrc(url);
+      setPlayerTitle(`${scenario.title} • #${vl.order_index} ${vl.type.toLowerCase()}`);
+      setIsPlayerOpen(true);
+    } finally {
+      setPlayerLoading(false);
+    }
+  }
+
+  async function onCreateAudio(voiceLineId: number) {
+    if (!scenario) return;
+    setGenerating((prev) => new Set(prev).add(voiceLineId));
+    try {
+      const res = await generateSingleTTS({ voice_line_id: voiceLineId, language: scenario.language });
+      if (res.success && res.signed_url) {
+        setScenario((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            voice_lines: prev.voice_lines.map((v) =>
+              v.id === voiceLineId ? { ...v, storage_url: res.signed_url } : v
+            ),
+          };
+        });
+      } else {
+        // eslint-disable-next-line no-alert
+        alert(res.error_message || "Failed to generate audio");
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-alert
+      alert("Failed to generate audio");
+    } finally {
+      setGenerating((prev) => {
+        const next = new Set(prev);
+        next.delete(voiceLineId);
+        return next;
+      });
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center py-10">
@@ -89,7 +146,6 @@ export default function ScenarioDetailPage() {
   return (
     <section className="py-4 space-y-4">
       <Breadcrumbs>
-        <BreadcrumbItem href="/dashboard">Dashboard</BreadcrumbItem>
         <BreadcrumbItem href="/dashboard/scenarios">Scenarios</BreadcrumbItem>
         <BreadcrumbItem>{scenario.title}</BreadcrumbItem>
       </Breadcrumbs>
@@ -125,6 +181,7 @@ export default function ScenarioDetailPage() {
             >
               Enhance Selected
             </Button>
+            {playerLoading && <span className="text-xs text-default-500">Loading audio…</span>}
           </div>
 
           <Table aria-label="Voice lines table">
@@ -133,7 +190,7 @@ export default function ScenarioDetailPage() {
               <TableColumn>Order</TableColumn>
               <TableColumn>Type</TableColumn>
               <TableColumn>Text</TableColumn>
-              <TableColumn>Audio</TableColumn>
+              <TableColumn>Action</TableColumn>
             </TableHeader>
             <TableBody emptyContent="No voice lines">
               {scenario.voice_lines
@@ -153,9 +210,29 @@ export default function ScenarioDetailPage() {
                     <TableCell className="whitespace-pre-wrap">{vl.text}</TableCell>
                     <TableCell>
                       {vl.storage_url ? (
-                        <audio controls src={vl.storage_url} />
+                        <Button
+                          size="sm"
+                          variant="flat"
+                          aria-label="Play audio"
+                          onPress={() => onOpenPlayer(vl.id)}
+                        >
+                          <PlayIcon className="h-5 w-5" />
+                        </Button>
                       ) : (
-                        <span className="text-default-400">—</span>
+                        generating.has(vl.id) ? (
+                          <Button size="sm" isDisabled aria-label="Generating audio">
+                            <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            color="primary"
+                            aria-label="Create audio"
+                            onPress={() => onCreateAudio(vl.id)}
+                          >
+                            <PlusIcon className="h-5 w-5" />
+                          </Button>
+                        )
                       )}
                     </TableCell>
                   </TableRow>
@@ -186,6 +263,20 @@ export default function ScenarioDetailPage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {playerSrc && (
+        <AudioPlayerModal
+          isOpen={isPlayerOpen}
+          onOpenChange={(open) => {
+            setIsPlayerOpen(open);
+            if (!open) setPlayerSrc(null);
+          }}
+          src={playerSrc}
+          title={playerTitle}
+          subtitle={scenario.language}
+          autoPlayOnOpen
+        />
+      )}
     </section>
   );
 }
