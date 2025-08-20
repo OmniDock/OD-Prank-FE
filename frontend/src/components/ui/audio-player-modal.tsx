@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Button } from "@heroui/react";
-import { PlayIcon, PauseIcon, StopIcon } from "@heroicons/react/24/outline";
+import { PlayIcon, PauseIcon, StopIcon, SpeakerWaveIcon, SpeakerXMarkIcon } from "@heroicons/react/24/outline";
+import { VoiceVisualizer } from "@/components/ui/voice-visualizer";
 
 interface AudioPlayerModalProps {
   isOpen: boolean;
@@ -17,6 +18,34 @@ export function AudioPlayerModal({ isOpen, onOpenChange, src, title, subtitle, a
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [resolvedSrc, setResolvedSrc] = useState<string>(src);
+  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+
+  // Try to resolve CORS-tainted signed URLs into same-origin blob URLs for WebAudio analysis
+  useEffect(() => {
+    let aborted = false;
+    let objectUrl: string | null = null;
+    setResolvedSrc(src);
+
+    (async () => {
+      try {
+        const res = await fetch(src, { mode: "cors", credentials: "omit" });
+        if (!res.ok) return;
+        const blob = await res.blob();
+        if (aborted) return;
+        objectUrl = URL.createObjectURL(blob);
+        setResolvedSrc(objectUrl);
+      } catch {
+        // Fall back to direct src
+      }
+    })();
+
+    return () => {
+      aborted = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [src]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -31,6 +60,9 @@ export function AudioPlayerModal({ isOpen, onOpenChange, src, title, subtitle, a
     audio.addEventListener("timeupdate", onUpdate);
     audio.addEventListener("ended", onEnded);
     audio.addEventListener("error", onError);
+
+    audio.muted = muted;
+    audio.volume = volume;
 
     return () => {
       audio.removeEventListener("loadedmetadata", onLoaded);
@@ -54,6 +86,13 @@ export function AudioPlayerModal({ isOpen, onOpenChange, src, title, subtitle, a
       }
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.muted = muted;
+    audio.volume = volume;
+  }, [muted, volume]);
 
   function togglePlay() {
     const audio = audioRef.current;
@@ -100,18 +139,16 @@ export function AudioPlayerModal({ isOpen, onOpenChange, src, title, subtitle, a
           {subtitle && <div className="text-xs text-default-500">{subtitle}</div>}
         </ModalHeader>
         <ModalBody>
-          <audio ref={audioRef} src={src} />
+          <audio ref={audioRef} src={resolvedSrc} crossOrigin="anonymous" />
           {error && <div className="text-xs text-danger">{error}</div>}
 
-          <div className={`flex items-center justify-center gap-1 h-16 ${isPlaying ? "" : "opacity-60"}`}>
-            {[...Array(7)].map((_, i) => (
-              <div
-                key={i}
-                className={`w-1.5 bg-primary-500 rounded-sm ${isPlaying ? "animate-pulse" : ""}`}
-                style={{ height: `${8 + (i % 3) * 8}px`, animationDelay: `${i * 100}ms` }}
-              />
-            ))}
-          </div>
+          <VoiceVisualizer
+            audioRef={audioRef}
+            isActive={isPlaying}
+            height={140}
+            colors={["#22c55e", "#3b82f6"]}
+            className="mt-1"
+          />
 
           <div className="flex items-center gap-3">
             <Button size="sm" color="primary" onPress={togglePlay} aria-label={isPlaying ? "Pause" : "Play"}>
@@ -120,6 +157,19 @@ export function AudioPlayerModal({ isOpen, onOpenChange, src, title, subtitle, a
             <Button size="sm" variant="flat" onPress={stop} aria-label="Stop">
               <StopIcon className="h-5 w-5" />
             </Button>
+            <Button size="sm" variant="flat" onPress={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"}>
+              {muted ? <SpeakerXMarkIcon className="h-5 w-5" /> : <SpeakerWaveIcon className="h-5 w-5" />}
+            </Button>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volume}
+              onChange={(e) => setVolume(Number(e.target.value))}
+              className="w-24"
+              aria-label="Volume"
+            />
             <div className="ml-auto text-xs text-default-500">
               {formatTime(currentTime)} / {formatTime(duration || 0)}
             </div>
