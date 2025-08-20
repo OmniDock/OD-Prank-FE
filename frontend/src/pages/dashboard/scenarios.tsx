@@ -72,7 +72,7 @@ export default function ScenariosPage() {
   }
 
   return (
-    <section className="py-4 space-y-4">
+    <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Scenarios</h1>
         <Button color="primary" onPress={() => setIsCreateOpen(true)}>
