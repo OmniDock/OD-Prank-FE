@@ -23,7 +23,7 @@ import {
 } from "@heroui/react";
 import { enhanceVoiceLines, fetchScenario } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
-import { generateSingleTTS, getAudioUrl } from "@/lib/api.tts";
+import { generateSingleTTS } from "@/lib/api.tts";
 import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
 import { PlayIcon, PlusIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 
@@ -37,9 +37,8 @@ export default function ScenarioDetailPage() {
   const [enhancing, setEnhancing] = useState(false);
   const [generating, setGenerating] = useState<Set<number>>(new Set());
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
-  const [playerSrc, setPlayerSrc] = useState<string | null>(null);
-  const [playerTitle, setPlayerTitle] = useState<string>("");
-  const [playerLoading, setPlayerLoading] = useState<boolean>(false);
+  const [playerCurrentIndex, setPlayerCurrentIndex] = useState(0);
+
 
   useEffect(() => {
     (async () => {
@@ -87,20 +86,13 @@ export default function ScenarioDetailPage() {
 
   async function onOpenPlayer(voiceLineId: number) {
     if (!scenario) return;
-    const vl = scenario.voice_lines.find((v) => v.id === voiceLineId);
-    if (!vl) return;
-    setPlayerLoading(true);
-    try {
-      // Always fetch a fresh signed URL to avoid expiry issues
-      const fresh = await getAudioUrl(voiceLineId);
-      const url = fresh?.signed_url || vl.storage_url;
-      if (!url) return;
-      setPlayerSrc(url);
-      setPlayerTitle(`${scenario.title} • #${vl.order_index} ${vl.type.toLowerCase()}`);
-      setIsPlayerOpen(true);
-    } finally {
-      setPlayerLoading(false);
-    }
+    
+    // Find the index of the voice line to play
+    const index = scenario.voice_lines.findIndex(vl => vl.id === voiceLineId);
+    if (index === -1) return;
+    
+    setPlayerCurrentIndex(index);
+    setIsPlayerOpen(true);
   }
 
   async function onCreateAudio(voiceLineId: number) {
@@ -181,7 +173,7 @@ export default function ScenarioDetailPage() {
             >
               Enhance Selected
             </Button>
-            {playerLoading && <span className="text-xs text-default-500">Loading audio…</span>}
+
           </div>
 
           <Table aria-label="Voice lines table">
@@ -264,16 +256,15 @@ export default function ScenarioDetailPage() {
         </ModalContent>
       </Modal>
 
-      {playerSrc && (
+      {scenario && (
         <AudioPlayerModal
           isOpen={isPlayerOpen}
-          onOpenChange={(open) => {
-            setIsPlayerOpen(open);
-            if (!open) setPlayerSrc(null);
-          }}
-          src={playerSrc}
-          title={playerTitle}
-          subtitle={scenario.language}
+          onOpenChange={setIsPlayerOpen}
+          voiceLines={scenario.voice_lines}
+          currentIndex={playerCurrentIndex}
+          onIndexChange={setPlayerCurrentIndex}
+          scenarioTitle={scenario.title}
+          language={scenario.language}
           autoPlayOnOpen
         />
       )}
