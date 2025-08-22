@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
   Textarea,
+  Checkbox,
 } from "@heroui/react";
 import { enhanceVoiceLines, fetchScenario } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
@@ -228,10 +229,11 @@ export default function ScenarioDetailPage() {
                 .map((vl) => (
                   <TableRow key={vl.id}>
                     <TableCell>
-                      <input
-                        type="checkbox"
-                        checked={selected.has(vl.id)}
-                        onChange={() => toggleSelected(vl.id)}
+                      <Checkbox
+                        size="sm"
+                        isSelected={selected.has(vl.id)}
+                        onValueChange={() => toggleSelected(vl.id)}
+                        aria-label={`Select voice line ${vl.id}`}
                       />
                     </TableCell>
                     <TableCell>{vl.order_index}</TableCell>
