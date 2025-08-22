@@ -21,12 +21,15 @@ import {
   TableRow,
   Textarea,
   Checkbox,
+  addToast,
 } from "@heroui/react";
-import { enhanceVoiceLines, fetchScenario } from "@/lib/api.scenarios";
+import { enhanceVoiceLines, fetchScenario, updateScenarioPreferredVoice } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
-import { generateSingleTTS } from "@/lib/api.tts";
+import { generateSingleTTS, fetchVoices } from "@/lib/api.tts";
 import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
+import { VoicePickerModal } from "@/components/ui/voice-picker-modal";
 import { PlayIcon, PlusIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import type { VoiceItem } from "@/types/tts";
 
 export default function ScenarioDetailPage() {
   const { id } = useParams();
@@ -39,6 +42,9 @@ export default function ScenarioDetailPage() {
   const [generating, setGenerating] = useState<Set<number>>(new Set());
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [playerCurrentIndex, setPlayerCurrentIndex] = useState(0);
+  const [voices, setVoices] = useState<VoiceItem[]>([]);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
+  const [isVoicePickerOpen, setIsVoicePickerOpen] = useState(false);
 
 
   useEffect(() => {
@@ -47,11 +53,23 @@ export default function ScenarioDetailPage() {
       try {
         const data = await fetchScenario(id);
         setScenario(data);
+        setSelectedVoiceId(data.preferred_voice_id ?? null);
       } finally {
         setLoading(false);
       }
     })();
   }, [id]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetchVoices();
+        setVoices(res.voices || []);
+      } catch {
+        // noop
+      }
+    })();
+  }, []);
 
   function toggleSelected(voiceLineId: number) {
     setSelected((prev) => {
@@ -100,7 +118,7 @@ export default function ScenarioDetailPage() {
     if (!scenario) return;
     setGenerating((prev) => new Set(prev).add(voiceLineId));
     try {
-      const res = await generateSingleTTS({ voice_line_id: voiceLineId, language: scenario.language });
+      const res = await generateSingleTTS({ voice_line_id: voiceLineId, language: scenario.language, voice_id: selectedVoiceId ?? undefined });
       if (res.success && res.signed_url) {
         setScenario((prev) => {
           if (!prev) return prev;
@@ -112,17 +130,47 @@ export default function ScenarioDetailPage() {
           };
         });
       } else {
-        // eslint-disable-next-line no-alert
-        alert(res.error_message || "Failed to generate audio");
+        addToast({
+          title: "Generation failed",
+          description: res.error_message || "Failed to generate audio",
+          color: "danger",
+          timeout: 5000,
+        });
       }
     } catch (e) {
-      // eslint-disable-next-line no-alert
-      alert("Failed to generate audio");
+      addToast({
+        title: "Request failed",
+        description: "Failed to generate audio",
+        color: "danger",
+        timeout: 5000,
+      });
     } finally {
       setGenerating((prev) => {
         const next = new Set(prev);
         next.delete(voiceLineId);
         return next;
+      });
+    }
+  }
+
+  async function persistPreferredVoice(voiceId: string) {
+    if (!scenario) return;
+    try {
+      const updated = await updateScenarioPreferredVoice(scenario.id, voiceId);
+      setScenario(updated);
+      setSelectedVoiceId(voiceId);
+      addToast({
+        title: "Preferred voice updated",
+        description: `${voices.find(v=>v.id===voiceId)?.name ?? voiceId} will be used for this scenario`,
+        color: "success",
+        timeout: 3000,
+      });
+    } catch (e) {
+      addToast({
+        title: "Update failed",
+        description: "Failed to set preferred voice",
+        color: "danger",
+        timeout: 5000,
       });
     }
   }
@@ -188,6 +236,23 @@ export default function ScenarioDetailPage() {
               <div className="text-xs text-default-500">Updated</div>
               <div className="text-sm text-default-900">{new Date(scenario.updated_at).toLocaleString()}</div>
             </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Voice Settings - separate card */}
+      <Card>
+        <CardBody>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="text-sm text-default-600">
+              Selected Voice: {(() => {
+                const vid = scenario.preferred_voice_id ?? selectedVoiceId;
+                if (!vid) return "None";
+                const v = voices.find(x => x.id === vid);
+                return v ? `${v.name} (${v.gender})` : vid;
+              })()}
+            </div>
+            <Button variant="flat" onPress={() => setIsVoicePickerOpen(true)}>Choose voice</Button>
           </div>
         </CardBody>
       </Card>
@@ -302,8 +367,17 @@ export default function ScenarioDetailPage() {
           scenarioTitle={scenario.title}
           language={scenario.language}
           autoPlayOnOpen
+          preferredVoiceId={selectedVoiceId ?? scenario.preferred_voice_id ?? null}
         />
       )}
+
+      <VoicePickerModal
+        isOpen={isVoicePickerOpen}
+        onOpenChange={setIsVoicePickerOpen}
+        voices={voices}
+        selectedVoiceId={selectedVoiceId ?? scenario?.preferred_voice_id}
+        onSelect={(id) => void persistPreferredVoice(id)}
+      />
     </section>
   );
 }

@@ -8,6 +8,7 @@ interface CircularTapeVisualizerProps {
   size?: number;
   color?: string;
   glowColor?: string;
+  padding?: number; // extra inner spacing between circle and canvas edge (in CSS px)
 }
 
 export function CircularTapeVisualizer({
@@ -17,6 +18,7 @@ export function CircularTapeVisualizer({
   size = 240,
   color = "#ff7a00",
   glowColor = "#ffb566",
+  padding = 0,
 }: CircularTapeVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -105,7 +107,9 @@ export function CircularTapeVisualizer({
       // Account for stroke widths and glow to keep drawing inside canvas
       const strokeMax = 8 * dpr; // outer stroke width
       const glowMax = 20 * dpr; // outer glow blur radius
-      const margin = strokeMax / 2 + glowMax + 2 * dpr;
+      // Calculate margin based on max amplitude + glow + strokes
+      // The 1.2 factor is to compensate for max amplitude expansion from waveform
+      const margin = (strokeMax / 2 + glowMax + 2 * dpr) * 1.2 + (padding * dpr);
       const maxRadius = Math.max(0, minDim / 2 - margin);
       const baseRadius = Math.min(minDim * 0.252 * pulseAmount, maxRadius * 0.9); // 10% smaller base circle
       const availableOffset = Math.max(0, maxRadius - baseRadius);
@@ -267,12 +271,11 @@ export function CircularTapeVisualizer({
   }, [audioRef, isActive, color, glowColor, size]);
 
   return (
-    <div className={className} style={{ height: size, width: "100%" }}>
-      <div className="flex items-center justify-center">
-        <canvas 
-          ref={canvasRef} 
-          className="max-w-full" 
-          style={{ height: size, width: size }} 
+    <div className={className} style={{ height: size, width: size }}>
+      <div className="flex items-center justify-center" style={{ height: size, width: size }}>
+        <canvas
+          ref={canvasRef}
+          style={{ height: size, width: size }}
         />
       </div>
     </div>

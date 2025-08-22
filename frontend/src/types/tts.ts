@@ -6,4 +6,19 @@ export interface TTSResult {
   error_message?: string;
 }
 
+export type Gender = "MALE" | "FEMALE";
+
+export interface VoiceItem {
+  id: string;
+  name: string;
+  description?: string;
+  languages: ("ENGLISH" | "GERMAN")[];
+  gender: Gender;
+  preview_url?: string;
+}
+
+export interface VoiceListResponse {
+  voices: VoiceItem[];
+}
+
 

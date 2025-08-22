@@ -37,4 +37,15 @@ export async function enhanceVoiceLines(
   return res.json();
 }
 
+export async function updateScenarioPreferredVoice(
+  scenarioId: number | string,
+  preferred_voice_id: string,
+): Promise<Scenario> {
+  const res = await apiFetch(`/scenario/${scenarioId}/preferred-voice`, {
+    method: "PATCH",
+    body: JSON.stringify({ preferred_voice_id }),
+  });
+  return res.json();
+}
+
 

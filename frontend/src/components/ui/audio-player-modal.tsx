@@ -14,6 +14,7 @@ interface AudioPlayerModalProps {
   scenarioTitle?: string;
   language?: Language;
   autoPlayOnOpen?: boolean;
+  preferredVoiceId?: string | null;
 }
 
 export function AudioPlayerModal({ 
@@ -24,7 +25,8 @@ export function AudioPlayerModal({
   onIndexChange, 
   scenarioTitle, 
   language, 
-  autoPlayOnOpen = true 
+  autoPlayOnOpen = true,
+  preferredVoiceId,
 }: AudioPlayerModalProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -68,7 +70,7 @@ export function AudioPlayerModal({
 
       try {
         // Always try to fetch a fresh signed URL; backend will 404 if none exists
-        const fresh = await getAudioUrl(currentVoiceLine.id);
+        const fresh = await getAudioUrl(currentVoiceLine.id, preferredVoiceId ?? undefined);
         const url = fresh?.signed_url;
         
         if (!url) {
@@ -110,7 +112,7 @@ export function AudioPlayerModal({
       aborted = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [currentVoiceLine?.id]);
+  }, [currentVoiceLine?.id, preferredVoiceId]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -246,6 +248,7 @@ export function AudioPlayerModal({
       const result = await generateSingleTTS({
         voice_line_id: currentVoiceLine.id,
         language: language,
+        voice_id: preferredVoiceId ?? undefined,
       });
       
       if (result.success && result.signed_url) {

@@ -17,6 +17,7 @@ export interface Scenario {
   title: string;
   description?: string | null;
   language: Language;
+  preferred_voice_id?: string | null;
   target_name: string;
   is_safe: boolean;
   is_not_safe_reason?: string | null;

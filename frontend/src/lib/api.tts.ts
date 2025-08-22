@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import type { Language } from "@/types/scenario";
+import type { VoiceListResponse } from "@/types/tts";
 
 export interface TTSResult {
   voice_line_id: number;
@@ -25,8 +26,14 @@ export async function generateSingleTTS(payload: SingleTTSRequest): Promise<TTSR
   return res.json();
 }
 
-export async function getAudioUrl(voice_line_id: number): Promise<{ signed_url: string; expires_in: number }> {
-  const res = await apiFetch(`/tts/audio-url/${voice_line_id}`, { method: "GET" });
+export async function getAudioUrl(voice_line_id: number, voice_id?: string): Promise<{ signed_url: string; expires_in: number }> {
+  const query = voice_id ? `?voice_id=${encodeURIComponent(voice_id)}` : "";
+  const res = await apiFetch(`/tts/audio-url/${voice_line_id}${query}`, { method: "GET" });
+  return res.json();
+}
+
+export async function fetchVoices(): Promise<VoiceListResponse> {
+  const res = await apiFetch(`/tts/voices`, { method: "GET" });
   return res.json();
 }
 
