@@ -66,25 +66,29 @@ export function CircularTapeVisualizer({
       }
       const currentAmp = Math.sqrt(sum / timeData.length);
 
-      // Write new amplitude to current head position (amplified) only when active
+      // Write new amplitude to current head position (amplified, normalized) only when active
       if (isActive) {
-        waveHistory[headPositionRef.current] = currentAmp * 5.0;
+        const headIndex = Math.floor(headPositionRef.current);
+        const gain = 5.2; // visual gain (30% increase)
+        const normalized = Math.min(1, currentAmp * gain);
+        waveHistory[headIndex] = normalized;
       }
       
       // Advance head clockwise only when active
       if (isActive) {
-        headPositionRef.current = (headPositionRef.current + 0.5) % 360;
+        headPositionRef.current = (headPositionRef.current + 0.45) % 360; // 1.25x slower vs 0.25
       }
 
       // Update pulse phase for breathing effect (only when playing)
       const hasAudio = isActive && currentAmp > 0.001;
       if (hasAudio) {
-        pulsePhaseRef.current += 0.04; // Slower, more gentle pulse
+        pulsePhaseRef.current += 0.015; // slower pulse motion
       }
 
       // Decay old values slightly for smooth trails
+      const activeHeadIndex = Math.floor(headPositionRef.current);
       for (let i = 0; i < 360; i++) {
-        if (i !== headPositionRef.current) {
+        if (i !== activeHeadIndex) {
           waveHistory[i] *= 0.98;
         }
       }
@@ -97,8 +101,14 @@ export function CircularTapeVisualizer({
       
       // Add gentle pulse effect when audio is playing
       const pulseAmount = hasAudio ? Math.sin(pulsePhaseRef.current) * 0.03 + 1 : 1;
-      const baseRadius = Math.min(w, h) * 0.28 * pulseAmount; // Smaller base circle
-      const maxOffset = Math.min(w, h) * 0.35; // Bigger amplitude range
+      const minDim = Math.min(w, h);
+      // Account for stroke widths and glow to keep drawing inside canvas
+      const strokeMax = 8 * dpr; // outer stroke width
+      const glowMax = 20 * dpr; // outer glow blur radius
+      const margin = strokeMax / 2 + glowMax + 2 * dpr;
+      const maxRadius = Math.max(0, minDim / 2 - margin);
+      const baseRadius = Math.min(minDim * 0.252 * pulseAmount, maxRadius * 0.9); // 10% smaller base circle
+      const availableOffset = Math.max(0, maxRadius - baseRadius);
 
       ctx.clearRect(0, 0, w, h);
 
@@ -116,8 +126,8 @@ export function CircularTapeVisualizer({
       ctx.beginPath();
       for (let i = 0; i < 360; i++) {
         const angle = (i * Math.PI) / 180 - Math.PI / 2;
-        const amplitude = waveHistory[i];
-        const offset = amplitude * maxOffset;
+        const amplitude = Math.min(1, waveHistory[i]);
+        const offset = amplitude * availableOffset;
         const r = baseRadius + offset;
         const x = cx + Math.cos(angle) * r;
         const y = cy + Math.sin(angle) * r;
@@ -142,8 +152,8 @@ export function CircularTapeVisualizer({
       ctx.beginPath();
       for (let i = 0; i < 360; i++) {
         const angle = (i * Math.PI) / 180 - Math.PI / 2;
-        const amplitude = waveHistory[i];
-        const offset = amplitude * maxOffset;
+        const amplitude = Math.min(1, waveHistory[i]);
+        const offset = amplitude * availableOffset;
         const r = baseRadius + offset;
         const x = cx + Math.cos(angle) * r;
         const y = cy + Math.sin(angle) * r;
@@ -167,8 +177,8 @@ export function CircularTapeVisualizer({
       ctx.beginPath();
       for (let i = 0; i < 360; i++) {
         const angle = (i * Math.PI) / 180 - Math.PI / 2;
-        const amplitude = waveHistory[i];
-        const offset = amplitude * maxOffset;
+        const amplitude = Math.min(1, waveHistory[i]);
+        const offset = amplitude * availableOffset;
         const r = baseRadius + offset;
         const x = cx + Math.cos(angle) * r;
         const y = cy + Math.sin(angle) * r;
@@ -212,9 +222,10 @@ export function CircularTapeVisualizer({
       ctx.restore();
 
       // Draw current head position indicator with layered glow
-      const headAngle = (headPositionRef.current * Math.PI) / 180 - Math.PI / 2;
-      const headAmp = waveHistory[headPositionRef.current];
-      const headR = baseRadius + headAmp * maxOffset;
+      const headIndex = Math.floor(headPositionRef.current);
+      const headAngle = (headIndex * Math.PI) / 180 - Math.PI / 2;
+      const headAmp = Math.min(1, waveHistory[headIndex]);
+      const headR = baseRadius + headAmp * availableOffset;
       const headX = cx + Math.cos(headAngle) * headR;
       const headY = cy + Math.sin(headAngle) * headR;
       
