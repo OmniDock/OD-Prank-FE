@@ -200,31 +200,28 @@ export default function ScenarioDetailPage() {
                     <TableCell>{vl.order_index}</TableCell>
                     <TableCell className="capitalize">{vl.type}</TableCell>
                     <TableCell className="whitespace-pre-wrap">{vl.text}</TableCell>
-                    <TableCell>
-                      {vl.storage_url ? (
-                        <Button
-                          size="sm"
-                          variant="flat"
-                          aria-label="Play audio"
-                          onPress={() => onOpenPlayer(vl.id)}
-                        >
-                          <PlayIcon className="h-5 w-5" />
+                    <TableCell className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        aria-label="Open player"
+                        onPress={() => onOpenPlayer(vl.id)}
+                      >
+                        <PlayIcon className="h-5 w-5" />
+                      </Button>
+                      {generating.has(vl.id) ? (
+                        <Button size="sm" isDisabled aria-label="Generating audio">
+                          <ArrowPathIcon className="h-5 w-5 animate-spin" />
                         </Button>
                       ) : (
-                        generating.has(vl.id) ? (
-                          <Button size="sm" isDisabled aria-label="Generating audio">
-                            <ArrowPathIcon className="h-5 w-5 animate-spin" />
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            color="primary"
-                            aria-label="Create audio"
-                            onPress={() => onCreateAudio(vl.id)}
-                          >
-                            <PlusIcon className="h-5 w-5" />
-                          </Button>
-                        )
+                        <Button
+                          size="sm"
+                          color="primary"
+                          aria-label="Create audio"
+                          onPress={() => onCreateAudio(vl.id)}
+                        >
+                          <PlusIcon className="h-5 w-5" />
+                        </Button>
                       )}
                     </TableCell>
                   </TableRow>

@@ -66,16 +66,10 @@ export function AudioPlayerModal({
       // Clear previous error
       setError(null);
 
-      // If no storage_url, voice line hasn't been generated yet
-      if (!currentVoiceLine.storage_url) {
-        setResolvedSrc(null);
-        return;
-      }
-
       try {
-        // Always fetch a fresh signed URL to avoid expiry issues
+        // Always try to fetch a fresh signed URL; backend will 404 if none exists
         const fresh = await getAudioUrl(currentVoiceLine.id);
-        const url = fresh?.signed_url || currentVoiceLine.storage_url;
+        const url = fresh?.signed_url;
         
         if (!url) {
           console.warn("No audio URL available for voice line", currentVoiceLine.id);
@@ -105,10 +99,7 @@ export function AudioPlayerModal({
         }
       } catch (err) {
         console.error("Failed to get audio URL:", err);
-        // Only show error if the voice line should have audio
-        if (currentVoiceLine.storage_url) {
-          setError(`Failed to load audio: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        }
+        // Backend returns 404 if not generated; show silent state
         setResolvedSrc(null);
       }
     };
@@ -119,7 +110,7 @@ export function AudioPlayerModal({
       aborted = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [currentVoiceLine?.id, currentVoiceLine?.storage_url]);
+  }, [currentVoiceLine?.id]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -258,14 +249,8 @@ export function AudioPlayerModal({
       });
       
       if (result.success && result.signed_url) {
-        // Update the current voice line with new audio URL
-        const updatedVoiceLines = [...voiceLines];
-        updatedVoiceLines[currentIndex] = {
-          ...currentVoiceLine,
-          storage_url: result.signed_url
-        };
-        // Note: In a real app, you'd want to update the parent component's state
-        // For now, the audio will load via the useEffect when storage_url changes
+        // Use the returned signed URL immediately
+        setResolvedSrc(result.signed_url);
       } else {
         setError(result.error_message || "Failed to generate audio");
       }
