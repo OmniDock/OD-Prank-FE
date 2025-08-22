@@ -145,14 +145,51 @@ export default function ScenarioDetailPage() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold">{scenario.title}</h1>
-          <p className="text-sm text-default-500">
-            Target: {scenario.target_name} • Lang: {scenario.language}
-          </p>
+
         </div>
         <Chip color={scenario.is_safe ? "success" : "danger"} variant="flat">
           {scenario.is_safe ? "Safe" : "Unsafe"}
         </Chip>
       </div>
+
+      {/* Scenario Details */}
+      <Card>
+        <CardBody>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-medium">Scenario Details</h2>
+          </div>
+
+          {scenario.description && (
+            <div className="mb-4">
+              <div className="text-sm font-medium text-default-600 mb-1">Description</div>
+              <p className="text-default-900 whitespace-pre-wrap">{scenario.description}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <div className="text-xs text-default-500">Target</div>
+              <div className="text-sm text-default-900">{scenario.target_name}</div>
+            </div>
+            <div>
+              <div className="text-xs text-default-500">Language</div>
+              <div className="text-sm text-default-900">{scenario.language}</div>
+            </div>
+            <div>
+              <div className="text-xs text-default-500">Voice Lines</div>
+              <div className="text-sm text-default-900">{scenario.voice_lines.length}</div>
+            </div>
+            <div>
+              <div className="text-xs text-default-500">Created</div>
+              <div className="text-sm text-default-900">{new Date(scenario.created_at).toLocaleString()}</div>
+            </div>
+            <div>
+              <div className="text-xs text-default-500">Updated</div>
+              <div className="text-sm text-default-900">{new Date(scenario.updated_at).toLocaleString()}</div>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
 
       {!scenario.is_safe && scenario.is_not_safe_reason && (
         <Card>
