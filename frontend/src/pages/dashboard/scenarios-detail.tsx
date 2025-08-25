@@ -45,7 +45,6 @@ export default function ScenarioDetailPage() {
     if (!id) return;
     try {
       const data = await fetchScenario(id);
-      console.log('Scenario refetched:', data);
       setScenario(data);
     } catch (error) {
       console.error('Failed to refetch scenario:', error);
