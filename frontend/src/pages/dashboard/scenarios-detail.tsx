@@ -40,8 +40,6 @@ export default function ScenarioDetailPage() {
   const [isVoicePickerOpen, setIsVoicePickerOpen] = useState(false);
 
 
-
-  // Helper function to refetch scenario data
   const refetchScenario = async () => {
     if (!id) return;
     try {
