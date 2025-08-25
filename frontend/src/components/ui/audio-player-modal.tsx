@@ -69,12 +69,18 @@ export function AudioPlayerModal({
       setError(null);
 
       try {
-        // Always try to fetch a fresh signed URL; backend will 404 if none exists
-        const fresh = await getAudioUrl(currentVoiceLine.id, preferredVoiceId ?? undefined);
-        const url = fresh?.signed_url;
+        // Only try the preferred voice ID - no fallback
+        if (!preferredVoiceId) {
+          console.warn("No preferred voice ID available for voice line", currentVoiceLine.id);
+          setResolvedSrc(null);
+          return;
+        }
+        
+        const response = await getAudioUrl(currentVoiceLine.id, preferredVoiceId);
+        const url = response?.signed_url ?? null;
         
         if (!url) {
-          console.warn("No audio URL available for voice line", currentVoiceLine.id);
+          console.warn("No audio URL available for voice line", currentVoiceLine.id, "with voice", preferredVoiceId);
           setResolvedSrc(null);
           return;
         }
@@ -100,8 +106,8 @@ export function AudioPlayerModal({
           // Fall back to direct URL - this is fine
         }
       } catch (err) {
-        console.error("Failed to get audio URL:", err);
-        // Backend returns 404 if not generated; show silent state
+        console.error("Failed to get audio URL for voice", preferredVoiceId, ":", err);
+        // Backend returns 404 if not generated for this specific voice; show silent state
         setResolvedSrc(null);
       }
     };
@@ -239,7 +245,7 @@ export function AudioPlayerModal({
   }
 
   async function generateAudio() {
-    if (!currentVoiceLine || generating) return;
+    if (!currentVoiceLine || generating || !preferredVoiceId) return;
     
     setGenerating(true);
     setError(null);
@@ -248,7 +254,7 @@ export function AudioPlayerModal({
       const result = await generateSingleTTS({
         voice_line_id: currentVoiceLine.id,
         language: language,
-        voice_id: preferredVoiceId ?? undefined,
+        voice_id: preferredVoiceId,
       });
       
       if (result.success && result.signed_url) {
@@ -314,7 +320,7 @@ export function AudioPlayerModal({
           {process.env.NODE_ENV === 'development' && (
             <div className="text-xs text-default-400 mb-2">
               Debug: Voice Line ID {currentVoiceLine?.id}, 
-              Has storage_url: {!!currentVoiceLine?.storage_url}, 
+              Preferred Voice: {preferredVoiceId || 'None'}, 
               Resolved src: {resolvedSrc ? 'Yes' : 'No'}
             </div>
           )}
@@ -341,8 +347,8 @@ export function AudioPlayerModal({
                 </p>
               </div>
               
-              {/* Generate button */}
-              {!currentVoiceLine?.storage_url && (
+              {/* Generate button - only show if no audio available and we have a preferred voice */}
+              {!resolvedSrc && preferredVoiceId && (
                 <Button 
                   color="primary" 
                   onPress={generateAudio}
@@ -352,6 +358,20 @@ export function AudioPlayerModal({
                 >
                   Generate Audio
                 </Button>
+              )}
+              
+              {/* No voice selected warning */}
+              {!preferredVoiceId && (
+                <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-warning shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-sm text-warning-700">
+                      Select a voice first to generate audio
+                    </span>
+                  </div>
+                </div>
               )}
             </div>
             

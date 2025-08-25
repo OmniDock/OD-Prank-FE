@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import {
   Breadcrumbs,
@@ -30,7 +30,7 @@ import type { Scenario } from "@/types/scenario";
 import { generateSingleTTS, fetchVoices, getAudioUrl } from "@/lib/api.tts";
 import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
 import { VoicePickerModal } from "@/components/ui/voice-picker-modal";
-import { PlayIcon, PlusIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import { PlayIcon, PlusIcon } from "@heroicons/react/24/outline";
 import type { VoiceItem } from "@/types/tts";
 
 export default function ScenarioDetailPage() {
@@ -45,19 +45,33 @@ export default function ScenarioDetailPage() {
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [playerCurrentIndex, setPlayerCurrentIndex] = useState(0);
   const [voices, setVoices] = useState<VoiceItem[]>([]);
-  const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
+
   const [isVoicePickerOpen, setIsVoicePickerOpen] = useState(false);
   const [audioAvailable, setAudioAvailable] = useState<Record<number, boolean>>({});
   const [activeTab, setActiveTab] = useState<"ALL" | "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING">("ALL");
 
+  // Memoize filtered and sorted voice lines to prevent unnecessary re-renders
+  const filteredVoiceLines = useMemo(() => {
+    if (!scenario) return [];
+    const filtered = activeTab === 'ALL' 
+      ? scenario.voice_lines 
+      : scenario.voice_lines.filter(vl => vl.type === activeTab);
+    
+    const sorted = filtered.slice().sort((a, b) => a.order_index - b.order_index);
+    console.debug(`Filtered voice lines for tab ${activeTab}:`, sorted.length, 'items');
+    return sorted;
+  }, [scenario?.voice_lines, activeTab]);
 
   useEffect(() => {
     (async () => {
       if (!id) return;
       try {
         const data = await fetchScenario(id);
+        console.log('Scenario loaded:', data);
         setScenario(data);
-        setSelectedVoiceId(data.preferred_voice_id ?? null);
+        
+        // Trigger audio availability check after scenario is set
+        console.debug('Triggering audio availability check after scenario load');
       } finally {
         setLoading(false);
       }
@@ -75,26 +89,83 @@ export default function ScenarioDetailPage() {
     })();
   }, []);
 
-  // Refresh audio availability for current selected voice across voice lines
+  // Update audio availability based on preferred voice ID only
   useEffect(() => {
+    let isCancelled = false;
+
     (async () => {
-      if (!scenario || !selectedVoiceId) {
-        setAudioAvailable({});
+      console.debug('Audio availability check triggered', {
+        hasScenario: !!scenario,
+        voiceLinesCount: scenario?.voice_lines?.length || 0,
+        preferredVoiceId: scenario?.preferred_voice_id
+      });
+
+      if (!scenario || !scenario.voice_lines || scenario.voice_lines.length === 0) {
+        console.debug('No scenario or voice lines, clearing audio availability');
+        if (!isCancelled) {
+          setAudioAvailable({});
+        }
         return;
       }
-      const entries: Array<Promise<void>> = [];
-      const next: Record<number, boolean> = {};
-      for (const vl of scenario.voice_lines) {
-        entries.push(
-          getAudioUrl(vl.id, selectedVoiceId)
-            .then(() => { next[vl.id] = true; })
-            .catch(() => { next[vl.id] = false; })
-        );
+
+      if (!scenario.preferred_voice_id) {
+        console.debug('No preferred voice ID, clearing audio availability');
+        if (!isCancelled) {
+          setAudioAvailable({});
+        }
+        return;
       }
-      await Promise.all(entries);
-      setAudioAvailable(next);
+
+      console.debug(`Checking audio availability for ${scenario.voice_lines.length} voice lines`);
+
+      // Parallel requests for better performance
+      const audioChecks = scenario.voice_lines.map(async (vl) => {
+        try {
+          await getAudioUrl(vl.id, scenario.preferred_voice_id as string);
+          console.debug(`✅ Audio available for voice line ${vl.id}`);
+          return { id: vl.id, available: true };
+        } catch (error) {
+          // 404 is expected when audio hasn't been generated yet
+          if (error instanceof Error && error.message.includes('404')) {
+            console.debug(`❌ Audio not yet generated for voice line ${vl.id}`);
+          } else {
+            console.warn(`Audio check failed for voice line ${vl.id}:`, error);
+          }
+          return { id: vl.id, available: false };
+        }
+      });
+
+      try {
+        const results = await Promise.allSettled(audioChecks);
+        
+        if (!isCancelled) {
+          const next: Record<number, boolean> = {};
+          results.forEach((result, index) => {
+            if (result.status === 'fulfilled') {
+              next[result.value.id] = result.value.available;
+            } else {
+              // Handle rejected promises
+              next[scenario.voice_lines[index].id] = false;
+            }
+          });
+          
+          const availableCount = Object.values(next).filter(Boolean).length;
+          console.debug(`Audio availability updated: ${availableCount}/${scenario.voice_lines.length} available`, next);
+          setAudioAvailable(next);
+        }
+      } catch (error) {
+        console.error('Error checking audio availability:', error);
+        if (!isCancelled) {
+          setAudioAvailable({});
+        }
+      }
     })();
-  }, [scenario?.id, scenario?.voice_lines.length, selectedVoiceId]);
+
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isCancelled = true;
+    };
+  }, [scenario?.id, scenario?.voice_lines, scenario?.preferred_voice_id]);
 
   function toggleSelected(voiceLineId: number) {
     setSelected((prev) => {
@@ -129,14 +200,20 @@ export default function ScenarioDetailPage() {
   }
 
   async function onOpenPlayer(voiceLineId: number) {
-    if (!scenario) return;
-    if (!selectedVoiceId) {
-      addToast({ title: "Select a voice first", description: "Choose a voice to play audio.", color: "warning", timeout: 3000 });
+    if (!scenario || !scenario.preferred_voice_id) {
+      addToast({ title: "No voice selected", description: "Select a voice first to play audio.", color: "warning", timeout: 3000 });
       return;
     }
+    
+    // If availability is stale, try to fetch a fresh URL for this specific line and preferred voice
     if (!audioAvailable[voiceLineId]) {
-      addToast({ title: "No audio yet", description: "Generate audio for this voice line first.", color: "default", timeout: 3000 });
-      return;
+      try {
+        await getAudioUrl(voiceLineId, scenario.preferred_voice_id);
+        setAudioAvailable((prev) => ({ ...prev, [voiceLineId]: true }));
+      } catch {
+        addToast({ title: "No audio yet", description: "Generate audio for this voice line first.", color: "default", timeout: 3000 });
+        return;
+      }
     }
     const index = scenario.voice_lines.findIndex(vl => vl.id === voiceLineId);
     if (index === -1) return;
@@ -145,26 +222,60 @@ export default function ScenarioDetailPage() {
   }
 
   async function onCreateAudio(voiceLineId: number) {
-    if (!scenario) return;
-    if (!selectedVoiceId) {
-      addToast({ title: "Select a voice first", description: "Pick a voice for this scenario before generating.", color: "warning", timeout: 3000 });
+    if (!scenario || !scenario.preferred_voice_id) {
+      addToast({ title: "No voice selected", description: "Select a voice first to generate audio.", color: "warning", timeout: 3000 });
       return;
     }
+    
     setGenerating((prev) => new Set(prev).add(voiceLineId));
     try {
-      const res = await generateSingleTTS({ voice_line_id: voiceLineId, language: scenario.language, voice_id: selectedVoiceId ?? undefined });
-      if (res.success && res.signed_url) {
-        setScenario((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            voice_lines: prev.voice_lines.map((v) =>
-              v.id === voiceLineId ? { ...v, storage_url: res.signed_url } : v
-            ),
-          };
-        });
-        setAudioAvailable((prev) => ({ ...prev, [voiceLineId]: true }));
-        addToast({ title: "Audio generated", description: "You can now play this line.", color: "success", timeout: 3000 });
+      const res = await generateSingleTTS({ 
+        voice_line_id: voiceLineId, 
+        language: scenario.language, 
+        voice_id: scenario.preferred_voice_id 
+      });
+      if (res.success) {
+        if (res.signed_url) {
+          // Audio is immediately available (from cache)
+          setAudioAvailable((prev) => {
+            const updated = { ...prev, [voiceLineId]: true };
+            console.debug(`Audio availability updated for voice line ${voiceLineId}:`, updated);
+            return updated;
+          });
+          addToast({ title: "Audio ready", description: "You can now play this line.", color: "success", timeout: 3000 });
+        } else {
+          // Audio generation started in background
+          addToast({ 
+            title: "Generation started", 
+            description: "Audio is being generated. It will be available shortly.", 
+            color: "primary", 
+            timeout: 4000 
+          });
+          
+          // Poll for completion every 2 seconds
+          const pollInterval = setInterval(async () => {
+            try {
+              await getAudioUrl(voiceLineId, scenario.preferred_voice_id as string);
+              // Audio is now available
+              setAudioAvailable((prev) => {
+                const updated = { ...prev, [voiceLineId]: true };
+                console.debug(`Audio availability updated after background generation for voice line ${voiceLineId}`);
+                return updated;
+              });
+              addToast({ title: "Audio ready", description: "Background generation completed!", color: "success", timeout: 3000 });
+              clearInterval(pollInterval);
+            } catch {
+              // Still not ready, continue polling
+              console.debug(`Audio not yet ready for voice line ${voiceLineId}, continuing to poll...`);
+            }
+          }, 2000);
+          
+          // Stop polling after 60 seconds
+          setTimeout(() => {
+            clearInterval(pollInterval);
+            console.warn(`Stopped polling for voice line ${voiceLineId} after timeout`);
+          }, 60000);
+        }
       } else {
         addToast({
           title: "Generation failed",
@@ -194,7 +305,6 @@ export default function ScenarioDetailPage() {
     try {
       const updated = await updateScenarioPreferredVoice(scenario.id, voiceId);
       setScenario(updated);
-      setSelectedVoiceId(voiceId);
       addToast({
         title: "Preferred voice updated",
         description: `${voices.find(v=>v.id===voiceId)?.name ?? voiceId} will be used for this scenario`,
@@ -241,8 +351,8 @@ export default function ScenarioDetailPage() {
       <Card className="ring-1 ring-default-200">
         <CardBody className="gap-6">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-secondary/10">
-              <svg className="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
@@ -273,7 +383,7 @@ export default function ScenarioDetailPage() {
                     <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span className="text-xs font-medium text-primary">Target</span>
+                    <span className="text-xs font-medium text-primary">Target Name</span>
                   </div>
                   <div className="text-base font-semibold text-foreground">{scenario.target_name}</div>
                 </div>
@@ -289,23 +399,35 @@ export default function ScenarioDetailPage() {
                 </div>
               </div>
 
-              {/* Voice Lines Count */}
-              <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-success/5 to-success/10">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2M7 4h10M7 4l-2 14h14l-2-14M11 9v4M13 9v4" />
-                  </svg>
-                  <span className="text-xs font-medium text-success">Voice Lines</span>
-                </div>
-                <div className="text-2xl font-bold text-foreground">{scenario.voice_lines.length}</div>
+              {/* Voice Lines Breakdown */}
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { type: 'OPENING', label: 'Openers' },
+                  { type: 'QUESTION', label: 'Questions' },
+                  { type: 'RESPONSE', label: 'Responses' },
+                  { type: 'CLOSING', label: 'Closers' }
+                ].map(({ type, label }) => {
+                  const count = scenario.voice_lines.filter(vl => vl.type === type).length;
+                  return (
+                    <div key={type} className="p-3 rounded-lg border border-default-200 bg-default-50">
+                      <div className="flex items-center gap-2 mb-1">
+                        <svg className="w-3 h-3 text-default-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <span className="text-xs font-medium text-default-600">{label}</span>
+                      </div>
+                      <div className="text-sm text-default-900">{count}</div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Timestamps */}
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg border border-default-200 bg-default-50">
                   <div className="flex items-center gap-2 mb-1">
                     <svg className="w-3 h-3 text-default-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span className="text-xs font-medium text-default-600">Created</span>
                   </div>
@@ -328,7 +450,7 @@ export default function ScenarioDetailPage() {
       </Card>
 
       {/* Voice Settings - separate card */}
-      <Card className={!selectedVoiceId ? "ring-2 ring-warning bg-warning/5" : "ring-1 ring-success/20 bg-success/5"}>
+      <Card className={!scenario.preferred_voice_id ? "ring-2 ring-warning bg-warning/5" : "ring-1 ring-success/20 bg-success/5"}>
         <CardBody className="gap-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
@@ -347,17 +469,32 @@ export default function ScenarioDetailPage() {
               <div className="text-sm font-medium text-default-700">Current Voice</div>
               <div className="text-base font-semibold text-foreground mt-1">
                 {(() => {
-                  const vid = scenario.preferred_voice_id ?? selectedVoiceId;
+                  const vid = scenario.preferred_voice_id;
                   if (!vid) return (
                     <span className="text-default-400 italic">No voice selected</span>
                   );
                   const v = voices.find(x => x.id === vid);
+                  const generatedCount = scenario.voice_lines.filter(vl => audioAvailable[vl.id]).length;
+                  const totalCount = scenario.voice_lines.length;
+                  
                   return v ? (
-                    <div className="flex items-center gap-2">
-                      <span>{v.name}</span>
-                      <Chip size="sm" variant="flat" color="primary">
-                        {v.gender}
-                      </Chip>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span>{v.name}</span>
+                        <Chip size="sm" variant="flat" color="primary">
+                          {v.gender}
+                        </Chip>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-default-500">Samples:</span>
+                        <Chip 
+                          size="sm" 
+                          variant="flat" 
+                          color={generatedCount === totalCount ? "success" : generatedCount > 0 ? "warning" : "default"}
+                        >
+                          {generatedCount}/{totalCount}
+                        </Chip>
+                      </div>
                     </div>
                   ) : (
                     <span className="text-default-600">{vid}</span>
@@ -367,15 +504,15 @@ export default function ScenarioDetailPage() {
             </div>
             <Button 
               color="primary" 
-              variant={selectedVoiceId ? "flat" : "solid"}
+              variant={scenario.preferred_voice_id ? "flat" : "solid"}
               onPress={() => setIsVoicePickerOpen(true)}
               className="shrink-0"
             >
-              {selectedVoiceId ? "Change Voice" : "Select Voice"}
+              {scenario.preferred_voice_id ? "Change Voice" : "Select Voice"}
             </Button>
           </div>
           
-          {!selectedVoiceId && (
+          {!scenario.preferred_voice_id && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
               <svg className="w-4 h-4 text-warning shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -401,7 +538,7 @@ export default function ScenarioDetailPage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-medium">Voice Lines</h2>
             <div className="flex items-center gap-2">
-              {!selectedVoiceId && (
+              {!scenario.preferred_voice_id && (
                 <Chip size="sm" variant="flat" color="warning">Select a voice to enable generation</Chip>
               )}
               <Button
@@ -430,20 +567,28 @@ export default function ScenarioDetailPage() {
             </Tabs>
           </div>
 
-          <Table aria-label="Voice lines table">
-            <TableHeader>
-              <TableColumn className="w-10"> </TableColumn>
-              <TableColumn className="w-16">Order</TableColumn>
-              <TableColumn className="w-28">Type</TableColumn>
-              <TableColumn>Text</TableColumn>
-              <TableColumn className="w-28">Action</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="No voice lines">
-              {(activeTab === 'ALL' ? scenario.voice_lines : scenario.voice_lines.filter(vl => vl.type === activeTab))
-                .slice()
-                .sort((a, b) => a.order_index - b.order_index)
-                .map((vl) => (
-                  <TableRow key={vl.id}>
+          <div className="min-h-[400px]">
+            <Table 
+              aria-label="Voice lines table"
+              className="table-fixed"
+              removeWrapper
+            >
+              <TableHeader>
+                <TableColumn className="w-12 min-w-12"> </TableColumn>
+                <TableColumn className="w-20 min-w-20">Order</TableColumn>
+                <TableColumn className="w-32 min-w-32">Type</TableColumn>
+                <TableColumn className="min-w-0">Text</TableColumn>
+                <TableColumn className="w-36 min-w-36">Action</TableColumn>
+              </TableHeader>
+              <TableBody 
+                emptyContent="No voice lines"
+                items={filteredVoiceLines}
+              >
+                {(vl) => (
+                  <TableRow 
+                    key={vl.id}
+                    className="hover:bg-default-50 transition-colors duration-150 cursor-pointer"
+                  >
                     <TableCell>
                       <Checkbox
                         size="sm"
@@ -452,30 +597,49 @@ export default function ScenarioDetailPage() {
                         aria-label={`Select voice line ${vl.id}`}
                       />
                     </TableCell>
-                    <TableCell>{vl.order_index}</TableCell>
-                    <TableCell className="capitalize">{vl.type}</TableCell>
-                    <TableCell className="whitespace-pre-wrap">{vl.text}</TableCell>
-                    <TableCell className="flex items-center gap-2">
-                      {!selectedVoiceId ? (
-                        <span className="text-xs text-default-400">Select a voice to enable</span>
-                      ) : audioAvailable[vl.id] ? (
-                        <Button size="sm" variant="flat" aria-label="Open player" onPress={() => onOpenPlayer(vl.id)}>
-                          <PlayIcon className="h-5 w-5" />
-                        </Button>
-                      ) : generating.has(vl.id) ? (
-                        <Button size="sm" isDisabled aria-label="Generating audio">
-                          <ArrowPathIcon className="h-5 w-5 animate-spin" />
-                        </Button>
-                      ) : (
-                        <Button size="sm" color="primary" aria-label="Create audio" onPress={() => onCreateAudio(vl.id)}>
-                          <PlusIcon className="h-5 w-5" />
-                        </Button>
-                      )}
+                    <TableCell>
+                      <span className="text-small font-medium">{vl.order_index}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="capitalize text-small font-medium">{vl.type}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="whitespace-pre-wrap text-small break-words max-w-full overflow-hidden">
+                        {vl.text}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 justify-start">
+                        {audioAvailable[vl.id] ? (
+                          <Button 
+                            size="sm" 
+                            variant="flat" 
+                            aria-label="Open player" 
+                            onPress={() => onOpenPlayer(vl.id)}
+                            className="hover:bg-primary/10 transition-colors"
+                          >
+                            <PlayIcon className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            color={generating.has(vl.id) ? "warning" : "primary"}
+                            aria-label="Create audio" 
+                            onPress={() => onCreateAudio(vl.id)}
+                            className={generating.has(vl.id) ? "cursor-not-allowed" : "hover:bg-primary/80 transition-colors"}
+                            isLoading={generating.has(vl.id)}
+                            isDisabled={generating.has(vl.id) || !scenario.preferred_voice_id}
+                          >
+                            {!generating.has(vl.id) && <PlusIcon className="h-4 w-4" />}
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardBody>
       </Card>
 
@@ -511,7 +675,7 @@ export default function ScenarioDetailPage() {
           scenarioTitle={scenario.title}
           language={scenario.language}
           autoPlayOnOpen
-          preferredVoiceId={selectedVoiceId ?? scenario.preferred_voice_id ?? null}
+          preferredVoiceId={scenario.preferred_voice_id ?? null}
         />
       )}
 
@@ -519,7 +683,7 @@ export default function ScenarioDetailPage() {
         isOpen={isVoicePickerOpen}
         onOpenChange={setIsVoicePickerOpen}
         voices={voices}
-        selectedVoiceId={selectedVoiceId ?? scenario?.preferred_voice_id}
+        selectedVoiceId={scenario?.preferred_voice_id}
         onSelect={(id) => void persistPreferredVoice(id)}
       />
     </section>

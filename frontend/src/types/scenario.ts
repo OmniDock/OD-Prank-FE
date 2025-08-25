@@ -7,7 +7,6 @@ export interface VoiceLine {
   text: string;
   type: VoiceLineType;
   order_index: number;
-  storage_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -19,6 +18,7 @@ export interface Scenario {
   language: Language;
   preferred_voice_id?: string | null;
   target_name: string;
+  scenario_analysis?: Record<string, unknown> | null;
   is_safe: boolean;
   is_not_safe_reason?: string | null;
   is_public: boolean;
