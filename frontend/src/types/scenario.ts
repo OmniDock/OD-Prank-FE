@@ -2,6 +2,16 @@ export type Language = "ENGLISH" | "GERMAN";
 
 export type VoiceLineType = "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING";
 
+export interface VoiceLineAudio {
+  id: number;
+  voice_id: string;
+  storage_path: string;
+  signed_url?: string | null;
+  duration_ms?: number | null;
+  size_bytes?: number | null;
+  created_at: string;
+}
+
 export interface VoiceLine {
   id: number;
   text: string;
@@ -9,6 +19,8 @@ export interface VoiceLine {
   order_index: number;
   created_at: string;
   updated_at: string;
+  // Audio information for the preferred voice (if available)
+  preferred_audio?: VoiceLineAudio | null;
 }
 
 export interface Scenario {

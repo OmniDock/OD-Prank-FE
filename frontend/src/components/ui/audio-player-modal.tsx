@@ -69,7 +69,34 @@ export function AudioPlayerModal({
       setError(null);
 
       try {
-        // Only try the preferred voice ID - no fallback
+        // First, try to use the preferred_audio field if available
+        const preferredAudioUrl = currentVoiceLine.preferred_audio?.signed_url;
+        
+        if (preferredAudioUrl) {
+          console.log("Loading audio from preferred_audio URL:", preferredAudioUrl);
+          setResolvedSrc(preferredAudioUrl);
+
+          // Try to create blob URL for better WebAudio compatibility
+          try {
+            const res = await fetch(preferredAudioUrl, { mode: "cors", credentials: "omit" });
+            if (res.ok) {
+              const blob = await res.blob();
+              if (!aborted) {
+                objectUrl = URL.createObjectURL(blob);
+                setResolvedSrc(objectUrl);
+                console.log("Created blob URL for preferred audio");
+              }
+            } else {
+              console.warn("Failed to fetch preferred audio blob, status:", res.status);
+            }
+          } catch (fetchErr) {
+            console.warn("Failed to create blob URL for preferred audio, using direct URL:", fetchErr);
+            // Fall back to direct URL - this is fine
+          }
+          return;
+        }
+
+        // Fallback to API call if no preferred_audio is available
         if (!preferredVoiceId) {
           console.warn("No preferred voice ID available for voice line", currentVoiceLine.id);
           setResolvedSrc(null);
@@ -85,7 +112,7 @@ export function AudioPlayerModal({
           return;
         }
 
-        console.log("Loading audio from URL:", url);
+        console.log("Loading audio from API URL:", url);
         setResolvedSrc(url);
 
         // Try to create blob URL for better WebAudio compatibility
@@ -96,13 +123,13 @@ export function AudioPlayerModal({
             if (!aborted) {
               objectUrl = URL.createObjectURL(blob);
               setResolvedSrc(objectUrl);
-              console.log("Created blob URL for audio");
+              console.log("Created blob URL for API audio");
             }
           } else {
-            console.warn("Failed to fetch audio blob, status:", res.status);
+            console.warn("Failed to fetch API audio blob, status:", res.status);
           }
         } catch (fetchErr) {
-          console.warn("Failed to create blob URL, using direct URL:", fetchErr);
+          console.warn("Failed to create blob URL for API audio, using direct URL:", fetchErr);
           // Fall back to direct URL - this is fine
         }
       } catch (err) {
