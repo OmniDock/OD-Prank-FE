@@ -22,10 +22,12 @@ import {
   Textarea,
   Checkbox,
   addToast,
+  Tabs,
+  Tab,
 } from "@heroui/react";
 import { enhanceVoiceLines, fetchScenario, updateScenarioPreferredVoice } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
-import { generateSingleTTS, fetchVoices } from "@/lib/api.tts";
+import { generateSingleTTS, fetchVoices, getAudioUrl } from "@/lib/api.tts";
 import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
 import { VoicePickerModal } from "@/components/ui/voice-picker-modal";
 import { PlayIcon, PlusIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
@@ -45,6 +47,8 @@ export default function ScenarioDetailPage() {
   const [voices, setVoices] = useState<VoiceItem[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [isVoicePickerOpen, setIsVoicePickerOpen] = useState(false);
+  const [audioAvailable, setAudioAvailable] = useState<Record<number, boolean>>({});
+  const [activeTab, setActiveTab] = useState<"ALL" | "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING">("ALL");
 
 
   useEffect(() => {
@@ -70,6 +74,27 @@ export default function ScenarioDetailPage() {
       }
     })();
   }, []);
+
+  // Refresh audio availability for current selected voice across voice lines
+  useEffect(() => {
+    (async () => {
+      if (!scenario || !selectedVoiceId) {
+        setAudioAvailable({});
+        return;
+      }
+      const entries: Array<Promise<void>> = [];
+      const next: Record<number, boolean> = {};
+      for (const vl of scenario.voice_lines) {
+        entries.push(
+          getAudioUrl(vl.id, selectedVoiceId)
+            .then(() => { next[vl.id] = true; })
+            .catch(() => { next[vl.id] = false; })
+        );
+      }
+      await Promise.all(entries);
+      setAudioAvailable(next);
+    })();
+  }, [scenario?.id, scenario?.voice_lines.length, selectedVoiceId]);
 
   function toggleSelected(voiceLineId: number) {
     setSelected((prev) => {
@@ -105,17 +130,26 @@ export default function ScenarioDetailPage() {
 
   async function onOpenPlayer(voiceLineId: number) {
     if (!scenario) return;
-    
-    // Find the index of the voice line to play
+    if (!selectedVoiceId) {
+      addToast({ title: "Select a voice first", description: "Choose a voice to play audio.", color: "warning", timeout: 3000 });
+      return;
+    }
+    if (!audioAvailable[voiceLineId]) {
+      addToast({ title: "No audio yet", description: "Generate audio for this voice line first.", color: "default", timeout: 3000 });
+      return;
+    }
     const index = scenario.voice_lines.findIndex(vl => vl.id === voiceLineId);
     if (index === -1) return;
-    
     setPlayerCurrentIndex(index);
     setIsPlayerOpen(true);
   }
 
   async function onCreateAudio(voiceLineId: number) {
     if (!scenario) return;
+    if (!selectedVoiceId) {
+      addToast({ title: "Select a voice first", description: "Pick a voice for this scenario before generating.", color: "warning", timeout: 3000 });
+      return;
+    }
     setGenerating((prev) => new Set(prev).add(voiceLineId));
     try {
       const res = await generateSingleTTS({ voice_line_id: voiceLineId, language: scenario.language, voice_id: selectedVoiceId ?? undefined });
@@ -129,6 +163,8 @@ export default function ScenarioDetailPage() {
             ),
           };
         });
+        setAudioAvailable((prev) => ({ ...prev, [voiceLineId]: true }));
+        addToast({ title: "Audio generated", description: "You can now play this line.", color: "success", timeout: 3000 });
       } else {
         addToast({
           title: "Generation failed",
@@ -204,44 +240,46 @@ export default function ScenarioDetailPage() {
       {/* Scenario Details */}
       <Card>
         <CardBody>
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-medium">Scenario Details</h2>
           </div>
 
-          {scenario.description && (
-            <div className="mb-4">
-              <div className="text-sm font-medium text-default-600 mb-1">Description</div>
-              <p className="text-default-900 whitespace-pre-wrap">{scenario.description}</p>
-            </div>
-          )}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-4">
+            {scenario.description && (
+              <div className="rounded-large border border-default-200 p-4 bg-content2/20">
+                <div className="text-sm font-medium text-default-600 mb-2">Description</div>
+                <p className="text-default-900 whitespace-pre-wrap">{scenario.description}</p>
+              </div>
+            )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <div className="text-xs text-default-500">Target</div>
-              <div className="text-sm text-default-900">{scenario.target_name}</div>
-            </div>
-            <div>
-              <div className="text-xs text-default-500">Language</div>
-              <div className="text-sm text-default-900">{scenario.language}</div>
-            </div>
-            <div>
-              <div className="text-xs text-default-500">Voice Lines</div>
-              <div className="text-sm text-default-900">{scenario.voice_lines.length}</div>
-            </div>
-            <div>
-              <div className="text-xs text-default-500">Created</div>
-              <div className="text-sm text-default-900">{new Date(scenario.created_at).toLocaleString()}</div>
-            </div>
-            <div>
-              <div className="text-xs text-default-500">Updated</div>
-              <div className="text-sm text-default-900">{new Date(scenario.updated_at).toLocaleString()}</div>
+            <div className="rounded-large border border-default-200 p-4 bg-content2/20 grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-xs text-default-500">Target</div>
+                <div className="text-sm text-default-900">{scenario.target_name}</div>
+              </div>
+              <div>
+                <div className="text-xs text-default-500">Language</div>
+                <div className="text-sm text-default-900">{scenario.language}</div>
+              </div>
+              <div>
+                <div className="text-xs text-default-500">Voice Lines</div>
+                <div className="text-sm text-default-900">{scenario.voice_lines.length}</div>
+              </div>
+              <div>
+                <div className="text-xs text-default-500">Created</div>
+                <div className="text-sm text-default-900">{new Date(scenario.created_at).toLocaleString()}</div>
+              </div>
+              <div>
+                <div className="text-xs text-default-500">Updated</div>
+                <div className="text-sm text-default-900">{new Date(scenario.updated_at).toLocaleString()}</div>
+              </div>
             </div>
           </div>
         </CardBody>
       </Card>
 
       {/* Voice Settings - separate card */}
-      <Card>
+      <Card className={!selectedVoiceId ? "ring-1 ring-warning bg-warning/5" : undefined}>
         <CardBody>
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="text-sm text-default-600">
@@ -254,6 +292,9 @@ export default function ScenarioDetailPage() {
             </div>
             <Button variant="flat" onPress={() => setIsVoicePickerOpen(true)}>Choose voice</Button>
           </div>
+          {!selectedVoiceId && (
+            <div className="text-xs text-warning mt-2">Select a voice to enable MP3 generation for voice lines.</div>
+          )}
         </CardBody>
       </Card>
 
@@ -269,26 +310,46 @@ export default function ScenarioDetailPage() {
         <CardBody>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-medium">Voice Lines</h2>
-            <Button
-              color="primary"
-              isDisabled={selected.size === 0}
-              onPress={() => setIsEnhanceOpen(true)}
-            >
-              Enhance Selected
-            </Button>
+            <div className="flex items-center gap-2">
+              {!selectedVoiceId && (
+                <Chip size="sm" variant="flat" color="warning">Select a voice to enable generation</Chip>
+              )}
+              <Button
+                color="primary"
+                isDisabled={selected.size === 0}
+                onPress={() => setIsEnhanceOpen(true)}
+              >
+                Enhance Selected
+              </Button>
+            </div>
+          </div>
 
+          <div className="mb-3">
+            <Tabs
+              selectedKey={activeTab}
+              onSelectionChange={(key) => setActiveTab(key as any)}
+              variant="underlined"
+              color="primary"
+              size="sm"
+            >
+              <Tab key="ALL" title={`All (${scenario.voice_lines.length})`} />
+              <Tab key="OPENING" title={`Opening (${scenario.voice_lines.filter(v=>v.type==='OPENING').length})`} />
+              <Tab key="QUESTION" title={`Question (${scenario.voice_lines.filter(v=>v.type==='QUESTION').length})`} />
+              <Tab key="RESPONSE" title={`Response (${scenario.voice_lines.filter(v=>v.type==='RESPONSE').length})`} />
+              <Tab key="CLOSING" title={`Closing (${scenario.voice_lines.filter(v=>v.type==='CLOSING').length})`} />
+            </Tabs>
           </div>
 
           <Table aria-label="Voice lines table">
             <TableHeader>
-              <TableColumn> </TableColumn>
-              <TableColumn>Order</TableColumn>
-              <TableColumn>Type</TableColumn>
+              <TableColumn className="w-10"> </TableColumn>
+              <TableColumn className="w-16">Order</TableColumn>
+              <TableColumn className="w-28">Type</TableColumn>
               <TableColumn>Text</TableColumn>
-              <TableColumn>Action</TableColumn>
+              <TableColumn className="w-28">Action</TableColumn>
             </TableHeader>
             <TableBody emptyContent="No voice lines">
-              {scenario.voice_lines
+              {(activeTab === 'ALL' ? scenario.voice_lines : scenario.voice_lines.filter(vl => vl.type === activeTab))
                 .slice()
                 .sort((a, b) => a.order_index - b.order_index)
                 .map((vl) => (
@@ -305,25 +366,18 @@ export default function ScenarioDetailPage() {
                     <TableCell className="capitalize">{vl.type}</TableCell>
                     <TableCell className="whitespace-pre-wrap">{vl.text}</TableCell>
                     <TableCell className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="flat"
-                        aria-label="Open player"
-                        onPress={() => onOpenPlayer(vl.id)}
-                      >
-                        <PlayIcon className="h-5 w-5" />
-                      </Button>
-                      {generating.has(vl.id) ? (
+                      {!selectedVoiceId ? (
+                        <span className="text-xs text-default-400">Select a voice to enable</span>
+                      ) : audioAvailable[vl.id] ? (
+                        <Button size="sm" variant="flat" aria-label="Open player" onPress={() => onOpenPlayer(vl.id)}>
+                          <PlayIcon className="h-5 w-5" />
+                        </Button>
+                      ) : generating.has(vl.id) ? (
                         <Button size="sm" isDisabled aria-label="Generating audio">
                           <ArrowPathIcon className="h-5 w-5 animate-spin" />
                         </Button>
                       ) : (
-                        <Button
-                          size="sm"
-                          color="primary"
-                          aria-label="Create audio"
-                          onPress={() => onCreateAudio(vl.id)}
-                        >
+                        <Button size="sm" color="primary" aria-label="Create audio" onPress={() => onCreateAudio(vl.id)}>
                           <PlusIcon className="h-5 w-5" />
                         </Button>
                       )}

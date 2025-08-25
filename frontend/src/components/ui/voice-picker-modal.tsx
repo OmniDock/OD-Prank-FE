@@ -181,7 +181,9 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
                         <p className="text-xs text-default-500 mt-1">{v.description}</p>
                       )}
                     </div>
-                    
+                    {selectedVoiceId === v.id && (
+                      <Chip size="sm" color="primary" variant="flat">Selected</Chip>
+                    )}
                   </div>
                 ))}
                 {filtered.length === 0 && (
