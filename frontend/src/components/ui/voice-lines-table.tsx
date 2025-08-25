@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, type Dispatch, type SetStateAction } from "react";
 import {
   Button,
   Card,
@@ -10,7 +10,6 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-  Checkbox,
   addToast,
   Tabs,
   Tab,
@@ -23,7 +22,7 @@ interface VoiceLinesTableProps {
   scenario: Scenario;
   onRefetchScenario: () => Promise<void>;
   selected: Set<number>;
-  onSelectionChange: (selected: Set<number>) => void;
+  onSelectionChange: Dispatch<SetStateAction<Set<number>>>;
   onOpenPlayer: (voiceLineId: number) => void;
   onEnhanceSelected: () => void;
 }
@@ -58,11 +57,7 @@ export function VoiceLinesTable({
     return sorted;
   }, [scenario?.voice_lines, activeTab]);
 
-  function toggleSelected(voiceLineId: number) {
-    const next = new Set(selected);
-    next.has(voiceLineId) ? next.delete(voiceLineId) : next.add(voiceLineId);
-    onSelectionChange(next);
-  }
+
 
   async function onCreateAudio(voiceLineId: number) {
     if (!scenario || !scenario.preferred_voice_id) {
@@ -76,9 +71,7 @@ export function VoiceLinesTable({
         voice_line_id: voiceLineId, 
         voice_id: scenario.preferred_voice_id 
       });
-      
-      console.log(res);
-      
+            
       if (res.success) {
         if (res.signed_url) {
           // Audio is immediately available (from cache)
@@ -154,46 +147,76 @@ export function VoiceLinesTable({
     }
   }
 
-  // Passive polling to reflect PENDING status when revisiting the page
+  // Passive polling: only poll rows marked as pending to avoid 404 noise
   useEffect(() => {
     if (!scenario?.preferred_voice_id) return;
+    if (pending.size === 0) return;
     let cancelled = false;
 
     const tick = async () => {
       if (cancelled) return;
-      const noAudio = scenario.voice_lines.filter(v => !v.preferred_audio?.signed_url);
-      if (noAudio.length === 0) return;
+      const ids = Array.from(pending);
+      if (ids.length === 0) return;
 
+      const toRemove: number[] = [];
       let anyReady = false;
-      const nextPending = new Set<number>(pending);
-
-      for (const vl of noAudio) {
+      for (const id of ids) {
         try {
-          const r = await getAudioUrl(vl.id, scenario.preferred_voice_id as string);
-          if ((r as any)?.status === "PENDING") {
-            nextPending.add(vl.id);
-          } else if ((r as any)?.signed_url) {
+          const r = await getAudioUrl(id, scenario.preferred_voice_id as string);
+          if ((r as any)?.signed_url) {
             anyReady = true;
-            nextPending.delete(vl.id);
+            toRemove.push(id);
           }
         } catch {
-          // ignore
+          // ignore transient errors
         }
       }
 
-      if (!cancelled) setPending(nextPending);
+      if (toRemove.length && !cancelled) {
+        setPending((prev) => {
+          const next = new Set(prev);
+          toRemove.forEach((id) => next.delete(id));
+          return next;
+        });
+      }
+
       if (anyReady && !cancelled) await onRefetchScenario();
     };
 
-    const interval = setInterval(tick, 4000);
-    // initial tick to update quickly
+    const interval = setInterval(tick, 2000);
     void tick();
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
+  }, [pending, scenario?.preferred_voice_id]);
+
+  // One-time discovery: when scenario loads/changes, detect rows already in PENDING on the server
+  useEffect(() => {
+    if (!scenario?.preferred_voice_id) return;
+    let cancelled = false;
+
+    const discover = async () => {
+      const targets = scenario.voice_lines.filter(v => !v.preferred_audio?.signed_url);
+      if (targets.length === 0) return;
+      for (const vl of targets) {
+        if (cancelled) return;
+        if (pending.has(vl.id)) continue;
+        try {
+          const r = await getAudioUrl(vl.id, scenario.preferred_voice_id as string);
+          if ((r as any)?.status === "PENDING") {
+            setPending((prev) => new Set(prev).add(vl.id));
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    void discover();
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenario?.voice_lines, scenario?.preferred_voice_id]);
+  }, [scenario?.id, scenario?.voice_lines, scenario?.preferred_voice_id]);
 
   return (
     <Card>
@@ -235,9 +258,17 @@ export function VoiceLinesTable({
             aria-label="Voice lines table"
             className="table-fixed"
             removeWrapper
+            selectionMode="multiple"
+            selectedKeys={new Set(Array.from(selected).map(String))}
+            onSelectionChange={(keys) => {
+              if (keys === "all") {
+                onSelectionChange(new Set(filteredVoiceLines.map(vl => vl.id)));
+              } else {
+                onSelectionChange(new Set(Array.from(keys as Set<string>).map(Number)));
+              }
+            }}
           >
             <TableHeader>
-              <TableColumn className="w-12 min-w-12"> </TableColumn>
               <TableColumn className="w-20 min-w-20">Order</TableColumn>
               <TableColumn className="w-32 min-w-32">Type</TableColumn>
               <TableColumn className="min-w-0">Text</TableColumn>
@@ -249,17 +280,9 @@ export function VoiceLinesTable({
             >
               {(vl) => (
                 <TableRow 
-                  key={vl.id}
-                  className="hover:bg-default-50 transition-colors duration-150 cursor-pointer"
+                  key={String(vl.id)}
+                  className="hover:bg-default-50 transition-colors duration-150"
                 >
-                  <TableCell>
-                    <Checkbox
-                      size="sm"
-                      isSelected={selected.has(vl.id)}
-                      onValueChange={() => toggleSelected(vl.id)}
-                      aria-label={`Select voice line ${vl.id}`}
-                    />
-                  </TableCell>
                   <TableCell>
                     <span className="text-small font-medium">{vl.order_index}</span>
                   </TableCell>
@@ -293,7 +316,7 @@ export function VoiceLinesTable({
                           isLoading={generating.has(vl.id) || pending.has(vl.id)}
                           isDisabled={generating.has(vl.id) || pending.has(vl.id) || !scenario.preferred_voice_id}
                         >
-                          {!generating.has(vl.id) && <PlusIcon className="h-4 w-4" />}
+                          {!(generating.has(vl.id) || pending.has(vl.id)) && <PlusIcon className="h-4 w-4" />}
                         </Button>
                       )}
                     </div>
@@ -307,3 +330,4 @@ export function VoiceLinesTable({
     </Card>
   );
 }
+
