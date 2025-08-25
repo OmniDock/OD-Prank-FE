@@ -53,12 +53,17 @@ export function AudioPlayerModal({
     setError(null);
   }, [currentIndex]);
 
-  // Load audio for current voice line
+  // Load audio for current voice line (only when modal is open)
   useEffect(() => {
     let aborted = false;
     let objectUrl: string | null = null;
+    let pollTimer: number | null = null;
     
     const loadAudio = async () => {
+      if (!isOpen) {
+        // Do not fetch when modal is closed to avoid unnecessary 404s/polls
+        return;
+      }
       if (!currentVoiceLine?.id) {
         setResolvedSrc(null);
         setError(null);
@@ -104,7 +109,47 @@ export function AudioPlayerModal({
         }
         
         const response = await getAudioUrl(currentVoiceLine.id, preferredVoiceId);
-        const url = response?.signed_url ?? null;
+
+        // If backend signals generation in progress, start polling until READY
+        if ((response as any)?.status === "PENDING") {
+          if (!aborted) setGenerating(true);
+
+          const poll = async () => {
+            if (aborted) return;
+            try {
+              const r = await getAudioUrl(currentVoiceLine.id, preferredVoiceId);
+              if ((r as any)?.signed_url) {
+                const readyUrl = (r as any).signed_url as string;
+                if (!aborted) {
+                  setResolvedSrc(readyUrl);
+                  setGenerating(false);
+                  // Try to create blob URL for better WebAudio compatibility
+                  try {
+                    const res = await fetch(readyUrl, { mode: "cors", credentials: "omit" });
+                    if (res.ok) {
+                      const blob = await res.blob();
+                      if (!aborted) {
+                        objectUrl = URL.createObjectURL(blob);
+                        setResolvedSrc(objectUrl);
+                      }
+                    }
+                  } catch {}
+                }
+                return; // stop polling
+              }
+            } catch {
+              // Ignore transient errors while polling
+            }
+            // Schedule next poll
+            if (!aborted) {
+              pollTimer = window.setTimeout(poll, 2000);
+            }
+          };
+          pollTimer = window.setTimeout(poll, 2000);
+          return; // exit initial load; polling will resolve
+        }
+
+        const url = (response as any)?.signed_url ?? null;
         
         if (!url) {
           console.warn("No audio URL available for voice line", currentVoiceLine.id, "with voice", preferredVoiceId);
@@ -133,7 +178,7 @@ export function AudioPlayerModal({
           // Fall back to direct URL - this is fine
         }
       } catch (err) {
-        console.error("Failed to get audio URL for voice", preferredVoiceId, ":", err);
+        console.debug("Audio not ready yet or failed to resolve URL for voice", preferredVoiceId, ":", err);
         // Backend returns 404 if not generated for this specific voice; show silent state
         setResolvedSrc(null);
       }
@@ -144,8 +189,9 @@ export function AudioPlayerModal({
     return () => {
       aborted = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
+      if (pollTimer) window.clearTimeout(pollTimer);
     };
-  }, [currentVoiceLine?.id, preferredVoiceId]);
+  }, [isOpen, currentVoiceLine?.id, preferredVoiceId]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -280,7 +326,6 @@ export function AudioPlayerModal({
     try {
       const result = await generateSingleTTS({
         voice_line_id: currentVoiceLine.id,
-        language: language,
         voice_id: preferredVoiceId,
       });
       

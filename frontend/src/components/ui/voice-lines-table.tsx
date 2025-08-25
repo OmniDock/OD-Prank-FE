@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Button,
   Card,
@@ -17,7 +17,7 @@ import {
 } from "@heroui/react";
 import { generateSingleTTS, getAudioUrl } from "@/lib/api.tts";
 import { PlayIcon, PlusIcon } from "@heroicons/react/24/outline";
-import type { Scenario, VoiceLine } from "@/types/scenario";
+import type { Scenario } from "@/types/scenario";
 
 interface VoiceLinesTableProps {
   scenario: Scenario;
@@ -37,6 +37,7 @@ export function VoiceLinesTable({
   onEnhanceSelected,
 }: VoiceLinesTableProps) {
   const [generating, setGenerating] = useState<Set<number>>(new Set());
+  const [pending, setPending] = useState<Set<number>>(new Set());
   const [activeTab, setActiveTab] = useState<"ALL" | "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING">("ALL");
 
   // Helper function to check if audio is available for a voice line
@@ -54,7 +55,6 @@ export function VoiceLinesTable({
       : scenario.voice_lines.filter(vl => vl.type === activeTab);
     
     const sorted = filtered.slice().sort((a, b) => a.order_index - b.order_index);
-    console.debug(`Filtered voice lines for tab ${activeTab}:`, sorted.length, 'items');
     return sorted;
   }, [scenario?.voice_lines, activeTab]);
 
@@ -74,9 +74,10 @@ export function VoiceLinesTable({
     try {
       const res = await generateSingleTTS({ 
         voice_line_id: voiceLineId, 
-        language: scenario.language, 
         voice_id: scenario.preferred_voice_id 
       });
+      
+      console.log(res);
       
       if (res.success) {
         if (res.signed_url) {
@@ -85,6 +86,7 @@ export function VoiceLinesTable({
           addToast({ title: "Audio ready", description: "You can now play this line.", color: "success", timeout: 3000 });
         } else {
           // Audio generation started in background
+          setPending((prev) => new Set(prev).add(voiceLineId));
           addToast({ 
             title: "Generation started", 
             description: "Audio is being generated. Refreshing when ready...", 
@@ -95,13 +97,24 @@ export function VoiceLinesTable({
           // Poll for completion and refetch scenario when ready
           const pollInterval = setInterval(async () => {
             try {
-              await getAudioUrl(voiceLineId, scenario.preferred_voice_id as string);
-              // Audio is now available - refetch scenario
-              await onRefetchScenario();
-              addToast({ title: "Audio ready", description: "Background generation completed!", color: "success", timeout: 3000 });
-              clearInterval(pollInterval);
+              const r = await getAudioUrl(voiceLineId, scenario.preferred_voice_id as string);
+              if ((r as any)?.status === "PENDING") {
+                // keep waiting
+                return;
+              }
+              if ((r as any)?.signed_url) {
+                // Audio is now available - refetch scenario
+                await onRefetchScenario();
+                addToast({ title: "Audio ready", description: "Background generation completed!", color: "success", timeout: 3000 });
+                clearInterval(pollInterval);
+                setPending((prev) => {
+                  const next = new Set(prev);
+                  next.delete(voiceLineId);
+                  return next;
+                });
+              }
             } catch {
-              // Still not ready, continue polling
+              // Still not ready or transient error, continue polling
               console.debug(`Audio not yet ready for voice line ${voiceLineId}, continuing to poll...`);
             }
           }, 2000);
@@ -110,6 +123,11 @@ export function VoiceLinesTable({
           setTimeout(() => {
             clearInterval(pollInterval);
             console.warn(`Stopped polling for voice line ${voiceLineId} after timeout`);
+            setPending((prev) => {
+              const next = new Set(prev);
+              next.delete(voiceLineId);
+              return next;
+            });
           }, 60000);
         }
       } else {
@@ -135,6 +153,47 @@ export function VoiceLinesTable({
       });
     }
   }
+
+  // Passive polling to reflect PENDING status when revisiting the page
+  useEffect(() => {
+    if (!scenario?.preferred_voice_id) return;
+    let cancelled = false;
+
+    const tick = async () => {
+      if (cancelled) return;
+      const noAudio = scenario.voice_lines.filter(v => !v.preferred_audio?.signed_url);
+      if (noAudio.length === 0) return;
+
+      let anyReady = false;
+      const nextPending = new Set<number>(pending);
+
+      for (const vl of noAudio) {
+        try {
+          const r = await getAudioUrl(vl.id, scenario.preferred_voice_id as string);
+          if ((r as any)?.status === "PENDING") {
+            nextPending.add(vl.id);
+          } else if ((r as any)?.signed_url) {
+            anyReady = true;
+            nextPending.delete(vl.id);
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (!cancelled) setPending(nextPending);
+      if (anyReady && !cancelled) await onRefetchScenario();
+    };
+
+    const interval = setInterval(tick, 4000);
+    // initial tick to update quickly
+    void tick();
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenario?.voice_lines, scenario?.preferred_voice_id]);
 
   return (
     <Card>
@@ -227,12 +286,12 @@ export function VoiceLinesTable({
                       ) : (
                         <Button 
                           size="sm" 
-                          color={generating.has(vl.id) ? "warning" : "primary"}
+                          color={(generating.has(vl.id) || pending.has(vl.id)) ? "warning" : "primary"}
                           aria-label="Create audio" 
                           onPress={() => onCreateAudio(vl.id)}
-                          className={generating.has(vl.id) ? "cursor-not-allowed" : "hover:bg-primary/80 transition-colors"}
-                          isLoading={generating.has(vl.id)}
-                          isDisabled={generating.has(vl.id) || !scenario.preferred_voice_id}
+                          className={(generating.has(vl.id) || pending.has(vl.id)) ? "cursor-not-allowed" : "hover:bg-primary/80 transition-colors"}
+                          isLoading={generating.has(vl.id) || pending.has(vl.id)}
+                          isDisabled={generating.has(vl.id) || pending.has(vl.id) || !scenario.preferred_voice_id}
                         >
                           {!generating.has(vl.id) && <PlusIcon className="h-4 w-4" />}
                         </Button>
