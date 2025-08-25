@@ -121,7 +121,7 @@ export default function ScenariosPage() {
         </CardBody>
       </Card>
 
-      <Modal isOpen={isCreateOpen} onOpenChange={setIsCreateOpen}>
+      <Modal isOpen={isCreateOpen} onOpenChange={setIsCreateOpen} size="2xl">
         <ModalContent>
           <ModalHeader>New Scenario</ModalHeader>
           <ModalBody className="space-y-3">

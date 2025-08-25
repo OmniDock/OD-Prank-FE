@@ -185,9 +185,9 @@ export function VoiceLinesTable({
 
           addToast({ 
             title: "Generation started", 
-            description: "Audio is being generated. Refreshing when ready...", 
+            description: "Audio is being generated.", 
             color: "primary", 
-            timeout: 4000 
+            timeout: 2000 
           });
           
           // Poll for completion and refetch scenario when ready
@@ -332,7 +332,7 @@ export function VoiceLinesTable({
               isDisabled={selected.size === 0}
               onPress={onEnhanceSelected}
             >
-              Enhance Selected
+              Enhance Selected ({selected.size})
             </Button>
           </div>
         </div>

@@ -25,6 +25,7 @@ import { ScenarioInfo } from "@/components/ui/scenario-info";
 import { VoiceSettings } from "@/components/ui/voice-settings";
 import { VoiceLinesTable } from "@/components/ui/voice-lines-table";
 import type { VoiceItem } from "@/types/tts";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 
 export default function ScenarioDetailPage() {
   const { id } = useParams();
@@ -96,16 +97,48 @@ export default function ScenarioDetailPage() {
         user_feedback: feedback,
       });
       if (res.success) {
-        const updated = { ...scenario };
-        res.successful_enhancements.forEach((it) => {
-          const vl = updated.voice_lines.find((v) => v.id === it.voice_line_id);
-          if (vl && it.enhanced_text) vl.text = it.enhanced_text;
+        // Refetch the complete scenario data to update audio availability
+        await refetchScenario();
+        
+        const successCount = res.successful_enhancements.length;
+        const failedCount = res.failed_enhancements?.length || 0;
+        
+        if (successCount > 0) {
+          addToast({
+            title: "Enhancement completed",
+            description: `Successfully enhanced ${successCount} voice line(s). Audio files have been cleared - regenerate as needed.`,
+            color: "success",
+            timeout: 5000,
+          });
+        }
+        
+        if (failedCount > 0) {
+          addToast({
+            title: "Some enhancements failed",
+            description: `${failedCount} voice line(s) could not be enhanced. Check the logs for details.`,
+            color: "warning",
+            timeout: 5000,
+          });
+        }
+      } else {
+        addToast({
+          title: "Enhancement failed",
+          description: "Failed to enhance voice lines. Please try again.",
+          color: "danger",
+          timeout: 5000,
         });
-        setScenario(updated);
       }
       setIsEnhanceOpen(false);
       setSelected(new Set());
       setFeedback("");
+    } catch (error) {
+      console.error('Enhancement error:', error);
+      addToast({
+        title: "Enhancement failed",
+        description: "An unexpected error occurred. Please try again.",
+        color: "danger",
+        timeout: 5000,
+      });
     } finally {
       setEnhancing(false);
     }
@@ -186,10 +219,24 @@ export default function ScenarioDetailPage() {
         onEnhanceSelected={() => setIsEnhanceOpen(true)}
       />
 
-      <Modal isOpen={isEnhanceOpen} onOpenChange={setIsEnhanceOpen}>
+      <Modal isOpen={isEnhanceOpen} onOpenChange={setIsEnhanceOpen} size="2xl">
         <ModalContent>
           <ModalHeader>Enhance Voice Lines</ModalHeader>
-          <ModalBody>
+          <ModalBody className="space-y-4">
+            <div className="p-4 bg-warning-50 border border-warning-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <ExclamationTriangleIcon className="flex-shrink-0 w-5 h-5 text-warning-600 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-warning-800 mb-1">
+                    Important: Audio Deletion Notice
+                  </p>
+                  <p className="text-warning-700">
+                    Enhancing voice lines will <strong>permanently delete all existing generated audio</strong> for the selected lines. You'll need to regenerate audio after enhancement.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
             <Textarea
               label="Your feedback"
               placeholder="Make them funnier and add more pauses..."
