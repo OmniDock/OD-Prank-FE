@@ -10,6 +10,7 @@ import ScenariosPage from "@/pages/dashboard/scenarios";
 import PhoneCallPage from "@/pages/dashboard/phone-call";
 import DashboardLayout from "@/layouts/dashboard";
 import ScenarioDetailPage from "@/pages/dashboard/scenarios-detail";
+import PrankCallPage from "@/pages/dashboard/prank-call";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="scenarios" element={<ScenariosPage />} />
           <Route path="scenarios/:id" element={<ScenarioDetailPage />} />
           <Route path="phone-call" element={<PhoneCallPage />} />
+          <Route path="prank-call" element={<PrankCallPage />} />
         </Route>
       </Route>
     </Routes>
