@@ -25,6 +25,10 @@ export default function PrankCall() {
   const inboundQueueRef = useRef<AudioBufferSourceNode[]>([]);
   const outboundNextTimeRef = useRef<number>(0);
   const inboundNextTimeRef = useRef<number>(0);
+  const filtersRef = useRef<{
+    inbound: { lowpass: BiquadFilterNode; highshelf: BiquadFilterNode; comp: DynamicsCompressorNode; gain: GainNode };
+    outbound: { lowpass: BiquadFilterNode; highshelf: BiquadFilterNode; comp: DynamicsCompressorNode; gain: GainNode };
+  } | null>(null);
 
   const backendBase: string = (import.meta.env.VITE_BACKEND_URL as string) || "";
   const wsBase = backendBase.replace(/https:\/\//, "wss://").replace(/http:\/\//, "ws://").replace(/\/$/, "");
@@ -56,13 +60,49 @@ export default function PrankCall() {
 
   async function initAudioContext() {
     if (!audioCtxRef.current) {
-      audioCtxRef.current = new AudioContext();
+      audioCtxRef.current = new AudioContext({ latencyHint: "interactive" });
       // Resume context if suspended (browser autoplay policy)
       if (audioCtxRef.current.state === 'suspended') {
         await audioCtxRef.current.resume();
       }
       outboundNextTimeRef.current = 0;
       inboundNextTimeRef.current = 0;
+
+      // Build smoothing filter chains for both directions
+      const ctx = audioCtxRef.current;
+      const makeChain = (gainVal: number) => {
+        const lowpass = ctx.createBiquadFilter();
+        lowpass.type = "lowpass";
+        lowpass.frequency.value = 3500;
+        lowpass.Q.value = 0.707;
+
+        const highshelf = ctx.createBiquadFilter();
+        highshelf.type = "highshelf";
+        highshelf.frequency.value = 3500;
+        highshelf.gain.value = -3;
+
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -24;
+        comp.knee.value = 4;
+        comp.ratio.value = 2;
+        comp.attack.value = 0.003;
+        comp.release.value = 0.1;
+
+        const gain = ctx.createGain();
+        gain.gain.value = gainVal;
+
+        lowpass.connect(highshelf);
+        highshelf.connect(comp);
+        comp.connect(gain);
+        gain.connect(ctx.destination);
+
+        return { lowpass, highshelf, comp, gain };
+      };
+
+      filtersRef.current = {
+        outbound: makeChain(0.7),
+        inbound: makeChain(1.0),
+      };
     }
     return audioCtxRef.current;
   }
@@ -101,19 +141,16 @@ export default function PrankCall() {
     // Create and schedule source
     const source = ctx.createBufferSource();
     source.buffer = buffer;
-    
-    // Add gain control for each direction
-    const gainNode = ctx.createGain();
-    gainNode.gain.value = direction === "outbound" ? 0.7 : 1.0; // Slightly lower outbound volume
-    source.connect(gainNode);
-    gainNode.connect(ctx.destination);
+
+    // Route through smoothing filter chain
+    const chain = filtersRef.current![direction];
+    source.connect(chain.lowpass);
     
     // Schedule playback
     const currentTime = ctx.currentTime;
-    const startTime = Math.max(currentTime + 0.01, nextTimeRef.current); // Small buffer
+    if (nextTimeRef.current - currentTime > 0.2) nextTimeRef.current = currentTime + 0.01; 
+    const startTime = Math.max(currentTime + 0.01, nextTimeRef.current);
     source.start(startTime);
-    
-    // Update next start time
     nextTimeRef.current = startTime + buffer.duration;
     
     // Track queue
@@ -153,7 +190,7 @@ export default function PrankCall() {
           const pcm16 = muLawToPCM16(ulaw);
           
           // Play audio from both directions
-          await playAudioChunk(pcm16, direction, msg.rate || 8000);
+          playAudioChunk(pcm16, direction, msg.rate || 8000).catch(() => {});
           
           // Update stats
           setAudioStats(prev => ({
