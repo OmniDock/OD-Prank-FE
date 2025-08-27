@@ -16,8 +16,15 @@ export default function PrankCall() {
   );
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StartCallResponse | null>(null);
+  const [audioStats, setAudioStats] = useState({ inbound: 0, outbound: 0 });
+  
+  // Audio context and playback management
   const audioCtxRef = useRef<AudioContext | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const outboundQueueRef = useRef<AudioBufferSourceNode[]>([]);
+  const inboundQueueRef = useRef<AudioBufferSourceNode[]>([]);
+  const outboundNextTimeRef = useRef<number>(0);
+  const inboundNextTimeRef = useRef<number>(0);
 
   const backendBase: string = (import.meta.env.VITE_BACKEND_URL as string) || "";
   const wsBase = backendBase.replace(/https:\/\//, "wss://").replace(/http:\/\//, "ws://").replace(/\/$/, "");
@@ -29,64 +36,162 @@ export default function PrankCall() {
     return out;
   }
 
+  // Proper μ-law to PCM16 decoder
   function muLawToPCM16(u8: Uint8Array) {
+    const BIAS = 0x84;
+    const CLIP = 32635;
     const out = new Int16Array(u8.length);
+    
     for (let i = 0; i < u8.length; i++) {
-      let u = (~u8[i]) & 0xff;
-      let sign = (u & 0x80) ? -1 : 1;
-      let exponent = (u >> 4) & 0x07;
-      let mantissa = u & 0x0f;
-      let sample = ((mantissa << 4) + 8) << (exponent + 3);
-      sample = (sample - 33) * sign;
-      out[i] = sample;
+      let byte = ~u8[i];
+      let sign = (byte & 0x80) >> 7;
+      let exponent = (byte >> 4) & 0x07;
+      let mantissa = byte & 0x0F;
+      let sample = mantissa << (exponent + 3) | (1 << (exponent + 2));
+      sample = sign ? (BIAS - sample) : (sample - BIAS);
+      out[i] = sample > CLIP ? CLIP : sample < -CLIP ? -CLIP : sample;
     }
     return out;
   }
 
-  async function playPCM16(pcm16: Int16Array, rate = 8000) {
+  async function initAudioContext() {
     if (!audioCtxRef.current) {
-      audioCtxRef.current = new AudioContext({ sampleRate: rate });
+      audioCtxRef.current = new AudioContext();
+      // Resume context if suspended (browser autoplay policy)
+      if (audioCtxRef.current.state === 'suspended') {
+        await audioCtxRef.current.resume();
+      }
+      outboundNextTimeRef.current = 0;
+      inboundNextTimeRef.current = 0;
     }
-    const ctx = audioCtxRef.current;
-    const buf = ctx.createBuffer(1, pcm16.length, rate);
-    const ch = buf.getChannelData(0);
-    for (let i = 0; i < pcm16.length; i++) ch[i] = pcm16[i] / 32768;
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start();
+    return audioCtxRef.current;
+  }
+
+  async function playAudioChunk(
+    pcm16: Int16Array, 
+    direction: "inbound" | "outbound",
+    sampleRate: number = 8000
+  ) {
+    const ctx = await initAudioContext();
+    
+    // Choose the right timing reference
+    const nextTimeRef = direction === "outbound" ? outboundNextTimeRef : inboundNextTimeRef;
+    
+    // Resample to browser's native rate for better quality
+    const targetRate = ctx.sampleRate;
+    const resampleRatio = targetRate / sampleRate;
+    const targetLength = Math.floor(pcm16.length * resampleRatio);
+    
+    // Create buffer
+    const buffer = ctx.createBuffer(1, targetLength, targetRate);
+    const channel = buffer.getChannelData(0);
+    
+    // Linear interpolation resampling
+    for (let i = 0; i < targetLength; i++) {
+      const sourceIndex = i / resampleRatio;
+      const index0 = Math.floor(sourceIndex);
+      const index1 = Math.min(index0 + 1, pcm16.length - 1);
+      const fraction = sourceIndex - index0;
+      
+      const sample0 = pcm16[index0] / 32768;
+      const sample1 = pcm16[index1] / 32768;
+      channel[i] = sample0 + (sample1 - sample0) * fraction;
+    }
+    
+    // Create and schedule source
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    
+    // Add gain control for each direction
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = direction === "outbound" ? 0.7 : 1.0; // Slightly lower outbound volume
+    source.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    // Schedule playback
+    const currentTime = ctx.currentTime;
+    const startTime = Math.max(currentTime + 0.01, nextTimeRef.current); // Small buffer
+    source.start(startTime);
+    
+    // Update next start time
+    nextTimeRef.current = startTime + buffer.duration;
+    
+    // Track queue
+    if (direction === "outbound") {
+      outboundQueueRef.current.push(source);
+    } else {
+      inboundQueueRef.current.push(source);
+    }
+    
+    // Clean up old sources
+    source.onended = () => {
+      const queue = direction === "outbound" ? outboundQueueRef : inboundQueueRef;
+      const idx = queue.current.indexOf(source);
+      if (idx > -1) queue.current.splice(idx, 1);
+    };
   }
 
   useEffect(() => {
-    // Connect monitor WS when we have a call_control_id
     if (!result?.call_control_id) return;
-    try {
-      const url = `${wsBase}/telnyx/monitor/${encodeURIComponent(result.call_control_id)}`;
-      const ws = new WebSocket(url);
-      wsRef.current = ws;
-      ws.onmessage = async (ev) => {
-        try {
-          const msg = JSON.parse(ev.data);
-          if (msg?.event === "media" && msg?.codec === "PCMU" && msg?.payload) {
-            const u = base64ToBytes(msg.payload);
-            const pcm16 = muLawToPCM16(u);
-            await playPCM16(pcm16, msg?.rate || 8000);
-          }
-        } catch (err) {
-          // ignore parse errors
-        }
-      };
-      ws.onclose = () => {
-        wsRef.current = null;
-      };
-    } catch (e) {
-      // no-op
-    }
-    return () => {
+    
+    const url = `${wsBase}/telnyx/monitor/${encodeURIComponent(result.call_control_id)}`;
+    const ws = new WebSocket(url);
+    wsRef.current = ws;
+    
+    ws.onopen = () => {
+      console.log("Monitor WebSocket connected");
+      setAudioStats({ inbound: 0, outbound: 0 });
+    };
+    
+    ws.onmessage = async (ev) => {
       try {
-        wsRef.current?.close();
-      } catch {}
+        const msg = JSON.parse(ev.data);
+        
+        if (msg?.event === "media" && msg?.codec === "PCMU" && msg?.payload) {
+          const direction = msg.direction as "inbound" | "outbound";
+          const ulaw = base64ToBytes(msg.payload);
+          const pcm16 = muLawToPCM16(ulaw);
+          
+          // Play audio from both directions
+          await playAudioChunk(pcm16, direction, msg.rate || 8000);
+          
+          // Update stats
+          setAudioStats(prev => ({
+            ...prev,
+            [direction]: prev[direction] + 1
+          }));
+        }
+      } catch (err) {
+        console.error("Error processing audio:", err);
+      }
+    };
+    
+    ws.onerror = (err) => {
+      console.error("WebSocket error:", err);
+    };
+    
+    ws.onclose = () => {
+      console.log("Monitor WebSocket closed");
       wsRef.current = null;
+    };
+    
+    return () => {
+      // Clean up
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+      }
+      wsRef.current = null;
+      
+      // Stop all playing audio
+      [...outboundQueueRef.current, ...inboundQueueRef.current].forEach(source => {
+        try { source.stop(); } catch {}
+      });
+      outboundQueueRef.current = [];
+      inboundQueueRef.current = [];
+      
+      // Reset timing
+      outboundNextTimeRef.current = 0;
+      inboundNextTimeRef.current = 0;
     };
   }, [result?.call_control_id]);
 
@@ -207,9 +312,10 @@ export default function PrankCall() {
           {result.call_session_id && (
             <div>call_session_id: {result.call_session_id}</div>
           )}
-          {result.media_ws_url && <div>media_ws_url: {result.media_ws_url}</div>}
           <div style={{ marginTop: 8, color: "#666" }}>
-            Monitoring audio via WS. Direction tags available in payload.
+            <div>📞 Call active - Playing bidirectional audio</div>
+            <div>🔊 Outbound chunks: {audioStats.outbound}</div>
+            <div>🎤 Inbound chunks: {audioStats.inbound}</div>
           </div>
         </div>
       )}
