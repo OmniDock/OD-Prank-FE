@@ -1,5 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { TelnyxRTCProvider, TelnyxRTCContext, useCallbacks, useNotification, Audio } from "@telnyx/react-client";
+import { debug } from "console";
 
 type StartCallResponse = {
   call_control_id: string;
@@ -16,221 +18,8 @@ export default function PrankCall() {
   );
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StartCallResponse | null>(null);
-  const [audioStats, setAudioStats] = useState({ inbound: 0, outbound: 0 });
-  
-  // Audio context and playback management
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-  const outboundQueueRef = useRef<AudioBufferSourceNode[]>([]);
-  const inboundQueueRef = useRef<AudioBufferSourceNode[]>([]);
-  const outboundNextTimeRef = useRef<number>(0);
-  const inboundNextTimeRef = useRef<number>(0);
-  const filtersRef = useRef<{
-    inbound: { lowpass: BiquadFilterNode; highshelf: BiquadFilterNode; comp: DynamicsCompressorNode; gain: GainNode };
-    outbound: { lowpass: BiquadFilterNode; highshelf: BiquadFilterNode; comp: DynamicsCompressorNode; gain: GainNode };
-  } | null>(null);
-
-  const backendBase: string = (import.meta.env.VITE_BACKEND_URL as string) || "";
-  const wsBase = backendBase.replace(/https:\/\//, "wss://").replace(/http:\/\//, "ws://").replace(/\/$/, "");
-
-  function base64ToBytes(b64: string) {
-    const bin = atob(b64);
-    const out = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-    return out;
-  }
-
-  // Proper μ-law to PCM16 decoder
-  function muLawToPCM16(u8: Uint8Array) {
-    const BIAS = 0x84;
-    const CLIP = 32635;
-    const out = new Int16Array(u8.length);
-    
-    for (let i = 0; i < u8.length; i++) {
-      let byte = ~u8[i];
-      let sign = (byte & 0x80) >> 7;
-      let exponent = (byte >> 4) & 0x07;
-      let mantissa = byte & 0x0F;
-      let sample = mantissa << (exponent + 3) | (1 << (exponent + 2));
-      sample = sign ? (BIAS - sample) : (sample - BIAS);
-      out[i] = sample > CLIP ? CLIP : sample < -CLIP ? -CLIP : sample;
-    }
-    return out;
-  }
-
-  async function initAudioContext() {
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new AudioContext({ latencyHint: "interactive" });
-      // Resume context if suspended (browser autoplay policy)
-      if (audioCtxRef.current.state === 'suspended') {
-        await audioCtxRef.current.resume();
-      }
-      outboundNextTimeRef.current = 0;
-      inboundNextTimeRef.current = 0;
-
-      // Build smoothing filter chains for both directions
-      const ctx = audioCtxRef.current;
-      const makeChain = (gainVal: number) => {
-        const lowpass = ctx.createBiquadFilter();
-        lowpass.type = "lowpass";
-        lowpass.frequency.value = 3500;
-        lowpass.Q.value = 0.707;
-
-        const highshelf = ctx.createBiquadFilter();
-        highshelf.type = "highshelf";
-        highshelf.frequency.value = 3500;
-        highshelf.gain.value = -3;
-
-        const comp = ctx.createDynamicsCompressor();
-        comp.threshold.value = -24;
-        comp.knee.value = 4;
-        comp.ratio.value = 2;
-        comp.attack.value = 0.003;
-        comp.release.value = 0.1;
-
-        const gain = ctx.createGain();
-        gain.gain.value = gainVal;
-
-        lowpass.connect(highshelf);
-        highshelf.connect(comp);
-        comp.connect(gain);
-        gain.connect(ctx.destination);
-
-        return { lowpass, highshelf, comp, gain };
-      };
-
-      filtersRef.current = {
-        outbound: makeChain(0.7),
-        inbound: makeChain(1.0),
-      };
-    }
-    return audioCtxRef.current;
-  }
-
-  async function playAudioChunk(
-    pcm16: Int16Array, 
-    direction: "inbound" | "outbound",
-    sampleRate: number = 8000
-  ) {
-    const ctx = await initAudioContext();
-    
-    // Choose the right timing reference
-    const nextTimeRef = direction === "outbound" ? outboundNextTimeRef : inboundNextTimeRef;
-    
-    // Resample to browser's native rate for better quality
-    const targetRate = ctx.sampleRate;
-    const resampleRatio = targetRate / sampleRate;
-    const targetLength = Math.floor(pcm16.length * resampleRatio);
-    
-    // Create buffer
-    const buffer = ctx.createBuffer(1, targetLength, targetRate);
-    const channel = buffer.getChannelData(0);
-    
-    // Linear interpolation resampling
-    for (let i = 0; i < targetLength; i++) {
-      const sourceIndex = i / resampleRatio;
-      const index0 = Math.floor(sourceIndex);
-      const index1 = Math.min(index0 + 1, pcm16.length - 1);
-      const fraction = sourceIndex - index0;
-      
-      const sample0 = pcm16[index0] / 32768;
-      const sample1 = pcm16[index1] / 32768;
-      channel[i] = sample0 + (sample1 - sample0) * fraction;
-    }
-    
-    // Create and schedule source
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-
-    // Route through smoothing filter chain
-    const chain = filtersRef.current![direction];
-    source.connect(chain.lowpass);
-    
-    // Schedule playback
-    const currentTime = ctx.currentTime;
-    if (nextTimeRef.current - currentTime > 0.2) nextTimeRef.current = currentTime + 0.01; 
-    const startTime = Math.max(currentTime + 0.01, nextTimeRef.current);
-    source.start(startTime);
-    nextTimeRef.current = startTime + buffer.duration;
-    
-    // Track queue
-    if (direction === "outbound") {
-      outboundQueueRef.current.push(source);
-    } else {
-      inboundQueueRef.current.push(source);
-    }
-    
-    // Clean up old sources
-    source.onended = () => {
-      const queue = direction === "outbound" ? outboundQueueRef : inboundQueueRef;
-      const idx = queue.current.indexOf(source);
-      if (idx > -1) queue.current.splice(idx, 1);
-    };
-  }
-
-  useEffect(() => {
-    if (!result?.call_control_id) return;
-    
-    const url = `${wsBase}/telnyx/monitor/${encodeURIComponent(result.call_control_id)}`;
-    const ws = new WebSocket(url);
-    wsRef.current = ws;
-    
-    ws.onopen = () => {
-      console.log("Monitor WebSocket connected");
-      setAudioStats({ inbound: 0, outbound: 0 });
-    };
-    
-    ws.onmessage = async (ev) => {
-      try {
-        const msg = JSON.parse(ev.data);
-        
-        if (msg?.event === "media" && msg?.codec === "PCMU" && msg?.payload) {
-          const direction = msg.direction as "inbound" | "outbound";
-          const ulaw = base64ToBytes(msg.payload);
-          const pcm16 = muLawToPCM16(ulaw);
-          
-          // Play audio from both directions
-          playAudioChunk(pcm16, direction, msg.rate || 8000).catch(() => {});
-          
-          // Update stats
-          setAudioStats(prev => ({
-            ...prev,
-            [direction]: prev[direction] + 1
-          }));
-        }
-      } catch (err) {
-        console.error("Error processing audio:", err);
-      }
-    };
-    
-    ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
-    };
-    
-    ws.onclose = () => {
-      console.log("Monitor WebSocket closed");
-      wsRef.current = null;
-    };
-    
-    return () => {
-      // Clean up
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.close();
-      }
-      wsRef.current = null;
-      
-      // Stop all playing audio
-      [...outboundQueueRef.current, ...inboundQueueRef.current].forEach(source => {
-        try { source.stop(); } catch {}
-      });
-      outboundQueueRef.current = [];
-      inboundQueueRef.current = [];
-      
-      // Reset timing
-      outboundNextTimeRef.current = 0;
-      inboundNextTimeRef.current = 0;
-    };
-  }, [result?.call_control_id]);
+  const [audioStats] = useState({ inbound: 0, outbound: 0 });
+  const [webrtcInfo, setWebrtcInfo] = useState<{ token: string; conference: string } | null>(null);
 
   async function preloadAudio() {
     setError(null);
@@ -271,7 +60,23 @@ export default function PrankCall() {
     }
   }
 
-  return (
+  async function startWebRTCMonitor() {
+    try {
+      if (!result?.call_control_id) return;
+      const res = await apiFetch(`/telnyx/webrtc/token`, {
+        method: "POST",
+        body: JSON.stringify({ call_control_id: result.call_control_id, ttl_seconds: 300 }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      setWebrtcInfo({ token: data.token, conference: data.conference_name });
+      // We render a provider below when webrtcInfo exists, which creates the client.
+    } catch (e: any) {
+      setError(e?.message || "WebRTC token failed");
+    }
+  }
+
+  const page = (
     <div style={{ maxWidth: 560, margin: "40px auto", padding: 16 }}>
       <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>
         Prank Call
@@ -326,6 +131,21 @@ export default function PrankCall() {
         >
           {loading === "dialing" ? "Calling…" : "Start call"}
         </button>
+
+        <button
+          onClick={startWebRTCMonitor}
+          disabled={!result?.call_control_id}
+          style={{
+            padding: "10px 14px",
+            borderRadius: 8,
+            border: "1px solid #08c",
+            background: webrtcInfo ? "#08c" : "#09d",
+            color: "#fff",
+            cursor: !result?.call_control_id ? "not-allowed" : "pointer",
+          }}
+        >
+          {webrtcInfo ? "Monitor (WebRTC) Ready" : "Start WebRTC Monitor"}
+        </button>
       </div>
 
       {error && (
@@ -353,9 +173,65 @@ export default function PrankCall() {
             <div>📞 Call active - Playing bidirectional audio</div>
             <div>🔊 Outbound chunks: {audioStats.outbound}</div>
             <div>🎤 Inbound chunks: {audioStats.inbound}</div>
+            {webrtcInfo && (
+              <div style={{ marginTop: 8 }}>
+                <div>🛰️ WebRTC Conference: {webrtcInfo.conference}</div>
+                <div style={{ wordBreak: "break-all" }}>Token: {webrtcInfo.token}</div>
+              </div>
+            )}
           </div>
         </div>
       )}
+    </div>
+  );
+
+  // When we have a token, wrap page in TelnyxRTCProvider, auto-connect and join
+  if (webrtcInfo?.token && webrtcInfo?.conference) {
+    return (
+      <TelnyxRTCProvider credential={{ login_token: webrtcInfo.token } as any} options={{debug:true}}>
+        <TelnyxJoinConference conference={webrtcInfo.conference} />
+        {page}
+      </TelnyxRTCProvider>
+    );
+  }
+
+  return page;
+}
+
+
+function TelnyxJoinConference({ conference }: { conference: string }) {
+  const client = useContext(TelnyxRTCContext) as any;
+  const notification = useNotification() as any;
+  const activeCall = notification && notification.call;
+
+  useCallbacks({
+    onReady: () => {
+      try {
+        console.log(`Attempting to join conference: ${conference}`);
+        client.newCall({
+          destinationNumber: 'sip:omnidockbackend@sip.telnyx.eu',
+          audio: true,
+          video: false,
+          clientState: btoa(conference),
+        });
+      } catch (error) {
+        console.error('Failed to initiate call to join conference:', error);
+      }
+    },
+    onError: (error: any) => {
+      console.error('Error during call:', error);
+    },
+    onSocketError: () => console.log('client socket error'),
+    onSocketClose: () => console.log('client disconnected'),
+    onNotification: (x: any) => console.log('received notification:', x),
+  });
+
+  return (
+    <div>
+      <h2>Conference Call</h2>
+      <Audio stream={activeCall?.remoteStream} autoPlay playsInline />
+      {!activeCall && <p>Connecting to conference...</p>}
+      {activeCall && activeCall.state !== 'active' && <p>Call state: {activeCall.state}</p>}
     </div>
   );
 }
