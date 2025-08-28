@@ -1,4 +1,4 @@
-import { useContext, useRef, useState } from "react";
+import { useContext, useRef, useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { TelnyxRTCProvider, TelnyxRTCContext, useCallbacks, useNotification, Audio } from "@telnyx/react-client";
 
@@ -197,23 +197,52 @@ export default function PrankCall() {
   return page;
 }
 
-
 function TelnyxJoinConference({ webrtcInfo }: { webrtcInfo: { token: string, conference: string, sip_username: string } }) {
   const client = useContext(TelnyxRTCContext) as any;
   const notification = useNotification() as any;
   const activeCall = notification && notification.call;
 
+  // Create a silent MediaStream without microphone access
+  const createSilentStream = () => {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    // Set gain to 0 for complete silence
+    gainNode.gain.value = 0;
+    oscillator.frequency.value = 0;
+    oscillator.connect(gainNode);
+    
+    const destination = audioContext.createMediaStreamDestination();
+    gainNode.connect(destination);
+    oscillator.start();
+    
+    // Clean up after a short time (the stream will persist)
+    setTimeout(() => {
+      oscillator.stop();
+      audioContext.close();
+    }, 100);
+    
+    return destination.stream;
+  };
+
   useCallbacks({
     onReady: () => {
       try {
         console.log(`Attempting to join conference: ${webrtcInfo.conference}`);
+        
+        // Create silent stream to bypass getUserMedia
+        const silentStream = createSilentStream();
+        
         client.newCall({
-          // destinationNumber: `sip:${webrtcInfo.sip_username}@sip.telnyx.com`,
           destinationNumber: `+493040739273`,
-          audio: true,
+          localStream: silentStream,  // Provide our own silent stream
+          audio: true,  // Keep this true for proper audio negotiation
           video: false,
-          customHeaders: [{ name: "X-Conference-Name", value: webrtcInfo.conference }]}
-        );
+          customHeaders: [{ name: "X-Conference-Name", value: webrtcInfo.conference }]
+        });
+        
+        console.log('Joining conference with silent stream (no mic access)...');
       } catch (error) {
         console.error('Failed to initiate call to join conference:', error);
       }
@@ -223,8 +252,13 @@ function TelnyxJoinConference({ webrtcInfo }: { webrtcInfo: { token: string, con
     },
     onSocketError: () => console.log('client socket error'),
     onSocketClose: () => console.log('client disconnected'),
-    onNotification: (x: any) => { console.log('received notification:', x); },
+    onNotification: (x: any) => { 
+      console.log('received notification:', x);
+      // No need to disable tracks since we're using a silent stream
+    },
   });
+
+  // Remove the useEffect that was disabling tracks since we no longer need it
 
   return (
     <div>
@@ -232,6 +266,7 @@ function TelnyxJoinConference({ webrtcInfo }: { webrtcInfo: { token: string, con
       <Audio stream={activeCall?.remoteStream} autoPlay playsInline />
       {!activeCall && <p>Connecting to conference...</p>}
       {activeCall && activeCall.state !== 'active' && <p>Call state: {activeCall.state}</p>}
+      {activeCall && <p style={{color: 'green'}}>🔇 Receive-only mode (no microphone access)</p>}
     </div>
   );
 }
