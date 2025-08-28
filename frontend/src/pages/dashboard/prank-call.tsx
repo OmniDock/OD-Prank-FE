@@ -1,7 +1,6 @@
 import { useContext, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { TelnyxRTCProvider, TelnyxRTCContext, useCallbacks, useNotification, Audio } from "@telnyx/react-client";
-import { debug } from "console";
 
 type StartCallResponse = {
   call_control_id: string;
@@ -19,7 +18,7 @@ export default function PrankCall() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StartCallResponse | null>(null);
   const [audioStats] = useState({ inbound: 0, outbound: 0 });
-  const [webrtcInfo, setWebrtcInfo] = useState<{ token: string; conference: string } | null>(null);
+  const [webrtcInfo, setWebrtcInfo] = useState<{ token: string; conference: string; sip_username: string } | null>(null);
 
   async function preloadAudio() {
     setError(null);
@@ -69,7 +68,7 @@ export default function PrankCall() {
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      setWebrtcInfo({ token: data.token, conference: data.conference_name });
+      setWebrtcInfo({ token: data.token, conference: data.conference_name, sip_username: data.sip_username });
       // We render a provider below when webrtcInfo exists, which creates the client.
     } catch (e: any) {
       setError(e?.message || "WebRTC token failed");
@@ -189,7 +188,7 @@ export default function PrankCall() {
   if (webrtcInfo?.token && webrtcInfo?.conference) {
     return (
       <TelnyxRTCProvider credential={{ login_token: webrtcInfo.token } as any} options={{debug:true}}>
-        <TelnyxJoinConference conference={webrtcInfo.conference} />
+        <TelnyxJoinConference webrtcInfo={webrtcInfo} />
         {page}
       </TelnyxRTCProvider>
     );
@@ -199,7 +198,7 @@ export default function PrankCall() {
 }
 
 
-function TelnyxJoinConference({ conference }: { conference: string }) {
+function TelnyxJoinConference({ webrtcInfo }: { webrtcInfo: { token: string, conference: string, sip_username: string } }) {
   const client = useContext(TelnyxRTCContext) as any;
   const notification = useNotification() as any;
   const activeCall = notification && notification.call;
@@ -207,12 +206,12 @@ function TelnyxJoinConference({ conference }: { conference: string }) {
   useCallbacks({
     onReady: () => {
       try {
-        console.log(`Attempting to join conference: ${conference}`);
+        console.log(`Attempting to join conference: ${webrtcInfo.conference}`);
         client.newCall({
-          destinationNumber: 'sip:omnidockbackend@sip.telnyx.eu',
+          destinationNumber: `sip:${webrtcInfo.sip_username}@sip.telnyx.com`,
           audio: true,
           video: false,
-          clientState: btoa(conference),
+          clientState: btoa(webrtcInfo.conference),
         });
       } catch (error) {
         console.error('Failed to initiate call to join conference:', error);
@@ -223,7 +222,20 @@ function TelnyxJoinConference({ conference }: { conference: string }) {
     },
     onSocketError: () => console.log('client socket error'),
     onSocketClose: () => console.log('client disconnected'),
-    onNotification: (x: any) => console.log('received notification:', x),
+    onNotification: (x: any) => {
+      console.log('received notification:', x);
+      if (x?.type === 'callUpdate') {
+        const call = x.call;
+        if (call && call.direction === 'inbound' && call.state === 'ringing') {
+          try {
+            call.answer();
+            console.log('Inbound call auto-answered');
+          } catch (e) {
+            console.error('Auto-answer failed:', e);
+          }
+        }
+      }
+    },
   });
 
   return (
