@@ -208,11 +208,12 @@ function TelnyxJoinConference({ webrtcInfo }: { webrtcInfo: { token: string, con
       try {
         console.log(`Attempting to join conference: ${webrtcInfo.conference}`);
         client.newCall({
-          destinationNumber: `sip:${webrtcInfo.sip_username}@sip.telnyx.com`,
+          // destinationNumber: `sip:${webrtcInfo.sip_username}@sip.telnyx.com`,
+          destinationNumber: `+493040739273`,
           audio: true,
           video: false,
-          clientState: btoa(webrtcInfo.conference),
-        });
+          customHeaders: [{ name: "X-Conference-Name", value: webrtcInfo.conference }]}
+        );
       } catch (error) {
         console.error('Failed to initiate call to join conference:', error);
       }
@@ -222,20 +223,7 @@ function TelnyxJoinConference({ webrtcInfo }: { webrtcInfo: { token: string, con
     },
     onSocketError: () => console.log('client socket error'),
     onSocketClose: () => console.log('client disconnected'),
-    onNotification: (x: any) => {
-      console.log('received notification:', x);
-      if (x?.type === 'callUpdate') {
-        const call = x.call;
-        if (call && call.direction === 'inbound' && call.state === 'ringing') {
-          try {
-            call.answer();
-            console.log('Inbound call auto-answered');
-          } catch (e) {
-            console.error('Auto-answer failed:', e);
-          }
-        }
-      }
-    },
+    onNotification: (x: any) => { console.log('received notification:', x); },
   });
 
   return (
