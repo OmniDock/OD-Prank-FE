@@ -140,6 +140,33 @@ function ActiveCallContent() {
     setIsPlaying(false);
   };
 
+  // Add a stop conference playback function after line 73:
+  const stopConferencePlayback = async () => {
+    if (!result?.conference_name) return;
+    
+    try {
+      const res = await apiFetch("/telnyx/call/stop-voiceline", {
+        method: "POST",
+        body: JSON.stringify({
+          conference_name: result.conference_name,
+          voice_line_id: 0, // Not used in stop endpoint
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+      // Also stop local playback
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      setPlayingLineId(null);
+      setIsPlaying(false);
+    } catch (error) {
+      console.error("Failed to stop conference playback:", error);
+    }
+  };
+
   if (!scenarioId) {
     return (
       <section className="space-y-4">
@@ -180,6 +207,26 @@ function ActiveCallContent() {
     };
   }, []);
 
+  const handleHangup = async () => {
+    if (!result?.conference_name) return;
+    
+    try {
+      const response = await apiFetch("/telnyx/call/hangup", {
+        method: "POST",
+        body: JSON.stringify({ conference_name: result.conference_name }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to hang up call');
+      }
+
+      // Navigate back after successful hangup
+      navigate("/dashboard/phone-call");
+    } catch (err) {
+      console.error('Error hanging up call:', err);
+    }
+  };
+
   return (
     <section className="space-y-6">
       {/* Hidden audio element for visualizer */}
@@ -203,6 +250,30 @@ function ActiveCallContent() {
                 </Chip>
               </div>
             </>
+          )}
+        </div>
+        {/* Add hangup button in header */}
+        <div className="flex items-center gap-3">
+          {playingLineId && result?.conference_name && (
+            <Button
+              size="sm"
+              color="danger"
+              variant="solid"
+              onPress={stopConferencePlayback}
+              startContent={<StopIcon className="w-4 h-4" />}
+            >
+              Stop All Playback
+            </Button>
+          )}
+          {result?.conference_name && (
+            <Button
+              size="sm"
+              color="danger"
+              variant="flat"
+              onPress={handleHangup}
+            >
+              End Call
+            </Button>
           )}
         </div>
       </div>
@@ -397,6 +468,21 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
     autoJoin: true 
   });
 
+  const handleHangup = async () => {
+    try {
+      const response = await apiFetch("/telnyx/call/hangup", {
+        method: "POST",
+        body: JSON.stringify({ conference_name: conference }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to hang up call');
+      }
+    } catch (err) {
+      console.error('Error hanging up call:', err);
+    }
+  };
+
   // Handle hangup - navigate back or show message
   useEffect(() => {
     if (connectionState === "hangup") {
@@ -413,17 +499,29 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
       <CardHeader>
         <div className="flex items-center justify-between w-full">
           <h3 className="text-lg font-semibold">Call Monitor</h3>
-          <Chip 
-            size="sm" 
-            variant="flat" 
-            color={
-              connectionState === "connected" ? "success" : 
-              connectionState === "hangup" ? "default" :
-              connectionState === "error" ? "danger" : "warning"
-            }
-          >
-            {connectionState === "hangup" ? "Call Ended" : connectionState}
-          </Chip>
+          <div className="flex items-center gap-2">
+            {connectionState === "connected" && (
+              <Button
+                size="sm"
+                color="danger"
+                variant="flat"
+                onPress={handleHangup}
+              >
+                End Call
+              </Button>
+            )}
+            <Chip 
+              size="sm" 
+              variant="flat" 
+              color={
+                connectionState === "connected" ? "success" : 
+                connectionState === "hangup" ? "default" :
+                connectionState === "error" ? "danger" : "warning"
+              }
+            >
+              {connectionState === "hangup" ? "Call Ended" : connectionState}
+            </Chip>
+          </div>
         </div>
       </CardHeader>
       <CardBody>
