@@ -18,7 +18,7 @@ export default function PrankCall() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StartCallResponse | null>(null);
   const [audioStats] = useState({ inbound: 0, outbound: 0 });
-  const [webrtcInfo, setWebrtcInfo] = useState<{ token: string; conference: string; sip_username: string } | null>(null);
+  const [webrtcInfo, setWebrtcInfo] = useState<{ token: string; conference: string } | null>(null);
 
   async function preloadAudio() {
     setError(null);
@@ -68,7 +68,7 @@ export default function PrankCall() {
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      setWebrtcInfo({ token: data.token, conference: data.conference_name, sip_username: data.sip_username });
+      setWebrtcInfo({ token: data.token, conference: data.conference_name });
       // We render a provider below when webrtcInfo exists, which creates the client.
     } catch (e: any) {
       setError(e?.message || "WebRTC token failed");
@@ -197,7 +197,7 @@ export default function PrankCall() {
   return page;
 }
 
-function TelnyxJoinConference({ webrtcInfo }: { webrtcInfo: { token: string, conference: string, sip_username: string } }) {
+  function TelnyxJoinConference({ webrtcInfo }: { webrtcInfo: { token: string, conference: string } }) {
   const client = useContext(TelnyxRTCContext) as any;
   const notification = useNotification() as any;
   const activeCall = notification && notification.call;
@@ -236,7 +236,7 @@ function TelnyxJoinConference({ webrtcInfo }: { webrtcInfo: { token: string, con
         
         client.newCall({
           destinationNumber: `+493040739273`,
-          localStream: silentStream,  // Provide our own silent stream
+          //localStream: silentStream,  // Provide our own silent stream
           audio: true,  // Keep this true for proper audio negotiation
           video: false,
           customHeaders: [{ name: "X-Conference-Name", value: webrtcInfo.conference }]
