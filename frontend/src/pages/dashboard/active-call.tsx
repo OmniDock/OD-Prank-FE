@@ -368,50 +368,6 @@ function ActiveCallContent() {
 
           {/* Sidebar - Audio Visualizer */}
           <div className="space-y-4">
-            <Card className="sticky top-4">
-              <CardHeader>
-                <h3 className="text-lg font-semibold">Audio Playback</h3>
-              </CardHeader>
-              <CardBody className="flex flex-col items-center gap-4">
-                <CircularTapeVisualizer
-                  audioRef={audioRef}
-                  isActive={isPlaying}
-                  size={240}
-                  color="#ff7a00"
-                  glowColor="#ffb566"
-                  className="mx-auto"
-                />
-                
-                {playingLineId && (
-                  <div className="w-full space-y-3">
-                    <div className="text-center">
-                      <p className="text-sm text-default-500">Now Playing</p>
-                      <p className="text-xs text-default-700 mt-1 px-2">
-                        {scenario.voice_lines.find(vl => vl.id === playingLineId)?.text}
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      color="danger"
-                      variant="flat"
-                      className="w-full"
-                      onPress={stopPlayback}
-                      startContent={<StopIcon className="w-4 h-4" />}
-                    >
-                      Stop Playback
-                    </Button>
-                  </div>
-                )}
-
-                {!playingLineId && (
-                  <p className="text-sm text-default-400 text-center">
-                    Click any voice line to play
-                  </p>
-                )}
-              </CardBody>
-            </Card>
-
-            {/* Call Info */}
             {result?.conference_name && (
               <Card>
                 <CardHeader>
