@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Card, CardBody, CardHeader, Chip, Divider, Spinner } from "@heroui/react";
-import { ScenarioInfo } from "@/components/ui/scenario-info";
+import { CircularTapeVisualizer } from "@/components/ui/circular-tape-visualizer";
 import type { Scenario, VoiceLine, VoiceLineType } from "@/types/scenario";
 import { fetchScenario } from "@/lib/api.scenarios";
 import { TelnyxRTCProvider, Audio } from "@telnyx/react-client";
 import { useTelnyxConference } from "@/hooks/useTelnyxConference";
 import { apiFetch } from "@/lib/api";
+import { getAudioUrl } from "@/lib/api.tts";
+import { PlayIcon, StopIcon } from "@heroicons/react/24/solid";
 
 type StartCallResponse = {
   call_control_id: string;
@@ -46,6 +48,11 @@ function ActiveCallContent() {
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Audio playback state for visualizer
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playingLineId, setPlayingLineId] = useState<number | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     if (!scenarioId) return;
@@ -66,25 +73,71 @@ function ActiveCallContent() {
   const grouped = useMemo(() => groupByType(scenario?.voice_lines ?? []), [scenario]);
 
   const playVoiceLine = async (voiceLineId: number) => {
-    if (!result?.conference_name) {
-      console.error("No conference name available");
+    // Stop current playback if playing
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+
+    // If clicking the same line that's playing, just stop
+    if (playingLineId === voiceLineId && isPlaying) {
+      setPlayingLineId(null);
+      setIsPlaying(false);
       return;
     }
 
-    try {
-      const res = await apiFetch("/telnyx/call/play-voiceline", {
-        method: "POST",
-        body: JSON.stringify({
-          conference_name: result.conference_name,
-          voice_line_id: voiceLineId,
-        }),
-      });
-      if (!res.ok) {
-        throw new Error(await res.text());
+    // Play to conference if available
+    if (result?.conference_name) {
+      try {
+        const res = await apiFetch("/telnyx/call/play-voiceline", {
+          method: "POST",
+          body: JSON.stringify({
+            conference_name: result.conference_name,
+            voice_line_id: voiceLineId,
+          }),
+        });
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+      } catch (error) {
+        console.error("Failed to play voice line to conference:", error);
       }
-    } catch (error) {
-      console.error("Failed to play voice line:", error);
     }
+
+    // Play locally for visualization
+    const voiceLine = scenario?.voice_lines.find(vl => vl.id === voiceLineId);
+    if (voiceLine && audioRef.current) {
+      try {
+        // Get audio URL for the voice line
+        const audioUrlResponse = await getAudioUrl(voiceLine.id, scenario?.preferred_voice_id || undefined);
+        
+        if (audioUrlResponse.status === "PENDING") {
+          console.log("Audio is still being generated");
+          return;
+        }
+        
+        if (audioUrlResponse.signed_url) {
+          audioRef.current.src = audioUrlResponse.signed_url;
+          setPlayingLineId(voiceLineId);
+          setIsPlaying(true);
+          
+          await audioRef.current.play();
+        }
+      } catch (error) {
+        console.error("Failed to play audio locally:", error);
+        setIsPlaying(false);
+        setPlayingLineId(null);
+      }
+    }
+  };
+
+  const stopPlayback = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setPlayingLineId(null);
+    setIsPlaying(false);
   };
 
   if (!scenarioId) {
@@ -103,57 +156,210 @@ function ActiveCallContent() {
     );
   }
 
+  // Add audio event handlers
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setPlayingLineId(null);
+    };
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+    };
+  }, []);
+
   return (
-    <section className="space-y-4">
+    <section className="space-y-6">
+      {/* Hidden audio element for visualizer */}
+      <audio ref={audioRef} className="hidden" />
+
+      {/* Header with scenario title */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Active Call</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold">Active Call</h1>
+          {scenario && (
+            <>
+              <Divider orientation="vertical" className="h-8" />
+              <div className="flex items-center gap-3">
+                <span className="text-xl font-medium text-default-700">{scenario.title}</span>
+                <Chip 
+                  size="sm" 
+                  color={scenario.is_safe ? "success" : "danger"} 
+                  variant="flat"
+                >
+                  {scenario.is_safe ? "Safe" : "Unsafe"}
+                </Chip>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-default-500"><Spinner size="sm" /> Loading…</div>
+        <div className="flex items-center gap-2 text-default-500">
+          <Spinner size="sm" /> Loading scenario...
+        </div>
       ) : error ? (
-        <div className="text-danger">{error}</div>
+        <Card>
+          <CardBody>
+            <div className="text-danger">{error}</div>
+            <Button className="mt-3" onPress={() => navigate(-1)}>Go back</Button>
+          </CardBody>
+        </Card>
       ) : scenario ? (
-        <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_1fr] gap-6">
-          <div className="space-y-4">
-            <Card className="ring-1 ring-default-200">
-              <CardBody>
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <div className="text-xs text-default-500">Scenario</div>
-                    <div className="text-lg font-semibold">{scenario.title}</div>
-                  </div>
-                  <Chip color={scenario.is_safe ? "success" : "danger"} variant="flat">
-                    {scenario.is_safe ? "Safe" : "Unsafe"}
-                  </Chip>
-                </div>
-                <Divider className="my-3" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {grouped.map(({ type, items }) => (
-                    <div key={type} className="space-y-2">
-                      <div className="text-xs font-medium text-default-600">{type}</div>
-                      <div className="flex flex-wrap gap-2">
-                        {items.length === 0 && <div className="text-xs text-default-400">No lines</div>}
-                        {items.map((vl) => (
-                          <Button 
-                            key={vl.id} 
-                            size="sm" 
-                            variant="flat" 
-                            onPress={() => playVoiceLine(vl.id)}
-                          >
-                            {vl.text.length > 28 ? vl.text.slice(0, 28) + "…" : vl.text}
-                          </Button>
-                        ))}
-                      </div>
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
+          {/* Main content - Voice Lines */}
+          <div className="space-y-6">
+            {grouped.map(({ type, items }) => (
+              <Card key={type} className="shadow-medium">
+                <CardHeader className="bg-gradient-to-r from-default-100 to-default-50 pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`
+                      w-10 h-10 rounded-full flex items-center justify-center
+                      ${type === 'OPENING' ? 'bg-primary/20 text-primary' : 
+                        type === 'QUESTION' ? 'bg-secondary/20 text-secondary' :
+                        type === 'RESPONSE' ? 'bg-success/20 text-success' :
+                        'bg-warning/20 text-warning'}
+                    `}>
+                      {type === 'OPENING' ? '👋' : 
+                       type === 'QUESTION' ? '❓' :
+                       type === 'RESPONSE' ? '💬' : '👋'}
                     </div>
-                  ))}
-                </div>
-              </CardBody>
-            </Card>
+                    <div>
+                      <h3 className="text-lg font-semibold">
+                        {type === 'OPENING' ? 'Opening Lines' : 
+                         type === 'QUESTION' ? 'Questions' :
+                         type === 'RESPONSE' ? 'Responses' : 'Closing Lines'}
+                      </h3>
+                      <p className="text-xs text-default-500">{items.length} available</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardBody className="pt-4">
+                  {items.length === 0 ? (
+                    <div className="text-center py-8 text-default-400">
+                      No {type.toLowerCase()} lines available
+                    </div>
+                  ) : (
+                    <div className="grid gap-3">
+                      {items.map((vl) => (
+                        <Button
+                          key={vl.id}
+                          size="lg"
+                          variant={playingLineId === vl.id ? "solid" : "flat"}
+                          color={playingLineId === vl.id ? "primary" : "default"}
+                          className={`
+                            justify-start text-left h-auto py-4 px-5
+                            ${playingLineId === vl.id ? 'ring-2 ring-primary ring-offset-2' : ''}
+                          `}
+                          onPress={() => playVoiceLine(vl.id)}
+                        >
+                          <div className="flex items-center gap-4 w-full">
+                            <div className={`
+                              w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                              ${playingLineId === vl.id ? 'bg-white/20' : 'bg-default-100'}
+                            `}>
+                              {playingLineId === vl.id ? (
+                                <StopIcon className="w-5 h-5" />
+                              ) : (
+                                <PlayIcon className="w-5 h-5" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`
+                                text-base leading-relaxed
+                                ${playingLineId === vl.id ? 'text-white' : 'text-foreground'}
+                              `}>
+                                {vl.text}
+                              </p>
+                            </div>
+                          </div>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+            ))}
           </div>
 
+          {/* Sidebar - Audio Visualizer */}
           <div className="space-y-4">
-            <ScenarioInfo scenario={scenario} />
+            <Card className="sticky top-4">
+              <CardHeader>
+                <h3 className="text-lg font-semibold">Audio Playback</h3>
+              </CardHeader>
+              <CardBody className="flex flex-col items-center gap-4">
+                <CircularTapeVisualizer
+                  audioRef={audioRef}
+                  isActive={isPlaying}
+                  size={240}
+                  color="#ff7a00"
+                  glowColor="#ffb566"
+                  className="mx-auto"
+                />
+                
+                {playingLineId && (
+                  <div className="w-full space-y-3">
+                    <div className="text-center">
+                      <p className="text-sm text-default-500">Now Playing</p>
+                      <p className="text-xs text-default-700 mt-1 px-2">
+                        {scenario.voice_lines.find(vl => vl.id === playingLineId)?.text}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      color="danger"
+                      variant="flat"
+                      className="w-full"
+                      onPress={stopPlayback}
+                      startContent={<StopIcon className="w-4 h-4" />}
+                    >
+                      Stop Playback
+                    </Button>
+                  </div>
+                )}
+
+                {!playingLineId && (
+                  <p className="text-sm text-default-400 text-center">
+                    Click any voice line to play
+                  </p>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* Call Info */}
+            {result?.conference_name && (
+              <Card>
+                <CardHeader>
+                  <h3 className="text-sm font-semibold">Call Details</h3>
+                </CardHeader>
+                <CardBody className="space-y-2 text-xs">
+                  <div>
+                    <span className="text-default-500">Conference:</span>
+                    <p className="font-mono text-default-700">{result.conference_name}</p>
+                  </div>
+                  {result.call_control_id && (
+                    <div>
+                      <span className="text-default-500">Call ID:</span>
+                      <p className="font-mono text-default-700 truncate">{result.call_control_id}</p>
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+            )}
           </div>
         </div>
       ) : null}
