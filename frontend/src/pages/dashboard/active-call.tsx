@@ -6,6 +6,7 @@ import type { Scenario, VoiceLine, VoiceLineType } from "@/types/scenario";
 import { fetchScenario } from "@/lib/api.scenarios";
 import { TelnyxRTCProvider, Audio } from "@telnyx/react-client";
 import { useTelnyxConference } from "@/hooks/useTelnyxConference";
+import { apiFetch } from "@/lib/api";
 
 type StartCallResponse = {
   call_control_id: string;
@@ -64,6 +65,28 @@ function ActiveCallContent() {
 
   const grouped = useMemo(() => groupByType(scenario?.voice_lines ?? []), [scenario]);
 
+  const playVoiceLine = async (voiceLineId: number) => {
+    if (!result?.conference_name) {
+      console.error("No conference name available");
+      return;
+    }
+
+    try {
+      const res = await apiFetch("/telnyx/call/play-voiceline", {
+        method: "POST",
+        body: JSON.stringify({
+          conference_name: result.conference_name,
+          voice_line_id: voiceLineId,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+    } catch (error) {
+      console.error("Failed to play voice line:", error);
+    }
+  };
+
   if (!scenarioId) {
     return (
       <section className="space-y-4">
@@ -112,10 +135,12 @@ function ActiveCallContent() {
                       <div className="flex flex-wrap gap-2">
                         {items.length === 0 && <div className="text-xs text-default-400">No lines</div>}
                         {items.map((vl) => (
-                          <Button key={vl.id} size="sm" variant="flat" onPress={() => {
-                            // TODO: Implement backend inject
-                            console.log("Inject voice line", vl.id, vl.text);
-                          }}>
+                          <Button 
+                            key={vl.id} 
+                            size="sm" 
+                            variant="flat" 
+                            onPress={() => playVoiceLine(vl.id)}
+                          >
                             {vl.text.length > 28 ? vl.text.slice(0, 28) + "…" : vl.text}
                           </Button>
                         ))}
