@@ -6,7 +6,8 @@ type StartCallResponse = {
   call_control_id: string;
   call_leg_id?: string;
   call_session_id?: string;
-  media_ws_url?: string;
+  conference_name?: string;
+  webrtc_token?: string;
 };
 
 export default function PrankCall() {
@@ -52,6 +53,14 @@ export default function PrankCall() {
       if (!res.ok) throw new Error(await res.text());
       const data: StartCallResponse = await res.json();
       setResult(data);
+      
+      // Automatically set up WebRTC monitoring
+      if (data.webrtc_token && data.conference_name) {
+        setWebrtcInfo({ 
+          token: data.webrtc_token, 
+          conference: data.conference_name 
+        });
+      }
     } catch (e: any) {
       setError(e?.message || "Call failed");
     } finally {
@@ -59,21 +68,7 @@ export default function PrankCall() {
     }
   }
 
-  async function startWebRTCMonitor() {
-    try {
-      if (!result?.call_control_id) return;
-      const res = await apiFetch(`/telnyx/webrtc/token`, {
-        method: "POST",
-        body: JSON.stringify({ call_control_id: result.call_control_id, ttl_seconds: 300 }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      setWebrtcInfo({ token: data.token, conference: data.conference_name });
-      // We render a provider below when webrtcInfo exists, which creates the client.
-    } catch (e: any) {
-      setError(e?.message || "WebRTC token failed");
-    }
-  }
+
 
   const page = (
     <div style={{ maxWidth: 560, margin: "40px auto", padding: 16 }}>
@@ -129,21 +124,6 @@ export default function PrankCall() {
           }}
         >
           {loading === "dialing" ? "Calling…" : "Start call"}
-        </button>
-
-        <button
-          onClick={startWebRTCMonitor}
-          disabled={!result?.call_control_id}
-          style={{
-            padding: "10px 14px",
-            borderRadius: 8,
-            border: "1px solid #08c",
-            background: webrtcInfo ? "#08c" : "#09d",
-            color: "#fff",
-            cursor: !result?.call_control_id ? "not-allowed" : "pointer",
-          }}
-        >
-          {webrtcInfo ? "Monitor (WebRTC) Ready" : "Start WebRTC Monitor"}
         </button>
       </div>
 
