@@ -84,14 +84,6 @@ function ActiveCallContent() {
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Active Call</h1>
-        <div className="flex items-center gap-2 text-sm text-default-500">
-          {result?.call_control_id && (
-            <Chip size="sm" variant="flat">CCID: {result.call_control_id}</Chip>
-          )}
-          {result?.conference_name && (
-            <Chip size="sm" variant="flat">Conf: {result.conference_name}</Chip>
-          )}
-        </div>
       </div>
 
       {loading ? (
