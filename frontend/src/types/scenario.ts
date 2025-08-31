@@ -52,6 +52,20 @@ export interface ScenarioCreateResponse {
   processing_summary: Record<string, unknown>;
 }
 
+export interface ScenarioProcessRequest {
+  scenario?: ScenarioCreateRequest;
+  session_id?: string;
+  clarifications?: string[];
+}
+
+export interface ScenarioProcessResponse {
+  status: 'needs_clarification' | 'complete' | 'error';
+  session_id?: string;
+  clarifying_questions?: string[];
+  scenario_id?: number;
+  error?: string;
+}
+
 export interface VoiceLineEnhancementRequest {
   voice_line_ids: number[];
   user_feedback: string;

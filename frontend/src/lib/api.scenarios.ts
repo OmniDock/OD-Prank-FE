@@ -3,6 +3,8 @@ import type {
   Scenario,
   ScenarioCreateRequest,
   ScenarioCreateResponse,
+  ScenarioProcessRequest,
+  ScenarioProcessResponse,
   VoiceLineEnhancementRequest,
   VoiceLineEnhancementResponse,
 } from "@/types/scenario";
@@ -21,6 +23,16 @@ export async function createScenario(
   payload: ScenarioCreateRequest,
 ): Promise<ScenarioCreateResponse> {
   const res = await apiFetch(`/scenario`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+export async function processScenario(
+  payload: ScenarioProcessRequest,
+): Promise<ScenarioProcessResponse> {
+  const res = await apiFetch(`/scenario/process`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
