@@ -40,6 +40,12 @@ export function useTelnyxConference({ conference, autoJoin = true }: UseTelnyxCo
   };
 
   const joinConference = () => {
+    // Add guard to prevent duplicate joins
+    if (connectionState !== "idle") {
+      console.log(`Skipping join - already in state: ${connectionState}`);
+      return;
+    }
+    
     if (!client) {
       setError("Telnyx client not ready");
       return;

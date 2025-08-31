@@ -1,6 +1,6 @@
 export type Language = "ENGLISH" | "GERMAN";
 
-export type VoiceLineType = "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING";
+export type VoiceLineType = "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING" | "FILLER";
 
 export interface VoiceLineAudio {
   id: number;

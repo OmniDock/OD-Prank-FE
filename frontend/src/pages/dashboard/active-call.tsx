@@ -24,12 +24,13 @@ type LocationState = {
 };
 
 function groupByType(voiceLines: VoiceLine[]) {
-  const order: VoiceLineType[] = ["OPENING", "QUESTION", "RESPONSE", "CLOSING"];
+  const order: VoiceLineType[] = ["OPENING", "QUESTION", "RESPONSE", "CLOSING", "FILLER"];
   const map: Record<VoiceLineType, VoiceLine[]> = {
     OPENING: [],
     QUESTION: [],
     RESPONSE: [],
     CLOSING: [],
+    FILLER: [],
   };
   for (const vl of voiceLines) map[vl.type].push(vl);
   return order.map((t) => ({ type: t, items: map[t] }));
@@ -302,17 +303,25 @@ function ActiveCallContent() {
                       ${type === 'OPENING' ? 'bg-primary/20 text-primary' : 
                         type === 'QUESTION' ? 'bg-secondary/20 text-secondary' :
                         type === 'RESPONSE' ? 'bg-success/20 text-success' :
+                        type === 'CLOSING' ? 'bg-warning/20 text-warning' :
+                        type === 'FILLER' ? 'bg-warning/20 text-warning' :
                         'bg-warning/20 text-warning'}
                     `}>
                       {type === 'OPENING' ? '👋' : 
                        type === 'QUESTION' ? '❓' :
-                       type === 'RESPONSE' ? '💬' : '👋'}
+                       type === 'RESPONSE' ? '💬' :
+                       type === 'CLOSING' ? '👋' :
+                       type === 'FILLER' ? '👋' :
+                       '👋'}
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold">
                         {type === 'OPENING' ? 'Opening Lines' : 
                          type === 'QUESTION' ? 'Questions' :
-                         type === 'RESPONSE' ? 'Responses' : 'Closing Lines'}
+                         type === 'RESPONSE' ? 'Responses' :
+                         type === 'CLOSING' ? 'Closing Lines' :
+                         type === 'FILLER' ? 'Fillers' :
+                         'Closing Lines'}
                       </h3>
                       <p className="text-xs text-default-500">{items.length} available</p>
                     </div>

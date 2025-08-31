@@ -150,7 +150,7 @@ export default function PhoneCallPage() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    {["OPENING", "QUESTION", "RESPONSE", "CLOSING"].map((type) => {
+                    {["OPENING", "QUESTION", "RESPONSE", "CLOSING", "FILLER"].map((type) => {
                       const lines = selectedScenario.voice_lines?.filter((vl) => vl.type === type) ?? [];
                       if (lines.length === 0) return null;
                       return (

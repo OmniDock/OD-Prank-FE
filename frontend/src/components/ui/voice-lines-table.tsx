@@ -38,7 +38,7 @@ export function VoiceLinesTable({
 }: VoiceLinesTableProps) {
   const [generating, setGenerating] = useState<Set<number>>(new Set());
   const [pending, setPending] = useState<Set<number>>(new Set());
-  const [activeTab, setActiveTab] = useState<"ALL" | "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING">("ALL");
+  const [activeTab, setActiveTab] = useState<"ALL" | "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING" | "FILLER">("ALL");
 
   // Helper function to check if audio is available for a voice line
   const isAudioAvailable = (voiceLineId: number): boolean => {
@@ -180,6 +180,19 @@ export function VoiceLinesTable({
       });
             
       if (res.success) {
+          // Check if audio is already ready (has signed_url)
+          if (res.signed_url) {
+            // Audio already exists, just refetch scenario to update UI
+            await onRefetchScenario();
+            addToast({ 
+              title: "Audio ready", 
+              description: "Audio file already exists.", 
+              color: "success", 
+              timeout: 3000 
+            });
+            return; // Don't start polling
+          }
+          
           // Audio generation started in background - move from generating to pending
           setPending((prev) => new Set(prev).add(voiceLineId));
 
@@ -191,18 +204,27 @@ export function VoiceLinesTable({
           });
           
           // Poll for completion and refetch scenario when ready
-          const pollInterval = setInterval(async () => {
+          let pollInterval: NodeJS.Timeout;
+          let pollCleared = false;
+          
+          pollInterval = setInterval(async () => {
+            // Guard against multiple clears
+            if (pollCleared) return;
+            
             try {
               const r = await getAudioUrl(voiceLineId, scenario.preferred_voice_id as string);
-                              if ((r as any)?.status === "PENDING") {
+              if ((r as any)?.status === "PENDING") {
                   // keep waiting
                   return;
-                }
+              }
               if ((r as any)?.signed_url) {
-                // Audio is now available - refetch scenario
+                // Audio is now available - clear interval first to prevent duplicate toasts
+                pollCleared = true;
+                clearInterval(pollInterval);
+                
+                // Then update UI
                 await onRefetchScenario();
                 addToast({ title: "Audio ready", description: "Background generation completed!", color: "success", timeout: 3000 });
-                clearInterval(pollInterval);
                 setPending((prev) => {
                   const next = new Set(prev);
                   next.delete(voiceLineId);
@@ -217,13 +239,16 @@ export function VoiceLinesTable({
           
           // Stop polling after 60 seconds
           setTimeout(() => {
-            clearInterval(pollInterval);
-            console.warn(`Stopped polling for voice line ${voiceLineId} after timeout`);
-            setPending((prev) => {
-              const next = new Set(prev);
-              next.delete(voiceLineId);
-              return next;
-            });
+            if (!pollCleared) {
+              pollCleared = true;
+              clearInterval(pollInterval);
+              console.warn(`Stopped polling for voice line ${voiceLineId} after timeout`);
+              setPending((prev) => {
+                const next = new Set(prev);
+                next.delete(voiceLineId);
+                return next;
+              });
+            }
           }, 60000);
         
       } else {
@@ -350,6 +375,7 @@ export function VoiceLinesTable({
             <Tab key="QUESTION" title={`Question (${scenario.voice_lines.filter(v=>v.type==='QUESTION').length})`} />
             <Tab key="RESPONSE" title={`Response (${scenario.voice_lines.filter(v=>v.type==='RESPONSE').length})`} />
             <Tab key="CLOSING" title={`Closing (${scenario.voice_lines.filter(v=>v.type==='CLOSING').length})`} />
+            <Tab key="FILLER" title={`Filler (${scenario.voice_lines.filter(v=>v.type==='FILLER').length})`} />
           </Tabs>
         </div>
 

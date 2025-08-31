@@ -15,7 +15,7 @@ import {
   Progress,
 } from "@heroui/react";
 import { processScenario, fetchScenario } from "@/lib/api.scenarios";
-import type { ScenarioCreateRequest, ScenarioProcessResponse, Scenario } from "@/types/scenario";
+import type { ScenarioCreateRequest, Scenario } from "@/types/scenario";
 import { useNavigate } from "react-router-dom";
 
 interface ScenarioCreateModalProps {
@@ -52,7 +52,8 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
   }, [isOpen]);
 
   const canSubmitInitial = form.title.trim().length > 0 && form.target_name.trim().length > 0 && !loading;
-  const canSubmitClarifications = clarifications.every(c => c.trim().length > 0) && !loading;
+  // Remove the requirement for all clarifications to be filled
+  const canSubmitClarifications = !loading;
 
   async function handleInitialSubmit() {
     if (!canSubmitInitial) return;
@@ -67,6 +68,7 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
         // Move to clarification step
         setSessionId(response.session_id!);
         setClarifyingQuestions(response.clarifying_questions || []);
+        // Initialize with empty strings (placeholders will show in UI)
         setClarifications(new Array(response.clarifying_questions?.length || 0).fill(''));
         setStep('clarifying');
       } else if (response.status === 'complete' && response.scenario_id) {
@@ -106,9 +108,14 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
     setStep('processing');
     
     try {
+      // Replace empty clarifications with default text
+      const processedClarifications = clarifications.map(c => 
+        c.trim() === '' ? 'Not important for this prank' : c
+      );
+      
       const response = await processScenario({
         session_id: sessionId,
-        clarifications: clarifications,
+        clarifications: processedClarifications,
       });
       
       if (response.status === 'complete' && response.scenario_id) {
@@ -141,7 +148,7 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
   }
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl" scrollBehavior="inside">
       <ModalContent>
         <ModalHeader>
           {step === 'initial' && 'New Scenario'}
@@ -211,6 +218,9 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
                 <p className="text-sm text-default-600">
                   To create the perfect prank scenario, we need a bit more information:
                 </p>
+                <p className="text-xs text-default-400 italic">
+                  You can skip any questions that aren't important for your prank - we'll use creative defaults.
+                </p>
                 
                 {clarifyingQuestions.map((question, index) => (
                   <Card key={index} className="bg-default-50">
@@ -223,7 +233,7 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
                           newClarifications[index] = e.target.value;
                           setClarifications(newClarifications);
                         }}
-                        placeholder="Your answer..."
+                        placeholder="(Optional) Leave empty to let AI be creative..."
                         minRows={2}
                         variant="bordered"
                         classNames={{
