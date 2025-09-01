@@ -105,29 +105,31 @@ function ActiveCallContent() {
       }
     }
 
-    // Play locally for visualization
-    const voiceLine = scenario?.voice_lines.find(vl => vl.id === voiceLineId);
-    if (voiceLine && audioRef.current) {
-      try {
-        // Get audio URL for the voice line
-        const audioUrlResponse = await getAudioUrl(voiceLine.id, scenario?.preferred_voice_id || undefined);
-        
-        if (audioUrlResponse.status === "PENDING") {
-          console.log("Audio is still being generated");
-          return;
-        }
-        
-        if (audioUrlResponse.signed_url) {
-          audioRef.current.src = audioUrlResponse.signed_url;
-          setPlayingLineId(voiceLineId);
-          setIsPlaying(true);
+    // Play locally for visualization only when NOT in a conference
+    if (!result?.conference_name) {
+      const voiceLine = scenario?.voice_lines.find(vl => vl.id === voiceLineId);
+      if (voiceLine && audioRef.current) {
+        try {
+          // Get audio URL for the voice line
+          const audioUrlResponse = await getAudioUrl(voiceLine.id, scenario?.preferred_voice_id || undefined);
           
-          await audioRef.current.play();
+          if (audioUrlResponse.status === "PENDING") {
+            console.log("Audio is still being generated");
+            return;
+          }
+          
+          if (audioUrlResponse.signed_url) {
+            audioRef.current.src = audioUrlResponse.signed_url;
+            setPlayingLineId(voiceLineId);
+            setIsPlaying(true);
+            
+            await audioRef.current.play();
+          }
+        } catch (error) {
+          console.error("Failed to play audio locally:", error);
+          setIsPlaying(false);
+          setPlayingLineId(null);
         }
-      } catch (error) {
-        console.error("Failed to play audio locally:", error);
-        setIsPlaying(false);
-        setPlayingLineId(null);
       }
     }
   };
@@ -165,6 +167,14 @@ function ActiveCallContent() {
       setIsPlaying(false);
     } catch (error) {
       console.error("Failed to stop conference playback:", error);
+    }
+  };
+
+  const interruptPlayback = async () => {
+    if (result?.conference_name) {
+      await stopConferencePlayback();
+    } else {
+      stopPlayback();
     }
   };
 
@@ -253,19 +263,17 @@ function ActiveCallContent() {
             </>
           )}
         </div>
-        {/* Add hangup button in header */}
+        {/* Header actions */}
         <div className="flex items-center gap-3">
-          {playingLineId && result?.conference_name && (
-            <Button
-              size="sm"
-              color="danger"
-              variant="solid"
-              onPress={stopConferencePlayback}
-              startContent={<StopIcon className="w-4 h-4" />}
-            >
-              Stop All Playback
-            </Button>
-          )}
+          <Button
+            size="sm"
+            color="danger"
+            variant="solid"
+            onPress={interruptPlayback}
+            startContent={<StopIcon className="w-4 h-4" />}
+          >
+            Interrupt
+          </Button>
           {result?.conference_name && (
             <Button
               size="sm"

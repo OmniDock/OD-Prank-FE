@@ -37,8 +37,8 @@ function normalizeGermanNumber(input: string): string | null {
 
 export default function PhoneCallPage() {
   const [selectedScenarioId, setSelectedScenarioId] = useState<number | null>(null);
-  // const [toNumber, setToNumber] = useState<string>("+491729859252");
-  const [toNumber, setToNumber] = useState<string>("+4915226152501");
+  const [toNumber, setToNumber] = useState<string>("+491729859252");
+  // const [toNumber, setToNumber] = useState<string>("+4915226152501");
 
   const [loading, setLoading] = useState<"idle" | "dialing">("idle");
   const [error, setError] = useState<string | null>(null);
