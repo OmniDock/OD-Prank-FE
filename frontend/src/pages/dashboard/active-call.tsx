@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Card, CardBody, CardHeader, Chip, Divider, Spinner } from "@heroui/react";
-import { CircularTapeVisualizer } from "@/components/ui/circular-tape-visualizer";
 import type { Scenario, VoiceLine, VoiceLineType } from "@/types/scenario";
 import { fetchScenario } from "@/lib/api.scenarios";
 import { TelnyxRTCProvider, Audio } from "@telnyx/react-client";
@@ -9,6 +8,7 @@ import { useTelnyxConference } from "@/hooks/useTelnyxConference";
 import { apiFetch } from "@/lib/api";
 import { getAudioUrl } from "@/lib/api.tts";
 import { PlayIcon, StopIcon } from "@heroicons/react/24/solid";
+import { motion } from "framer-motion";
 
 type StartCallResponse = {
   call_control_id: string;
@@ -291,7 +291,12 @@ function ActiveCallContent() {
           </CardBody>
         </Card>
       ) : scenario ? (
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6"
+        >
           {/* Main content - Voice Lines */}
           <div className="space-y-6">
             {grouped.map(({ type, items }) => (
@@ -397,7 +402,7 @@ function ActiveCallContent() {
               </Card>
             )}
           </div>
-        </div>
+        </motion.div>
       ) : null}
     </section>
   );

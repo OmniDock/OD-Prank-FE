@@ -26,6 +26,7 @@ import { VoiceSettings } from "@/components/ui/voice-settings";
 import { VoiceLinesTable } from "@/components/ui/voice-lines-table";
 import type { VoiceItem } from "@/types/tts";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { motion } from "framer-motion";
 
 export default function ScenarioDetailPage() {
   const { id } = useParams();
@@ -177,7 +178,12 @@ export default function ScenarioDetailPage() {
   if (!scenario) return null;
 
   return (
-    <section className="py-4 space-y-4">
+    <motion.section
+      className="py-4 space-y-4"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+    >
       <Breadcrumbs>
         <BreadcrumbItem href="/dashboard/scenarios">Scenarios</BreadcrumbItem>
         <BreadcrumbItem>{scenario.title}</BreadcrumbItem>
@@ -275,7 +281,7 @@ export default function ScenarioDetailPage() {
         selectedVoiceId={scenario?.preferred_voice_id}
         onSelect={(id) => void persistPreferredVoice(id)}
       />
-    </section>
+    </motion.section>
   );
 }
 

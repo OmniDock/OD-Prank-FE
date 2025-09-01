@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardBody, Chip, Spinner } from "@heroui/react";
+import { motion } from "framer-motion";
 import { fetchScenarios } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
 
@@ -48,7 +49,12 @@ export default function ScenarioGridSelect({ selectedId, onSelect, disabled }: S
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+    <motion.div
+      className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+    >
       {sorted.map((s) => {
         const isSelected = s.id === selectedId;
         const count = s.voice_lines?.length ?? 0;
@@ -102,7 +108,7 @@ export default function ScenarioGridSelect({ selectedId, onSelect, disabled }: S
           </button>
         );
       })}
-    </div>
+    </motion.div>
   );
 }
 

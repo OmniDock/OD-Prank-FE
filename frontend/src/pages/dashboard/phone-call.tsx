@@ -5,6 +5,7 @@ import type { Scenario } from "@/types/scenario";
 import { useNavigate } from "react-router-dom";
 import ScenarioGridSelect from "@/components/ui/scenario-grid-select";
 import HorizontalSteps from "@/components/ui/horizontal-steps";
+import { motion } from "framer-motion";
 
 type StartCallResponse = {
   call_control_id: string;
@@ -130,7 +131,12 @@ export default function PhoneCallPage() {
       )}
 
       {currentStep === 2 && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="grid grid-cols-1 xl:grid-cols-2 gap-6"
+        >
 
 
           <Card className="max-h-[500px] overflow-y-auto">
@@ -242,7 +248,7 @@ export default function PhoneCallPage() {
               )}
             </CardBody>
           </Card>
-        </div>
+        </motion.div>
       )}
     </section>
   );
