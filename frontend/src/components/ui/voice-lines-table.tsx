@@ -15,7 +15,7 @@ import {
   Tab,
   Spinner,
 } from "@heroui/react";
-import { generateSingleTTS, getAudioUrl } from "@/lib/api.tts";
+import { generateSingleTTS, fetchVoiceLinesSummary } from "@/lib/api.tts";
 import { PlayIcon, PlusIcon } from "@heroicons/react/24/outline";
 import type { Scenario } from "@/types/scenario";
 
@@ -39,6 +39,9 @@ export function VoiceLinesTable({
   const [generating, setGenerating] = useState<Set<number>>(new Set());
   const [pending, setPending] = useState<Set<number>>(new Set());
   const [activeTab, setActiveTab] = useState<"ALL" | "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING" | "FILLER">("ALL");
+  const [summaryEtag, setSummaryEtag] = useState<string | undefined>(undefined);
+  const [pollInterval, setPollInterval] = useState(2000);
+  const [consecutiveNoChanges, setConsecutiveNoChanges] = useState(0);
 
   // Helper function to check if audio is available for a voice line
   const isAudioAvailable = (voiceLineId: number): boolean => {
@@ -58,8 +61,6 @@ export function VoiceLinesTable({
     return sorted;
   }, [scenario?.voice_lines, activeTab]);
 
-
-
   async function onCreateAudio(voiceLineId: number) {
     if (!scenario || !scenario.preferred_voice_id) {
       addToast({ title: "No voice selected", description: "Select a voice first to generate audio.", color: "warning", timeout: 1000 });
@@ -73,9 +74,7 @@ export function VoiceLinesTable({
       });
             
       if (res.success) {
-          // Check if audio is already ready (has signed_url)
           if (res.signed_url) {
-            // Audio already exists, just refetch scenario to update UI
             await onRefetchScenario();
             addToast({ 
               title: "Audio ready", 
@@ -83,10 +82,9 @@ export function VoiceLinesTable({
               color: "success", 
               timeout: 1000 
             });
-            return; // Don't start polling
+            return;
           }
-          
-          // Audio generation started in background - move from generating to pending
+          // Mark as pending; summary poller will pick up
           setPending((prev) => new Set(prev).add(voiceLineId));
 
           addToast({ 
@@ -95,55 +93,6 @@ export function VoiceLinesTable({
             color: "primary", 
             timeout: 1000 
           });
-          
-          // Poll for completion and refetch scenario when ready
-          let pollInterval: NodeJS.Timeout;
-          let pollCleared = false;
-          
-          pollInterval = setInterval(async () => {
-            // Guard against multiple clears
-            if (pollCleared) return;
-            
-            try {
-              const r = await getAudioUrl(voiceLineId, scenario.preferred_voice_id as string);
-              if ((r as any)?.status === "PENDING") {
-                  // keep waiting
-                  return;
-              }
-              if ((r as any)?.signed_url) {
-                // Audio is now available - clear interval first to prevent duplicate toasts
-                pollCleared = true;
-                clearInterval(pollInterval);
-                
-                // Then update UI
-                await onRefetchScenario();
-                addToast({ title: "Audio ready", description: "Background generation completed!", color: "success", timeout: 1000 });
-                setPending((prev) => {
-                  const next = new Set(prev);
-                  next.delete(voiceLineId);
-                  return next;
-                });
-              }
-            } catch {
-              // Still not ready or transient error, continue polling
-              console.debug(`Audio not yet ready for voice line ${voiceLineId}, continuing to poll...`);
-            }
-          }, 2000);
-          
-          // Stop polling after 60 seconds
-          setTimeout(() => {
-            if (!pollCleared) {
-              pollCleared = true;
-              clearInterval(pollInterval);
-              console.warn(`Stopped polling for voice line ${voiceLineId} after timeout`);
-              setPending((prev) => {
-                const next = new Set(prev);
-                next.delete(voiceLineId);
-                return next;
-              });
-            }
-          }, 60000);
-        
       } else {
         addToast({
           title: "Generation failed",
@@ -153,8 +102,6 @@ export function VoiceLinesTable({
         });
       }
     } catch (e) {
-      // Network/request error - clear generating state
-
       addToast({
         title: "Request failed",
         description: "Failed to generate audio",
@@ -164,77 +111,104 @@ export function VoiceLinesTable({
     }
   }
 
-
-  // Passive polling: only poll rows marked as pending to avoid 404 noise
+  // Summary polling with ETag (only when there are pending items)
   useEffect(() => {
-    if (!scenario?.preferred_voice_id) return;
-    if (pending.size === 0) return;
+    if (!scenario?.id) return;
+    if (pending.size === 0) {
+      // Reset polling state when no pending items
+      setPollInterval(2000);
+      setConsecutiveNoChanges(0);
+      return;
+    }
+
     let cancelled = false;
 
-    const tick = async () => {
+    const poll = async () => {
       if (cancelled) return;
-      const ids = Array.from(pending);
-      if (ids.length === 0) return;
-
-      const toRemove: number[] = [];
-      let anyReady = false;
-      for (const id of ids) {
-        try {
-          const r = await getAudioUrl(id, scenario.preferred_voice_id as string);
-          if ((r as any)?.signed_url) {
-            anyReady = true;
-            toRemove.push(id);
-          }
-        } catch {
-          // ignore transient errors
-        }
-      }
-
-      if (toRemove.length && !cancelled) {
-        setPending((prev) => {
-          const next = new Set(prev);
-          toRemove.forEach((id) => next.delete(id));
-          return next;
-        });
-      }
-
-      if (anyReady && !cancelled) await onRefetchScenario();
-    };
-
-    const interval = setInterval(tick, 2000);
-    void tick();
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [pending, scenario?.preferred_voice_id]);
-
-  // One-time discovery: when scenario loads/changes, detect rows already in PENDING on the server
-  useEffect(() => {
-    if (!scenario?.preferred_voice_id) return;
-    let cancelled = false;
-
-    const discover = async () => {
-      const targets = scenario.voice_lines.filter(v => !v.preferred_audio?.signed_url);
-      if (targets.length === 0) return;
-      for (const vl of targets) {
+      try {
+        const res = await fetchVoiceLinesSummary(scenario.id, summaryEtag);
         if (cancelled) return;
-        if (pending.has(vl.id)) continue;
-        try {
-          const r = await getAudioUrl(vl.id, scenario.preferred_voice_id as string);
-          if ((r as any)?.status === "PENDING") {
-            setPending((prev) => new Set(prev).add(vl.id));
-          }
-        } catch {
-          // ignore
+        
+        if (res.notModified) {
+          // Exponential backoff when no changes detected
+          setConsecutiveNoChanges(prev => prev + 1);
+          setPollInterval(prev => Math.min(prev * 1.5, 10000)); // Max 10 seconds
+          return;
         }
+
+        // Reset fast polling on change
+        setConsecutiveNoChanges(0);
+        setPollInterval(2000);
+
+        if (res.etag) setSummaryEtag(res.etag);
+        const items = res.data?.items || [];
+
+        // Determine which IDs moved to READY
+        const readyIds = new Set<number>();
+        for (const it of items) {
+          if (it.status === "READY") {
+            readyIds.add(it.voice_line_id);
+          }
+        }
+
+        // Remove READY from pending
+        if (readyIds.size > 0) {
+          setPending((prev) => {
+            const next = new Set(prev);
+            for (const id of Array.from(readyIds)) next.delete(id);
+            return next;
+          });
+          // Refresh scenario to update signed URLs
+          await onRefetchScenario();
+        }
+
+        // Add any reported PENDING to pending set
+        const pendingIds = items.filter(i => i.status === "PENDING").map(i => i.voice_line_id);
+        if (pendingIds.length > 0) {
+          setPending((prev) => {
+            const next = new Set(prev);
+            pendingIds.forEach(id => next.add(id));
+            return next;
+          });
+        }
+      } catch (e) {
+        // ignore transient
       }
     };
 
-    void discover();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenario?.id, scenario?.voice_lines, scenario?.preferred_voice_id]);
+    const interval = setInterval(poll, pollInterval);
+    void poll();
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [scenario?.id, pending.size, summaryEtag, onRefetchScenario, pollInterval]);
+
+  // One-time discovery on scenario change: find PENDING items via summary
+  useEffect(() => {
+    if (!scenario?.id) return;
+    let cancelled = false;
+    
+    // Small delay to avoid duplicate request with initial polling
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetchVoiceLinesSummary(scenario.id);
+        if (cancelled) return;
+        if (res.etag) setSummaryEtag(res.etag);
+        const items = res.data?.items || [];
+        const pendingIds = items.filter(i => i.status === "PENDING").map(i => i.voice_line_id);
+        if (pendingIds.length) {
+          setPending(new Set(pendingIds));
+        } else {
+          setPending(new Set());
+        }
+      } catch {
+        // ignore
+      }
+    }, 100);
+    
+    return () => { 
+      cancelled = true; 
+      clearTimeout(timer);
+    };
+  }, [scenario?.id]);
 
   return (
     <Card>

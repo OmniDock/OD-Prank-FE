@@ -38,4 +38,29 @@ export async function fetchVoices(): Promise<VoiceListResponse> {
   return res.json();
 }
 
+export interface VoiceLinesSummaryItem {
+  voice_line_id: number;
+  status: string | null;
+  signed_url?: string | null;
+  storage_path?: string | null;
+  updated_at?: string | null;
+}
+
+export interface VoiceLinesSummaryResponse {
+  items: VoiceLinesSummaryItem[];
+}
+
+export async function fetchVoiceLinesSummary(scenario_id: number, etag?: string): Promise<{ notModified: boolean; etag?: string; data?: VoiceLinesSummaryResponse }>{
+  const res = await apiFetch(`/voice-lines/summary?scenario_id=${encodeURIComponent(String(scenario_id))}`, {
+    method: "GET",
+    headers: etag ? { "If-None-Match": etag } : undefined,
+  });
+  if (res.status === 304) {
+    return { notModified: true };
+  }
+  const newEtag = res.headers.get("ETag") || undefined;
+  const data = (await res.json()) as VoiceLinesSummaryResponse;
+  return { notModified: false, etag: newEtag, data };
+}
+
 
