@@ -60,116 +60,9 @@ export function VoiceLinesTable({
 
 
 
-  // async function onCreateAudio(voiceLineId: number) {
-  //   if (!scenario || !scenario.preferred_voice_id) {
-  //     addToast({ title: "No voice selected", description: "Select a voice first to generate audio.", color: "warning", timeout: 3000 });
-  //     return;
-  //   }
-        
-  //   try {
-  //     const res = await generateSingleTTS({ 
-  //       voice_line_id: voiceLineId, 
-  //       voice_id: scenario.preferred_voice_id 
-  //     });
-            
-  //     if (res.success) {
-  //       if (res.signed_url) {
-  //         // Audio is immediately available (from cache)
-  //         await onRefetchScenario(); // Refetch to get updated audio info
-  //         addToast({ title: "Audio ready", description: "You can now play this line.", color: "success", timeout: 3000 });
-  //         // Clear generating state - we're done
-  //         setGenerating((prev) => {
-  //           const next = new Set(prev);
-  //           next.delete(voiceLineId);
-  //           return next;
-  //         });
-  //       } else {
-  //         // Audio generation started in background - move from generating to pending
-  //         setPending((prev) => new Set(prev).add(voiceLineId));
-  //         setGenerating((prev) => {
-  //           const next = new Set(prev);
-  //           next.delete(voiceLineId);
-  //           return next;
-  //         });
-  //         addToast({ 
-  //           title: "Generation started", 
-  //           description: "Audio is being generated. Refreshing when ready...", 
-  //           color: "primary", 
-  //           timeout: 4000 
-  //         });
-          
-  //         // Poll for completion and refetch scenario when ready
-  //         const pollInterval = setInterval(async () => {
-  //           try {
-  //             const r = await getAudioUrl(voiceLineId, scenario.preferred_voice_id as string);
-  //             if ((r as any)?.status === "PENDING") {
-  //               // keep waiting
-  //               return;
-  //             }
-  //             if ((r as any)?.signed_url) {
-  //               // Audio is now available - refetch scenario
-  //               await onRefetchScenario();
-  //               addToast({ title: "Audio ready", description: "Background generation completed!", color: "success", timeout: 3000 });
-  //               clearInterval(pollInterval);
-  //               setPending((prev) => {
-  //                 const next = new Set(prev);
-  //                 next.delete(voiceLineId);
-  //                 return next;
-  //               });
-  //             }
-  //           } catch {
-  //             // Still not ready or transient error, continue polling
-  //             console.debug(`Audio not yet ready for voice line ${voiceLineId}, continuing to poll...`);
-  //           }
-  //         }, 2000);
-          
-  //         // Stop polling after 60 seconds
-  //         setTimeout(() => {
-  //           clearInterval(pollInterval);
-  //           console.warn(`Stopped polling for voice line ${voiceLineId} after timeout`);
-  //           setPending((prev) => {
-  //             const next = new Set(prev);
-  //             next.delete(voiceLineId);
-  //             return next;
-  //           });
-  //         }, 60000);
-  //       }
-  //     } else {
-  //       // Generation failed - clear generating state
-  //       setGenerating((prev) => {
-  //         const next = new Set(prev);
-  //         next.delete(voiceLineId);
-  //         return next;
-  //       });
-  //       addToast({
-  //         title: "Generation failed",
-  //         description: res.error_message || "Failed to generate audio",
-  //         color: "danger",
-  //         timeout: 5000,
-  //       });
-  //     }
-  //   } catch (e) {
-  //     // Network/request error - clear generating state
-  //     setGenerating((prev) => {
-  //       const next = new Set(prev);
-  //       next.delete(voiceLineId);
-  //       return next;
-  //     });
-  //     addToast({
-  //       title: "Request failed",
-  //       description: "Failed to generate audio",
-  //       color: "danger",
-  //       timeout: 5000,
-  //     });
-  //   }
-  // }
-
-
-
-
   async function onCreateAudio(voiceLineId: number) {
     if (!scenario || !scenario.preferred_voice_id) {
-      addToast({ title: "No voice selected", description: "Select a voice first to generate audio.", color: "warning", timeout: 3000 });
+      addToast({ title: "No voice selected", description: "Select a voice first to generate audio.", color: "warning", timeout: 1000 });
       return;
     }
         
@@ -188,7 +81,7 @@ export function VoiceLinesTable({
               title: "Audio ready", 
               description: "Audio file already exists.", 
               color: "success", 
-              timeout: 3000 
+              timeout: 1000 
             });
             return; // Don't start polling
           }
@@ -200,7 +93,7 @@ export function VoiceLinesTable({
             title: "Generation started", 
             description: "Audio is being generated.", 
             color: "primary", 
-            timeout: 2000 
+            timeout: 1000 
           });
           
           // Poll for completion and refetch scenario when ready
@@ -224,7 +117,7 @@ export function VoiceLinesTable({
                 
                 // Then update UI
                 await onRefetchScenario();
-                addToast({ title: "Audio ready", description: "Background generation completed!", color: "success", timeout: 3000 });
+                addToast({ title: "Audio ready", description: "Background generation completed!", color: "success", timeout: 1000 });
                 setPending((prev) => {
                   const next = new Set(prev);
                   next.delete(voiceLineId);
@@ -256,7 +149,7 @@ export function VoiceLinesTable({
           title: "Generation failed",
           description: res.error_message || "Failed to generate audio",
           color: "danger",
-          timeout: 5000,
+          timeout: 3000,
         });
       }
     } catch (e) {
@@ -266,7 +159,7 @@ export function VoiceLinesTable({
         title: "Request failed",
         description: "Failed to generate audio",
         color: "danger",
-        timeout: 5000,
+        timeout: 3000,
       });
     }
   }
