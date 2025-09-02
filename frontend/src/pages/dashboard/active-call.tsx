@@ -350,7 +350,6 @@ function ActiveCallContent() {
                       {items.map((vl) => (
                         <Button
                           key={vl.id}
-                          size="lg"
                           variant={playingLineId === vl.id ? "solid" : "flat"}
                           color={playingLineId === vl.id ? "primary" : "default"}
                           className={`

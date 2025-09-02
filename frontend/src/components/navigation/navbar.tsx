@@ -105,7 +105,6 @@ export const Navbar = () => {
                       : "foreground"
                 }
                 href="#"
-                size="lg"
               >
                 {item.label}
               </Link>

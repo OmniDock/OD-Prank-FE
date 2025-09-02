@@ -93,9 +93,19 @@ export default function PhoneCallPage() {
       {currentStep === 1 && (
         <Card>
           <CardHeader className="pb-3">
-            <div className="flex flex-col">
-              <h2 className="text-lg font-semibold">Choose Your Scenario</h2>
-              <p className="text-sm text-default-500">Select a prank scenario from your collection</p>
+            <div className="flex flex-row justify-between items-center w-full">
+              <div className="flex flex-col">
+                <h2 className="text-lg font-semibold">Choose your scenario</h2>
+                <p className="text-sm text-default-500">Select a prank scenario from your collection</p>
+              </div>
+              <Button
+                color="primary"
+                isDisabled={!selectedScenarioId}
+                onPress={() => setCurrentStep(2)}
+                endContent={<span>→</span>}
+              >
+                Continue
+              </Button>
             </div>
           </CardHeader>
           <CardBody className="space-y-4">
@@ -107,21 +117,6 @@ export default function PhoneCallPage() {
                 setSelectedScenario(s);
               }}
             />
-            <div className="flex justify-between items-center pt-4">
-              <div className="text-sm text-default-500">
-                {selectedScenario && (
-                  <span>Selected: <strong>{selectedScenario.title}</strong></span>
-                )}
-              </div>
-              <Button
-                color="primary"
-                isDisabled={!selectedScenarioId}
-                onPress={() => setCurrentStep(2)}
-                endContent={<span>→</span>}
-              >
-                Continue
-              </Button>
-            </div>
           </CardBody>
         </Card>
       )}
@@ -229,9 +224,8 @@ export default function PhoneCallPage() {
                   onPress={startCall}
                   isDisabled={!canAct}
                   isLoading={loading === "dialing"}
-                  size="lg"
                   className="font-semibold"
-                  startContent={loading !== "dialing" && <span>📞</span>}
+                  startContent={loading !== "dialing" && <span></span>}
                 >
                 {loading === "dialing" ? "Dialing..." : "Start Call"}
                 </Button>

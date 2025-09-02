@@ -66,7 +66,7 @@ export default function ScenarioGridSelect({ selectedId, onSelect, disabled }: S
             className={[
               "text-left",
               "rounded-xl",
-              "border",
+              "border-2",
               isSelected ? "border-primary" : "border-default-200",
               "bg-content1",
               "transition",
@@ -75,7 +75,7 @@ export default function ScenarioGridSelect({ selectedId, onSelect, disabled }: S
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             ].join(" ")}
           >
-            <Card shadow="none" className="bg-transparent">
+            <Card shadow="none" className="bg-transparent shadow-lg">
               <CardBody className="p-4 gap-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -83,8 +83,8 @@ export default function ScenarioGridSelect({ selectedId, onSelect, disabled }: S
                     <div className="text-base font-semibold text-foreground line-clamp-2">{s.title}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Chip size="sm" variant="flat" color={s.is_safe ? "success" : "danger"}>
-                      {s.is_safe ? "Safe" : "Unsafe"}
+                    <Chip size="sm" variant="flat" color="default">
+                      {s.target_name}
                     </Chip>
                     {isSelected && (
                       <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white">
