@@ -2,15 +2,18 @@ import { useState } from "react";
 import { Card, CardBody, addToast, Button } from "@heroui/react";
 import type { Scenario } from "@/types/scenario";
 import DeleteConfirmationModal from "@/components/delete-confirmation-modal";
+import SetActiveModal from "@/components/set-active-modal";
 import { deleteScenario } from "@/lib/api.scenarios";
-import { TrashIcon } from "@heroicons/react/24/outline";
+import { TrashIcon, PowerIcon } from "@heroicons/react/24/outline";
 
 interface ScenarioInfoProps {
   scenario: Scenario;
+  onRefresh?: () => Promise<void>;
 }
 
-export function ScenarioInfo({ scenario }: ScenarioInfoProps) {
+export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isActiveModalOpen, setIsActiveModalOpen] = useState(false);
 
 
   async function handleDeleteConfirm() {
@@ -41,6 +44,15 @@ export function ScenarioInfo({ scenario }: ScenarioInfoProps) {
             </div>
           </div>
           <div className="flex flex-row gap-2">
+            <Button 
+              color={scenario.is_active ? "warning" : "success"} 
+              variant="flat"
+              size="sm"
+              startContent={<PowerIcon className="w-4 h-4" />}
+              onPress={() => setIsActiveModalOpen(true)}
+            >
+              {scenario.is_active ? "Deactivate" : "Set Active"}
+            </Button>
             <Button 
               color="danger" 
               variant="flat"
@@ -145,6 +157,19 @@ export function ScenarioInfo({ scenario }: ScenarioInfoProps) {
           itemName={scenario.title}
           description={`You are about to permanently delete the scenario "${scenario.title}" and all its associated data including voice lines and audio files.`}
           onConfirm={handleDeleteConfirm}
+        />
+
+        <SetActiveModal
+          isOpen={isActiveModalOpen}
+          onOpenChange={setIsActiveModalOpen}
+          scenario={scenario}
+          onScenarioUpdate={async () => {
+            if (onRefresh) {
+              await onRefresh();
+            } else {
+              window.location.reload();
+            }
+          }}
         />
 
       </CardBody>

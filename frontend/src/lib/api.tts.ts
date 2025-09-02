@@ -63,4 +63,25 @@ export async function fetchVoiceLinesSummary(scenario_id: number, etag?: string)
   return { notModified: false, etag: newEtag, data };
 }
 
+export interface ScenarioTTSRequest {
+  scenario_id: number;
+  voice_id?: string;
+}
+
+export interface TTSResponse {
+  success: boolean;
+  total_processed: number;
+  successful_count: number;
+  failed_count: number;
+  results: TTSResult[];
+}
+
+export async function generateScenarioTTS(payload: ScenarioTTSRequest): Promise<TTSResponse> {
+  const res = await apiFetch(`/tts/generate/scenario`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
 

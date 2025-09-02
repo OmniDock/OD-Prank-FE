@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   Button,
   Card,
@@ -14,7 +14,7 @@ import {
   Textarea,
   addToast,
 } from "@heroui/react";
-import { enhanceVoiceLines, fetchScenario, updateScenarioPreferredVoice, deleteScenario } from "@/lib/api.scenarios";
+import { enhanceVoiceLines, fetchScenario, updateScenarioPreferredVoice } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
 import { fetchVoices } from "@/lib/api.tts";
 import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
@@ -23,12 +23,11 @@ import { ScenarioInfo } from "@/components/ui/scenario-info";
 import { VoiceSettings } from "@/components/ui/voice-settings";
 import { VoiceLinesTable } from "@/components/ui/voice-lines-table";
 import type { VoiceItem } from "@/types/tts";
-import { ExclamationTriangleIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 
 export default function ScenarioDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -193,7 +192,7 @@ export default function ScenarioDetailPage() {
           </Chip>
       </div>
 
-      <ScenarioInfo scenario={scenario} />
+      <ScenarioInfo scenario={scenario} onRefresh={refetchScenario} />
 
       <VoiceSettings 
         scenario={scenario}

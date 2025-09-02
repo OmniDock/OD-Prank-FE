@@ -3,7 +3,6 @@ import {
   Button,
   Card,
   CardBody,
-  Chip,
   Table,
   TableBody,
   TableCell,
@@ -13,10 +12,11 @@ import {
   addToast,
   Tabs,
   Tab,
+  Chip,
   Spinner,
 } from "@heroui/react";
 import { generateSingleTTS, fetchVoiceLinesSummary } from "@/lib/api.tts";
-import { PlayIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { PlayIcon, PlusIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import type { Scenario } from "@/types/scenario";
 
 interface VoiceLinesTableProps {
@@ -41,7 +41,7 @@ export function VoiceLinesTable({
   const [activeTab, setActiveTab] = useState<"ALL" | "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING" | "FILLER">("ALL");
   const [summaryEtag, setSummaryEtag] = useState<string | undefined>(undefined);
   const [pollInterval, setPollInterval] = useState(2000);
-  const [consecutiveNoChanges, setConsecutiveNoChanges] = useState(0);
+  const [, setConsecutiveNoChanges] = useState(0);
 
   // Helper function to check if audio is available for a voice line
   const isAudioAvailable = (voiceLineId: number): boolean => {
@@ -60,6 +60,110 @@ export function VoiceLinesTable({
     const sorted = filtered.slice().sort((a, b) => a.order_index - b.order_index);
     return sorted;
   }, [scenario?.voice_lines, activeTab]);
+
+  async function onGenerateSelectedAudio() {
+    if (!scenario || !scenario.preferred_voice_id) {
+      addToast({ 
+        title: "No voice selected", 
+        description: "Please select a preferred voice first.", 
+        color: "warning", 
+        timeout: 2000 
+      });
+      return;
+    }
+
+    if (selected.size === 0) {
+      addToast({ 
+        title: "No selection", 
+        description: "Select voice lines to generate audio for.", 
+        color: "warning", 
+        timeout: 2000 
+      });
+      return;
+    }
+
+    const selectedIds = Array.from(selected);
+    let successCount = 0;
+    let failCount = 0;
+    let alreadyGeneratedCount = 0;
+
+    // Filter out voice lines that already have audio
+    const toGenerate = selectedIds.filter(id => !isAudioAvailable(id));
+    alreadyGeneratedCount = selectedIds.length - toGenerate.length;
+
+    if (toGenerate.length === 0) {
+      addToast({ 
+        title: "Audio already generated", 
+        description: "All selected voice lines already have audio.", 
+        color: "default", 
+        timeout: 2000 
+      });
+      return;
+    }
+
+    // Add to generating set
+    setGenerating(new Set([...generating, ...toGenerate]));
+
+    for (const voiceLineId of toGenerate) {
+      try {
+        const res = await generateSingleTTS({ 
+          voice_line_id: voiceLineId, 
+          voice_id: scenario.preferred_voice_id 
+        });
+        
+        if (res.success) {
+          successCount++;
+          if (!res.signed_url) {
+            // Mark as pending if generation started in background
+            setPending((prev) => new Set(prev).add(voiceLineId));
+          }
+        } else {
+          failCount++;
+        }
+      } catch (e) {
+        failCount++;
+      } finally {
+        // Remove from generating set
+        setGenerating((prev) => {
+          const next = new Set(prev);
+          next.delete(voiceLineId);
+          return next;
+        });
+      }
+    }
+
+    if (successCount > 0) {
+      addToast({ 
+        title: "Generation started", 
+        description: `Started generating ${successCount} audio files`, 
+        color: "primary", 
+        timeout: 2000 
+      });
+      // Refresh scenario after a delay to update audio status
+      setTimeout(onRefetchScenario, 2000);
+    }
+
+    if (failCount > 0) {
+      addToast({ 
+        title: "Some generations failed", 
+        description: `Failed to generate ${failCount} audio files`, 
+        color: "warning", 
+        timeout: 3000 
+      });
+    }
+
+    if (alreadyGeneratedCount > 0) {
+      addToast({ 
+        title: "Some already have audio", 
+        description: `${alreadyGeneratedCount} voice lines already have audio`, 
+        color: "info", 
+        timeout: 2000 
+      });
+    }
+
+    // Clear selection after generation
+    onSelectionChange(new Set());
+  }
 
   async function onCreateAudio(voiceLineId: number) {
     if (!scenario || !scenario.preferred_voice_id) {
@@ -216,14 +320,27 @@ export function VoiceLinesTable({
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-medium">Voice Lines</h2>
           <div className="flex items-center gap-2">
-            <Button
-              color="primary"
-              isDisabled={selected.size === 0}
-              onPress={onEnhanceSelected}
-              size="sm"
-            >
-              Enhance Selected ({selected.size})
-            </Button>
+            {selected.size > 0 && (
+              <>
+                <Button
+                  color="secondary"
+                  variant="flat"
+                  isDisabled={!scenario.preferred_voice_id}
+                  onPress={onGenerateSelectedAudio}
+                  size="sm"
+                  startContent={<SparklesIcon className="w-4 h-4" />}
+                >
+                  Generate Audio ({selected.size})
+                </Button>
+                <Button
+                  color="primary"
+                  onPress={onEnhanceSelected}
+                  size="sm"
+                >
+                  Enhance Selected ({selected.size})
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
