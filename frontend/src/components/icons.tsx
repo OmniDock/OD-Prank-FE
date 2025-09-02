@@ -1,26 +1,18 @@
 import * as React from "react";
 
 import { IconSvgProps } from "@/types";
+import { PhoneIcon } from "@heroicons/react/24/outline";
 
-export const Logo: React.FC<IconSvgProps> = ({
-  size = 36,
-  height,
-  ...props
-}) => (
-  <svg
-    fill="none"
-    height={size || height}
-    viewBox="0 0 32 32"
-    width={size || height}
-    {...props}
+export const Logo: React.FC<{ size?: number; className?: string }> = ({ size = 36, className }) => (
+  <span
+    className={[
+      "inline-flex items-center justify-center rounded-full bg-gradient-primary",
+      className || "",
+    ].join(" ")}
+    style={{ width: size, height: size }}
   >
-    <path
-      clipRule="evenodd"
-      d="M17.6482 10.1305L15.8785 7.02583L7.02979 22.5499H10.5278L17.6482 10.1305ZM19.8798 14.0457L18.11 17.1983L19.394 19.4511H16.8453L15.1056 22.5499H24.7272L19.8798 14.0457Z"
-      fill="currentColor"
-      fillRule="evenodd"
-    />
-  </svg>
+    <PhoneIcon className="h-[60%] w-[60%] text-white" />
+  </span>
 );
 
 export const DiscordIcon: React.FC<IconSvgProps> = ({

@@ -1,3 +1,21 @@
 @import "tailwindcss";
 
-@config "../../tailwind.config.js"
+@config "../../tailwind.config.js";
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 via-purple-500 to-fuchsia-500;
+  }
+
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-primary-600 to-fuchsia-600;
+  }
+
+  .bg-gradient-surface {
+    @apply bg-gradient-to-r from-white/70 to-white/40 dark:from-neutral-900/60 dark:to-neutral-900/40;
+  }
+
+  .glass-card {
+    @apply backdrop-blur border border-white/20 dark:border-white/10 shadow-lg;
+  }
+}
