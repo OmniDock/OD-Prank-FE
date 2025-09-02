@@ -41,8 +41,8 @@ export default function ScenariosPage() {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Scenarios</h1>
+      <div className="flex items-center justify-end">
+
         <Button color="primary" onPress={() => setIsCreateOpen(true)}>
           New Scenario
         </Button>

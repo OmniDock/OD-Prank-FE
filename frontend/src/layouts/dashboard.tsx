@@ -4,8 +4,9 @@ import Sidebar from "@/components/navigation/sidebar";
 import { Button } from "@heroui/react";
 import { ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/context/AuthProvider";
-
+import { useLocation } from "react-router-dom";
 export default function DashboardLayout() {
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const { signOut } = useAuth();
   const navigate = useNavigate();
@@ -23,6 +24,12 @@ export default function DashboardLayout() {
     });
   }
 
+  const url_title_mapping = {
+    "/dashboard": "Dashboard",
+    "/dashboard/scenarios": "Scenarios",
+    "/dashboard/phone-call": "Phone Call",
+  } as Record<string, string>;
+
   return (
     <div className={`h-screen w-screen grid grid-rows-[auto_1fr] grid-cols-1 lg:grid-rows-1 ${collapsed ? "lg:grid-cols-[4rem_1fr]" : "lg:grid-cols-[10rem_1fr]"}`}>
       {/* Sidebar */}
@@ -32,7 +39,7 @@ export default function DashboardLayout() {
       <div className="flex flex-col min-h-0">
         {/* Topbar */}
         <header className="h-16 border-b border-default-200 bg-content1 flex items-center justify-between px-4">
-          <div className="text-sm text-default-500" />
+          <div className="font-semibold text-xl">{url_title_mapping[location.pathname]}</div>
           <div className="flex items-center gap-2">
             <Button
               size="sm"

@@ -72,10 +72,6 @@ export default function PhoneCallPage() {
 
   return (
     <section className="space-y-6">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-semibold">Start a Prank Call</h1>
-      </div>
-
       {/* Step Indicator */}
       <div className='flex flex-row w-full justify-center'>
           <HorizontalSteps
