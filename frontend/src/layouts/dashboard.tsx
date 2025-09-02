@@ -26,7 +26,7 @@ export default function DashboardLayout() {
   return (
     <div className={`h-screen w-screen grid grid-rows-[auto_1fr] grid-cols-1 lg:grid-rows-1 ${collapsed ? "lg:grid-cols-[4rem_1fr]" : "lg:grid-cols-[10rem_1fr]"}`}>
       {/* Sidebar */}
-      <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
+      <Sidebar collapsed={true} onToggle={toggleSidebar} />
 
       {/* Main */}
       <div className="flex flex-col min-h-0">

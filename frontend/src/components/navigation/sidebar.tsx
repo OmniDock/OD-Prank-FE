@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
-import { HomeIcon, QueueListIcon, PhoneIcon, ChevronLeftIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, PhoneIcon, VideoCameraIcon } from "@heroicons/react/24/outline";
+import { Tooltip } from "@heroui/react";
 import clsx from "clsx";
 
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
@@ -14,7 +15,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         <NavItem to="/dashboard" icon={<HomeIcon className="h-5 w-5" />} collapsed={collapsed} end>
           Dashboard
         </NavItem>
-        <NavItem to="/dashboard/scenarios" icon={<QueueListIcon className="h-5 w-5" />} collapsed={collapsed}>
+        <NavItem to="/dashboard/scenarios" icon={<VideoCameraIcon className="h-5 w-5" />} collapsed={collapsed}>
           Scenarios
         </NavItem>
         <NavItem to="/dashboard/phone-call" icon={<PhoneIcon className="h-5 w-5" />} collapsed={collapsed}>
@@ -22,26 +23,13 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         </NavItem>
       </nav>
 
-      <div className={clsx("border-t border-default-200", collapsed ? "px-1 py-2" : "px-2.5 py-2")}> 
-        <button
-          type="button"
-          onClick={onToggle}
-          className={clsx(
-            "w-full flex items-center justify-center gap-2 rounded-medium px-2 py-2 text-sm",
-            "hover:bg-default-100 text-default-700"
-          )}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <ChevronLeftIcon className={clsx("h-5 w-5 transition-transform", collapsed && "rotate-180")} />
-          {!collapsed && <span>Collapse</span>}
-        </button>
-      </div>
+
     </aside>
   );
 }
 
 function NavItem({ to, icon, children, collapsed, end }: { to: string; icon: React.ReactNode; children: React.ReactNode; collapsed: boolean; end?: boolean }) {
-  return (
+  const content = (
     <NavLink
       to={to}
       className={({ isActive }) =>
@@ -59,6 +47,17 @@ function NavItem({ to, icon, children, collapsed, end }: { to: string; icon: Rea
       {!collapsed && <span className="truncate">{children}</span>}
     </NavLink>
   );
+
+  // Only show tooltip when sidebar is collapsed
+  if (collapsed) {
+    return (
+      <Tooltip content={children} placement="right">
+        {content}
+      </Tooltip>
+    );
+  }
+
+  return content;
 }
 
 export default Sidebar;
