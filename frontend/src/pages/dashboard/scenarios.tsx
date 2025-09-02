@@ -32,7 +32,7 @@ export default function ScenariosPage() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await fetchScenarios();
+        const data = await fetchScenarios(50, 0, false);
         setScenarios(data);
       } finally {
         setLoading(false);

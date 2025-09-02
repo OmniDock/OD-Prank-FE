@@ -1,23 +1,55 @@
-import { Card, CardBody, Chip } from "@heroui/react";
+import { useState } from "react";
+import { Card, CardBody, addToast, Button } from "@heroui/react";
 import type { Scenario } from "@/types/scenario";
+import DeleteConfirmationModal from "@/components/delete-confirmation-modal";
+import { deleteScenario } from "@/lib/api.scenarios";
+import { TrashIcon } from "@heroicons/react/24/outline";
 
 interface ScenarioInfoProps {
   scenario: Scenario;
 }
 
 export function ScenarioInfo({ scenario }: ScenarioInfoProps) {
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+
+  async function handleDeleteConfirm() {
+    if (!scenario) return;
+    
+    await deleteScenario(scenario.id);
+    addToast({
+      title: "Scenario deleted",
+      description: `Successfully deleted "${scenario.title}"`,
+      color: "success",
+      timeout: 3000,
+    });
+  }
+
   return (
     <Card className="ring-1 ring-default-200">
       <CardBody className="gap-6">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+        <div className="flex flex-row justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-foreground">Scenario Details</h2>
+              <p className="text-sm text-default-500">Overview and configuration</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">Scenario Details</h2>
-            <p className="text-sm text-default-500">Overview and configuration</p>
+          <div className="flex flex-row gap-2">
+            <Button 
+              color="danger" 
+              variant="flat"
+              size="sm"
+              startContent={<TrashIcon className="w-4 h-4" />}
+              onPress={() => setIsDeleteOpen(true)}
+            >
+              Delete
+            </Button>
           </div>
         </div>
 
@@ -64,7 +96,7 @@ export function ScenarioInfo({ scenario }: ScenarioInfoProps) {
                 { type: 'OPENING', label: 'Openers' },
                 { type: 'QUESTION', label: 'Questions' },
                 { type: 'RESPONSE', label: 'Responses' },
-                { type: 'CLOSING', label: 'Closers' }
+                { type: 'CLOSING', label: 'Closers' },
               ].map(({ type, label }) => {
                 const count = scenario.voice_lines.filter(vl => vl.type === type).length;
                 return (
@@ -105,6 +137,16 @@ export function ScenarioInfo({ scenario }: ScenarioInfoProps) {
             </div>
           </div>
         </div>
+
+        <DeleteConfirmationModal
+          isOpen={isDeleteOpen}
+          onOpenChange={setIsDeleteOpen}
+          title="Delete Scenario"
+          itemName={scenario.title}
+          description={`You are about to permanently delete the scenario "${scenario.title}" and all its associated data including voice lines and audio files.`}
+          onConfirm={handleDeleteConfirm}
+        />
+
       </CardBody>
     </Card>
   );

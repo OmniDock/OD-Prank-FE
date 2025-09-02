@@ -9,8 +9,8 @@ import type {
   VoiceLineEnhancementResponse,
 } from "@/types/scenario";
 
-export async function fetchScenarios(limit = 50, offset = 0): Promise<Scenario[]> {
-  const res = await apiFetch(`/scenario?limit=${limit}&offset=${offset}`);
+export async function fetchScenarios(limit = 50, offset = 0, only_active = true): Promise<Scenario[]> {
+  const res = await apiFetch(`/scenario?limit=${limit}&offset=${offset}&only_active=${only_active}`);
   return res.json();
 }
 

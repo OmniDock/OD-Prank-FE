@@ -20,7 +20,7 @@ export default function ScenarioGridSelect({ selectedId, onSelect, disabled }: S
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchScenarios(100, 0);
+        const data = await fetchScenarios(100, 0, true);
         setScenarios(data);
       } catch (e: any) {
         setError(e?.message || "Failed to load scenarios");

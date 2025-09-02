@@ -216,9 +216,6 @@ export function VoiceLinesTable({
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-medium">Voice Lines</h2>
           <div className="flex items-center gap-2">
-            {!scenario.preferred_voice_id && (
-              <Chip size="sm" variant="flat" color="warning">Select a voice to enable generation</Chip>
-            )}
             <Button
               color="primary"
               isDisabled={selected.size === 0}

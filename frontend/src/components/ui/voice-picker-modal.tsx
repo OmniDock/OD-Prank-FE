@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Button, Input, Chip } from "@heroui/react";
-import { PlayIcon, PauseIcon, StopIcon, SpeakerWaveIcon, SpeakerXMarkIcon, UserIcon, LanguageIcon } from "@heroicons/react/24/outline";
+import { PlayIcon, PauseIcon, StopIcon, SpeakerWaveIcon, SpeakerXMarkIcon } from "@heroicons/react/24/outline";
 import type { VoiceItem } from "@/types/tts";
 import { CircularTapeVisualizer } from "@/components/ui/circular-tape-visualizer";
 

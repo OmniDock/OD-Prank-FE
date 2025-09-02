@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  Breadcrumbs,
-  BreadcrumbItem,
   Button,
   Card,
   CardBody,
@@ -24,7 +22,6 @@ import { VoicePickerModal } from "@/components/ui/voice-picker-modal";
 import { ScenarioInfo } from "@/components/ui/scenario-info";
 import { VoiceSettings } from "@/components/ui/voice-settings";
 import { VoiceLinesTable } from "@/components/ui/voice-lines-table";
-import DeleteConfirmationModal from "@/components/delete-confirmation-modal";
 import type { VoiceItem } from "@/types/tts";
 import { ExclamationTriangleIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
@@ -42,7 +39,6 @@ export default function ScenarioDetailPage() {
   const [playerCurrentIndex, setPlayerCurrentIndex] = useState(0);
   const [voices, setVoices] = useState<VoiceItem[]>([]);
   const [isVoicePickerOpen, setIsVoicePickerOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
 
   const refetchScenario = async () => {
@@ -171,18 +167,7 @@ export default function ScenarioDetailPage() {
     }
   }
 
-  async function handleDeleteConfirm() {
-    if (!scenario) return;
-    
-    await deleteScenario(scenario.id);
-    addToast({
-      title: "Scenario deleted",
-      description: `Successfully deleted "${scenario.title}"`,
-      color: "success",
-      timeout: 3000,
-    });
-    navigate("/dashboard/scenarios");
-  }
+
 
   if (loading) {
     return (
@@ -200,30 +185,12 @@ export default function ScenarioDetailPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
     >
-      <Breadcrumbs>
-        <BreadcrumbItem href="/dashboard/scenarios">Scenarios</BreadcrumbItem>
-        <BreadcrumbItem>{scenario.title}</BreadcrumbItem>
-      </Breadcrumbs>
 
       <div className="flex items-center justify-between">
-        <div className="space-y-1 flex flex-row gap-4 items-center">
           <h1 className="text-2xl font-semibold">{scenario.title}</h1>
           <Chip color={scenario.is_safe ? "success" : "danger"} variant="flat">
             {scenario.is_safe ? "Safe" : "Unsafe"}
           </Chip>
-        </div>
-        <div className="flex items-center gap-2">
-
-          <Button 
-            color="danger" 
-            variant="flat"
-            size="sm"
-            startContent={<TrashIcon className="w-4 h-4" />}
-            onPress={() => setIsDeleteOpen(true)}
-          >
-            Delete
-          </Button>
-        </div>
       </div>
 
       <ScenarioInfo scenario={scenario} />
@@ -260,7 +227,7 @@ export default function ScenarioDetailPage() {
                 <ExclamationTriangleIcon className="flex-shrink-0 w-5 h-5 text-warning-600 mt-0.5" />
                 <div className="text-sm">
                   <p className="font-medium text-warning-800 mb-1">
-                    Important: Audio Deletion Notice
+                    Important: Audio deletion notice
                   </p>
                   <p className="text-warning-700">
                     Enhancing voice lines will <strong>permanently delete all existing generated audio</strong> for the selected lines. You'll need to regenerate audio after enhancement.
@@ -309,14 +276,7 @@ export default function ScenarioDetailPage() {
         onSelect={(id) => void persistPreferredVoice(id)}
       />
 
-      <DeleteConfirmationModal
-        isOpen={isDeleteOpen}
-        onOpenChange={setIsDeleteOpen}
-        title="Delete Scenario"
-        itemName={scenario.title}
-        description={`You are about to permanently delete the scenario "${scenario.title}" and all its associated data including voice lines and audio files.`}
-        onConfirm={handleDeleteConfirm}
-      />
+
     </motion.section>
   );
 }
