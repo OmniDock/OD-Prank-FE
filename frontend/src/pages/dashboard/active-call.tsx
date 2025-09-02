@@ -392,7 +392,7 @@ function ActiveCallContent() {
             {result?.conference_name && (
               <Card>
                 <CardHeader>
-                  <h3 className="text-sm font-semibold">Call Details</h3>
+                  <h3 className="text-sm font-semibold">Call details</h3>
                 </CardHeader>
                 <CardBody className="space-y-2 text-xs">
                   <div>

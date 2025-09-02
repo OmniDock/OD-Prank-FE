@@ -133,7 +133,7 @@ export default function PhoneCallPage() {
           <Card className="max-h-[500px] overflow-y-auto">
             <CardHeader>
               <div className="flex flex-col">
-                <h3 className="text-lg font-semibold">Scenario Preview</h3>
+                <h3 className="text-lg font-semibold">Scenario preview</h3>
                 <p className="text-sm text-default-500">Voice lines that will be used</p>
               </div>
             </CardHeader>
@@ -176,7 +176,7 @@ export default function PhoneCallPage() {
             <CardHeader className="pb-3">
               <div className="flex flex-col w-full">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">Call Details</h2>
+                  <h2 className="text-lg font-semibold">Call details</h2>
 
                 </div>
                 <p className="text-sm text-default-500">Enter the phone number to call</p>
@@ -187,12 +187,12 @@ export default function PhoneCallPage() {
                 <div className="p-4 rounded-lg bg-default-50 border border-default-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-xs text-default-500 mb-1">Selected Scenario</div>
+                      <div className="text-xs text-default-500 mb-1">Selected scenario</div>
                       <div className="font-semibold">{selectedScenario.title}</div>
                       <div className="flex items-center gap-2 mt-2">
                         <Chip size="sm" variant="flat">{selectedScenario.language}</Chip>
-                        <Chip size="sm" variant="flat" color={selectedScenario.is_safe ? "success" : "danger"}>
-                          {selectedScenario.is_safe ? "Safe" : "Unsafe"}
+                        <Chip size="sm" variant="flat" color="default">
+                          {selectedScenario.target_name}
                         </Chip>
                         <span className="text-xs text-default-500">
                           {selectedScenario.voice_lines?.length ?? 0} voice lines

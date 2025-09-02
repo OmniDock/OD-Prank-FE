@@ -66,7 +66,7 @@ export default function ScenarioGridSelect({ selectedId, onSelect, disabled }: S
             className={[
               "text-left",
               "rounded-xl",
-              "border-2",
+              isSelected ? "border-2" : "border-1",
               isSelected ? "border-primary" : "border-default-200",
               "bg-content1",
               "transition",
@@ -75,7 +75,7 @@ export default function ScenarioGridSelect({ selectedId, onSelect, disabled }: S
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             ].join(" ")}
           >
-            <Card shadow="none" className="bg-transparent shadow-lg">
+            <Card shadow="none" className="bg-transparent shadow-md">
               <CardBody className="p-4 gap-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
