@@ -60,4 +60,11 @@ export async function updateScenarioPreferredVoice(
   return res.json();
 }
 
+export async function deleteScenario(id: string | number): Promise<{ success: boolean }> {
+  const res = await apiFetch(`/scenario/${id}`, {
+    method: "DELETE",
+  });
+  return res.json();
+}
+
 

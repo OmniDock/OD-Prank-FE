@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Breadcrumbs,
   BreadcrumbItem,
@@ -16,7 +16,7 @@ import {
   Textarea,
   addToast,
 } from "@heroui/react";
-import { enhanceVoiceLines, fetchScenario, updateScenarioPreferredVoice } from "@/lib/api.scenarios";
+import { enhanceVoiceLines, fetchScenario, updateScenarioPreferredVoice, deleteScenario } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
 import { fetchVoices } from "@/lib/api.tts";
 import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
@@ -24,12 +24,14 @@ import { VoicePickerModal } from "@/components/ui/voice-picker-modal";
 import { ScenarioInfo } from "@/components/ui/scenario-info";
 import { VoiceSettings } from "@/components/ui/voice-settings";
 import { VoiceLinesTable } from "@/components/ui/voice-lines-table";
+import DeleteConfirmationModal from "@/components/delete-confirmation-modal";
 import type { VoiceItem } from "@/types/tts";
-import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 
 export default function ScenarioDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -40,6 +42,7 @@ export default function ScenarioDetailPage() {
   const [playerCurrentIndex, setPlayerCurrentIndex] = useState(0);
   const [voices, setVoices] = useState<VoiceItem[]>([]);
   const [isVoicePickerOpen, setIsVoicePickerOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
 
   const refetchScenario = async () => {
@@ -168,6 +171,19 @@ export default function ScenarioDetailPage() {
     }
   }
 
+  async function handleDeleteConfirm() {
+    if (!scenario) return;
+    
+    await deleteScenario(scenario.id);
+    addToast({
+      title: "Scenario deleted",
+      description: `Successfully deleted "${scenario.title}"`,
+      color: "success",
+      timeout: 3000,
+    });
+    navigate("/dashboard/scenarios");
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center py-10">
@@ -194,9 +210,19 @@ export default function ScenarioDetailPage() {
           <h1 className="text-2xl font-semibold">{scenario.title}</h1>
 
         </div>
-        <Chip color={scenario.is_safe ? "success" : "danger"} variant="flat">
-          {scenario.is_safe ? "Safe" : "Unsafe"}
-        </Chip>
+        <div className="flex items-center gap-2">
+          <Chip color={scenario.is_safe ? "success" : "danger"} variant="flat">
+            {scenario.is_safe ? "Safe" : "Unsafe"}
+          </Chip>
+          <Button 
+            color="danger" 
+            variant="flat"
+            startContent={<TrashIcon className="w-4 h-4" />}
+            onPress={() => setIsDeleteOpen(true)}
+          >
+            Delete
+          </Button>
+        </div>
       </div>
 
       <ScenarioInfo scenario={scenario} />
@@ -280,6 +306,15 @@ export default function ScenarioDetailPage() {
         voices={voices}
         selectedVoiceId={scenario?.preferred_voice_id}
         onSelect={(id) => void persistPreferredVoice(id)}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        title="Delete Scenario"
+        itemName={scenario.title}
+        description={`You are about to permanently delete the scenario "${scenario.title}" and all its associated data including voice lines and audio files.`}
+        onConfirm={handleDeleteConfirm}
       />
     </motion.section>
   );
