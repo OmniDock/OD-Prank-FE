@@ -101,12 +101,12 @@ export default function ScenariosPage() {
                       <TableCell>{s.target_name}</TableCell>
                       <TableCell className="uppercase">{s.language}</TableCell>
                       <TableCell>
-                        <Chip color={s.is_safe ? "success" : "danger"} variant="flat">
+                        <Chip color={s.is_safe ? "success" : "danger"} size="sm" variant="flat">
                           {s.is_safe ? "Safe" : "Unsafe"}
                         </Chip>
                       </TableCell>
                       <TableCell>
-                        <Chip color={s.is_active ? "success" : "danger"} variant="flat">
+                        <Chip color={s.is_active ? "success" : "danger"} size="sm" variant="flat">
                           {s.is_active ? "Active" : "Inactive"}
                         </Chip>
                       </TableCell>
