@@ -156,7 +156,7 @@ export function VoiceLinesTable({
       addToast({ 
         title: "Some already have audio", 
         description: `${alreadyGeneratedCount} voice lines already have audio`, 
-        color: "info", 
+        color: "default", 
         timeout: 2000 
       });
     }
