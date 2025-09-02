@@ -70,6 +70,7 @@ export function VoiceSettings({ scenario, voices, onOpenVoicePicker }: VoiceSett
             </div>
           </div>
           <Button 
+            size="sm"
             color="primary" 
             variant={scenario.preferred_voice_id ? "flat" : "solid"}
             onPress={onOpenVoicePicker}

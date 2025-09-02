@@ -35,7 +35,7 @@ export default function SignUpPage() {
 					<Input type="password" label="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
 					{error ? <p className="text-danger text-sm">{error}</p> : null}
 					{message ? <p className="text-success text-sm">{message}</p> : null}
-					<Button type="submit" color="primary" isLoading={loading}>Create Account</Button>
+					<Button type="submit" size="sm" color="primary" isLoading={loading}>Create Account</Button>
 				</form>
 				<p className="mt-4 text-sm">
 					Already have an account? <Link href="/signin">Sign in</Link>

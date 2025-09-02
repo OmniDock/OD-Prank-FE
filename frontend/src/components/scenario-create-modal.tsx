@@ -275,10 +275,11 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
         <ModalFooter>
           {step === 'initial' && (
             <>
-              <Button variant="light" onPress={() => onOpenChange(false)}>
+              <Button variant="light" size="sm" onPress={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button 
+                size="sm"
                 color="primary" 
                 onPress={handleInitialSubmit} 
                 isDisabled={!canSubmitInitial} 
@@ -293,12 +294,14 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
             <>
               <Button 
                 variant="light" 
+                size="sm"
                 onPress={() => setStep('initial')}
                 isDisabled={loading}
               >
                 Back
               </Button>
               <Button 
+                size="sm"
                 color="primary" 
                 onPress={handleClarificationSubmit} 
                 isDisabled={!canSubmitClarifications} 
@@ -310,7 +313,7 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
           )}
           
           {step === 'processing' && (
-            <Button variant="light" isDisabled>
+            <Button variant="light" size="sm" isDisabled>
               Please wait...
             </Button>
           )}

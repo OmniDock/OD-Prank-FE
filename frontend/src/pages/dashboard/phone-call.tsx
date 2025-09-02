@@ -99,6 +99,7 @@ export default function PhoneCallPage() {
                 <p className="text-sm text-default-500">Select a prank scenario from your collection</p>
               </div>
               <Button
+                size="sm"
                 color="primary"
                 isDisabled={!selectedScenarioId}
                 onPress={() => setCurrentStep(2)}
@@ -126,53 +127,10 @@ export default function PhoneCallPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="grid grid-cols-1 xl:grid-cols-2 gap-6"
+          className="grid grid-cols-1 xl:grid-cols-1 gap-6"
         >
 
-
-          <Card className="max-h-[500px] overflow-y-auto">
-            <CardHeader>
-              <div className="flex flex-col">
-                <h3 className="text-lg font-semibold">Scenario preview</h3>
-                <p className="text-sm text-default-500">Voice lines that will be used</p>
-              </div>
-            </CardHeader>
-            <CardBody>
-              {selectedScenario ? (
-                <div className="space-y-3">
-                  {selectedScenario.description && (
-                    <div className="p-3 rounded-lg bg-default-50">
-                      <div className="text-xs text-default-500 mb-1">Description</div>
-                      <div className="text-sm">{selectedScenario.description}</div>
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    {["OPENING", "QUESTION", "RESPONSE", "CLOSING", "FILLER"].map((type) => {
-                      const lines = selectedScenario.voice_lines?.filter((vl) => vl.type === type) ?? [];
-                      if (lines.length === 0) return null;
-                      return (
-                        <div key={type} className="border border-default-200 rounded-lg p-3">
-                          <div className="text-xs font-medium text-default-600 mb-2">{type}</div>
-                          <div className="space-y-1">
-                            {lines.slice(0, 3).map((vl) => (
-                              <div key={vl.id} className="text-sm text-default-700">• {vl.text}</div>
-                            ))}
-                            {lines.length > 3 && (
-                              <div className="text-xs text-default-500">...and {lines.length - 3} more</div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-default-500 text-sm">No scenario selected</div>
-              )}
-            </CardBody>
-          </Card>
-
-          <Card className="max-h-[500px] overflow-y-auto">
+          <Card className="overflow-y-auto">
             <CardHeader className="pb-3">
               <div className="flex flex-col w-full">
                 <div className="flex items-center justify-between">
@@ -220,6 +178,7 @@ export default function PhoneCallPage() {
 
               <div className="flex gap-2 pt-4 justify-end h-full items-end">
                 <Button
+                  size="sm"
                   color="primary"
                   onPress={startCall}
                   isDisabled={!canAct}
@@ -235,6 +194,48 @@ export default function PhoneCallPage() {
                 <div className="p-3 rounded-lg bg-danger-50 border border-danger-200">
                   <div className="text-danger text-sm">{error}</div>
                 </div>
+              )}
+            </CardBody>
+          </Card>
+
+          <Card className="">
+            <CardHeader>
+              <div className="flex flex-col">
+                <h3 className="text-lg font-semibold">Scenario preview</h3>
+                <p className="text-sm text-default-500">Voice lines that will be used</p>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {selectedScenario ? (
+                <div className="space-y-3">
+                  {selectedScenario.description && (
+                    <div className="p-3 rounded-lg bg-default-50">
+                      <div className="text-xs text-default-500 mb-1">Description</div>
+                      <div className="text-sm">{selectedScenario.description}</div>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    {["OPENING", "QUESTION", "RESPONSE", "CLOSING", "FILLER"].map((type) => {
+                      const lines = selectedScenario.voice_lines?.filter((vl) => vl.type === type) ?? [];
+                      if (lines.length === 0) return null;
+                      return (
+                        <div key={type} className="border border-default-200 rounded-lg p-3">
+                          <div className="text-xs font-medium text-default-600 mb-2">{type}</div>
+                          <div className="space-y-1">
+                            {lines.map((vl) => (
+                              <div key={vl.id} className="text-sm text-default-700">• {vl.text}</div>
+                            ))}
+                            {/* {lines.length > 3 && (
+                              <div className="text-xs text-default-500">...and {lines.length - 3} more</div>
+                            )} */}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-default-500 text-sm">No scenario selected</div>
               )}
             </CardBody>
           </Card>

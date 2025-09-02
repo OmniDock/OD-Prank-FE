@@ -223,6 +223,7 @@ export function VoiceLinesTable({
               color="primary"
               isDisabled={selected.size === 0}
               onPress={onEnhanceSelected}
+              size="sm"
             >
               Enhance Selected ({selected.size})
             </Button>

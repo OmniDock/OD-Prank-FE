@@ -72,6 +72,7 @@ export const Navbar = () => {
         </NavbarItem>
         <NavbarItem className="hidden md:flex">
           <Button
+            size="sm"
             isExternal
             as={Link}
             className="text-sm font-normal text-default-600 bg-default-100"

@@ -36,7 +36,7 @@ export default function SignInPage() {
 					<Input type="email" label="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
 					<Input type="password" label="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
 					{error ? <p className="text-danger text-sm">{error}</p> : null}
-					<Button type="submit" color="primary" isLoading={loading}>Sign In</Button>
+					<Button type="submit" color="primary" size="sm" isLoading={loading}>Sign In</Button>
 				</form>
 				<p className="mt-4 text-sm">
 					Don&apos;t have an account? <Link href="/signup">Sign up</Link>

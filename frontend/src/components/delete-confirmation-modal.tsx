@@ -107,7 +107,7 @@ export default function DeleteConfirmationModal({
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={handleClose} isDisabled={isDeleting}>
+          <Button variant="light" size="sm" onPress={handleClose} isDisabled={isDeleting}>
             Cancel
           </Button>
           <Button

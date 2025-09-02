@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Button, Input, Chip } from "@heroui/react";
-import { PlayIcon, PauseIcon, StopIcon, SpeakerWaveIcon, SpeakerXMarkIcon } from "@heroicons/react/24/outline";
+import { PlayIcon, PauseIcon, StopIcon, SpeakerWaveIcon, SpeakerXMarkIcon, UserIcon, LanguageIcon } from "@heroicons/react/24/outline";
 import type { VoiceItem } from "@/types/tts";
 import { CircularTapeVisualizer } from "@/components/ui/circular-tape-visualizer";
 
@@ -123,7 +123,7 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="5xl" scrollBehavior="inside" hideCloseButton={true}>
       <ModalContent>
         <ModalHeader className="flex items-center justify-between">
-          <div className="text-lg font-semibold">Choose a Voice</div>
+          <div className="text-lg font-semibold">Choose a voice</div>
         </ModalHeader>
         <ModalBody>
           <audio ref={audioRef} crossOrigin="anonymous" />
@@ -142,25 +142,25 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
               </div>
               
               {/* Filters below search */}
-              <div className="flex items-center gap-4 flex-wrap mb-2">
-                <div className="flex items-center gap-1">
-                  <Button size="sm" variant={genderFilter === "MALE" ? "solid" : "flat"} onPress={() => setGenderFilter(genderFilter === "MALE" ? "ALL" : "MALE")}>Male</Button>
-                  <Button size="sm" variant={genderFilter === "FEMALE" ? "solid" : "flat"} onPress={() => setGenderFilter(genderFilter === "FEMALE" ? "ALL" : "FEMALE")}>Female</Button>
+              <div className="flex items-center justify-center gap-12 flex-wrap mb-2">
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant={genderFilter === "MALE" ? "solid" : "flat"} color={genderFilter === "MALE" ? "primary" : "default"} onPress={() => setGenderFilter(genderFilter === "MALE" ? "ALL" : "MALE")}>Male</Button>
+                  <Button size="sm" variant={genderFilter === "FEMALE" ? "solid" : "flat"} color={genderFilter === "FEMALE" ? "primary" : "default"} onPress={() => setGenderFilter(genderFilter === "FEMALE" ? "ALL" : "FEMALE")}>Female</Button>
                 </div>
-                <div className="flex items-center gap-1 flex-wrap">
-                  <Button size="sm" variant={languageFilter === "GERMAN" ? "solid" : "flat"} onPress={() => setLanguageFilter(languageFilter === "GERMAN" ? "ALL" : "GERMAN")}>German</Button>
-                  <Button size="sm" variant={languageFilter === "ENGLISH" ? "solid" : "flat"} onPress={() => setLanguageFilter(languageFilter === "ENGLISH" ? "ALL" : "ENGLISH")}>English</Button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button size="sm" variant={languageFilter === "GERMAN" ? "solid" : "flat"} color={languageFilter === "GERMAN" ? "primary" : "default"}  onPress={() => setLanguageFilter(languageFilter === "GERMAN" ? "ALL" : "GERMAN")}>German</Button>
+                  <Button size="sm" variant={languageFilter === "ENGLISH" ? "solid" : "flat"} color={languageFilter === "ENGLISH" ? "primary" : "default"}  onPress={() => setLanguageFilter(languageFilter === "ENGLISH" ? "ALL" : "ENGLISH")}>English</Button>
                 </div>
               </div>
               
-              <hr className="border-default-200 mt-2"/>
+              <hr className="border-default-200"/>
               
               {/* Voice actors list */}
               <div className="flex flex-col  gap-3 overflow-y-auto max-h-[400px]">
                 {filtered.map((v) => (
                   <div 
                     key={v.id} 
-                    className={`py-3 px-2 flex items-center justify-between hover:bg-content2/20 cursor-pointer shadow-md m-1 rounded-md ${selectedVoiceId === v.id ? "bg-content2/30 rounded-md" : ""} ${previewingId === v.id ? "ring-1 ring-warning ring-inset rounded-md" : ""}`}
+                    className={`py-3 px-2 flex items-center justify-between hover:bg-content2/20 cursor-pointer shadow-md m-1 rounded-md ${selectedVoiceId === v.id ? "bg-content2/30 rounded-md" : ""} ${previewingId === v.id ? "ring-2 ring-primary ring-inset rounded-md" : ""}`}
                     onClick={() => {
                       // Stop audio if we're switching to a different voice
                       if (previewingId && previewingId !== v.id && isPlaying) {
@@ -265,7 +265,7 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
                 </div>
                 {/* Single select button for the previewed voice */}
                 <Button 
-                  size="md" 
+                  size="sm" 
                   color="warning"
                   className="w-full mt-1"
                   variant={selectedVoiceId === previewingId ? "flat" : "solid"}
@@ -284,7 +284,9 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={() => onOpenChange(false)}>Close</Button>
+          <div className="flex flex-start w-full flex-row justify-start">
+            <Button variant="light" size="sm" onPress={() => onOpenChange(false)}>Close</Button>
+          </div>
         </ModalFooter>
       </ModalContent>
     </Modal>

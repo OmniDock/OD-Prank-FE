@@ -388,15 +388,6 @@ export function AudioPlayerModal({
           {resolvedSrc && <audio ref={audioRef} src={resolvedSrc} crossOrigin="anonymous" />}
           {error && <div className="text-xs text-danger mb-4">{error}</div>}
           
-          {/* Debug info - remove in production */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-default-400 mb-2">
-              Debug: Voice Line ID {currentVoiceLine?.id}, 
-              Preferred Voice: {preferredVoiceId || 'None'}, 
-              Resolved src: {resolvedSrc ? 'Yes' : 'No'}
-            </div>
-          )}
-          
           {/* Two-column layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left column: Text content */}
@@ -427,6 +418,7 @@ export function AudioPlayerModal({
                   isLoading={generating}
                   startContent={<GenerateIcon className="h-4 w-4" />}
                   className="w-full"
+                  size="sm"
                 >
                   Generate Audio
                 </Button>
@@ -508,25 +500,7 @@ export function AudioPlayerModal({
         </ModalBody>
         
         <ModalFooter className="justify-between">
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="flat" 
-              size="sm"
-              onPress={goToPrevious}
-              isDisabled={currentIndex === 0}
-            >
-              ← Previous
-            </Button>
-            <Button 
-              variant="flat" 
-              size="sm"
-              onPress={goToNext}
-              isDisabled={currentIndex === voiceLines.length - 1}
-            >
-              Next →
-            </Button>
-          </div>
-          <Button variant="light" onPress={() => onOpenChange(false)}>
+          <Button variant="light" size="sm" onPress={() => onOpenChange(false)}>
             Close
           </Button>
         </ModalFooter>

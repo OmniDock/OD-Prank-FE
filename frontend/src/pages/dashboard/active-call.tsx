@@ -187,7 +187,7 @@ function ActiveCallContent() {
         <Card>
           <CardBody className="space-y-3">
             <div className="text-danger">Missing scenario context.</div>
-            <Button onPress={() => navigate(-1)}>Go back</Button>
+            <Button size="sm" onPress={() => navigate(-1)}>Go back</Button>
           </CardBody>
         </Card>
       </section>
@@ -295,7 +295,7 @@ function ActiveCallContent() {
         <Card>
           <CardBody>
             <div className="text-danger">{error}</div>
-            <Button className="mt-3" onPress={() => navigate(-1)}>Go back</Button>
+            <Button className="mt-3" size="sm" onPress={() => navigate(-1)}>Go back</Button>
           </CardBody>
         </Card>
       ) : scenario ? (
@@ -357,6 +357,7 @@ function ActiveCallContent() {
                             ${playingLineId === vl.id ? 'ring-2 ring-primary ring-offset-2' : ''}
                           `}
                           onPress={() => playVoiceLine(vl.id)}
+                          size="sm"
                         >
                           <div className="flex items-center gap-4 w-full">
                             <div className={`

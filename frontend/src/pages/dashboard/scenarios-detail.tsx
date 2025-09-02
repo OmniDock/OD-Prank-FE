@@ -206,17 +206,18 @@ export default function ScenarioDetailPage() {
       </Breadcrumbs>
 
       <div className="flex items-center justify-between">
-        <div className="space-y-1">
+        <div className="space-y-1 flex flex-row gap-4 items-center">
           <h1 className="text-2xl font-semibold">{scenario.title}</h1>
-
-        </div>
-        <div className="flex items-center gap-2">
           <Chip color={scenario.is_safe ? "success" : "danger"} variant="flat">
             {scenario.is_safe ? "Safe" : "Unsafe"}
           </Chip>
+        </div>
+        <div className="flex items-center gap-2">
+
           <Button 
             color="danger" 
             variant="flat"
+            size="sm"
             startContent={<TrashIcon className="w-4 h-4" />}
             onPress={() => setIsDeleteOpen(true)}
           >
@@ -276,10 +277,10 @@ export default function ScenarioDetailPage() {
             />
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" onPress={() => setIsEnhanceOpen(false)}>
+            <Button variant="light" size="sm" onPress={() => setIsEnhanceOpen(false)}>
               Cancel
             </Button>
-            <Button color="primary" onPress={onEnhance} isLoading={enhancing}>
+            <Button color="primary" size="sm" onPress={onEnhance} isLoading={enhancing}>
               Run Enhancement
             </Button>
           </ModalFooter>
