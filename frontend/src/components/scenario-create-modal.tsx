@@ -48,17 +48,6 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
       setClarifyingQuestions([]);
       setClarifications([]);
       setError(null);
-    } else {
-      // Check for pre-filled description when modal opens
-      const preFillDescription = sessionStorage.getItem('preFillDescription');
-      if (preFillDescription) {
-        setForm(prev => ({
-          ...prev,
-          description: preFillDescription,
-          title: "" // Let user fill this
-        }));
-        sessionStorage.removeItem('preFillDescription');
-      }
     }
   }, [isOpen]);
 

@@ -1,15 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@heroui/button";
+import { useNavigate } from "react-router-dom";
 import { Textarea } from "@heroui/input";
 import { SparklesIcon } from "@heroicons/react/24/solid";
-import { usePageTransition } from "@/context/PageTransitionContext";
 
 export default function ChatWindow() {
   const [input, setInput] = useState("");
   const [placeholder, setPlaceholder] = useState("");
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const { triggerTransition } = usePageTransition();
-  const [isRippling, setIsRippling] = useState(false);
+  const navigate = useNavigate();
 
   // Typewriter effect placeholders
   const placeholders = [
@@ -54,16 +52,8 @@ export default function ChatWindow() {
 
   function goNext() {
     if (input.trim()) {
-      // Store the scenario text in sessionStorage for later use
-      sessionStorage.setItem('pendingScenario', input.trim());
-      
-      // Trigger ripple effect
-      setIsRippling(true);
-      
-      // Trigger the page transition with the button element
-      setTimeout(() => {
-        triggerTransition("/signin", buttonRef.current || undefined);
-      }, 300);
+      // Fake flow: ignore content and redirect
+      navigate("/signin");
     }
   }
 
@@ -86,20 +76,13 @@ export default function ChatWindow() {
               minRows={3}
               maxRows={10}
               variant="flat"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  goNext();
-                }
-              }}
             />
             <div className="pb-2 pr-2">
               <Button
-                ref={buttonRef}
                 onPress={goNext}
                 isIconOnly
                 size="md"
-                className={`bg-gradient-primary button-ripple ${isRippling ? 'ripple-active' : ''}`}
+                className="bg-gradient-primary"
                 disabled={!input.trim()}
               >
                 <SparklesIcon className="w-5 h-5 text-white" />
