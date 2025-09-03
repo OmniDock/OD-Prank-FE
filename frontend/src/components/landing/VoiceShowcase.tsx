@@ -7,10 +7,12 @@ import {
   PlayIcon, 
   PauseIcon, 
   SpeakerWaveIcon,
-  UserIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  FunnelIcon,
+  UserIcon
 } from "@heroicons/react/24/solid";
+import { Tabs, Tab } from "@heroui/tabs";
 import { supabase } from "@/lib/supabaseClient";
 
 interface Voice {
@@ -37,6 +39,8 @@ export default function VoiceShowcase({
   const [loading, setLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [selectedGender, setSelectedGender] = useState<string>("all");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("all");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -108,6 +112,16 @@ export default function VoiceShowcase({
     };
     return flags[language] || '🌍';
   };
+  
+  // Filter voices based on selected criteria
+  const filteredVoices = voices.filter(voice => {
+    const genderMatch = selectedGender === 'all' || voice.gender === selectedGender;
+    const languageMatch = selectedLanguage === 'all' || voice.languages.includes(selectedLanguage);
+    return genderMatch && languageMatch;
+  });
+  
+  // Get unique languages from all voices
+  const availableLanguages = Array.from(new Set(voices.flatMap(v => v.languages)));
 
   if (loading) {
     return (
@@ -129,19 +143,76 @@ export default function VoiceShowcase({
   return (
     <div className="w-full">
       {/* Header - matching TemplateContainer style */}
-      <div className="text-center mb-12">
+      <div className="text-center mb-8">
         <h2 className="text-4xl md:text-5xl font-bold mb-4">
           <span className="text-gradient">{title}</span>
         </h2>
         <p className="text-lg text-default-600 max-w-2xl mx-auto">
           {subtitle}
         </p>
+        {filteredVoices.length > 0 && (
+          <p className="text-sm text-default-400 mt-2">
+            Showing {showAll ? filteredVoices.length : Math.min(maxVoices, filteredVoices.length)} of {filteredVoices.length} voices
+            {selectedGender !== 'all' && ` • ${selectedGender.toLowerCase()}`}
+            {selectedLanguage !== 'all' && ` • ${selectedLanguage.toLowerCase()}`}
+          </p>
+        )}
+      </div>
+      
+      {/* Filters */}
+      <div className="flex flex-wrap justify-center gap-4 mb-8">
+        {/* Gender Filter */}
+        <Tabs 
+          selectedKey={selectedGender}
+          onSelectionChange={(key) => setSelectedGender(key as string)}
+          size="sm"
+          color="primary"
+          variant="solid"
+        >
+          <Tab key="all" title="All Genders" />
+          <Tab key="MALE" title="Male" />
+          <Tab key="FEMALE" title="Female" />
+        </Tabs>
+        
+        {/* Language Filter */}
+        <Tabs
+          selectedKey={selectedLanguage}
+          onSelectionChange={(key) => setSelectedLanguage(key as string)}
+          size="sm"
+          color="primary"
+          variant="solid"
+        >
+          <Tab key="all" title="All Languages" />
+          {availableLanguages.map(lang => (
+            <Tab 
+              key={lang}
+              title={
+                <div className="flex items-center gap-1">
+                  <span>{getLanguageFlag(lang)}</span>
+                  <span>{lang.charAt(0) + lang.slice(1).toLowerCase()}</span>
+                </div>
+              }
+            />
+          ))}
+        </Tabs>
       </div>
 
+      {/* No results message */}
+      {filteredVoices.length === 0 && (
+        <div className="text-center py-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-default-100 mb-4">
+            <FunnelIcon className="w-8 h-8 text-default-400" />
+          </div>
+          <p className="text-default-500">No voices match your filters</p>
+          <p className="text-sm text-default-400 mt-2">Try adjusting your selection</p>
+        </div>
+      )}
+      
       {/* Voice Cards Grid */}
+      {filteredVoices.length > 0 && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Always visible cards */}
-        {voices.slice(0, maxVoices).map((voice, index) => (
+        {filteredVoices.slice(0, maxVoices).map((voice, index) => (
           <motion.div
             key={voice.id}
             initial={{ opacity: 0, y: 20 }}
@@ -152,8 +223,8 @@ export default function VoiceShowcase({
               ease: "easeOut"
             }}
           >
-              <Card className="hover:shadow-lg transition-shadow duration-300 border-default-100">
-                <CardBody className="p-6">
+              <Card className="hover:shadow-lg transition-shadow duration-300 border-default-100 h-full">
+                <CardBody className="p-6 flex flex-col h-full">
                   {/* Voice Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -161,7 +232,14 @@ export default function VoiceShowcase({
                         <UserIcon className={`w-5 h-5 text-${getGenderColor(voice.gender)}`} />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold">{voice.name}</h3>
+                        <div className="flex flex-row items-center gap-2 justify-center">
+                          <h3 className="text-lg font-semibold">{voice.name}</h3>
+                          <div className="flex gap-2 flex-wrap">
+                            {voice.languages.map((lang) => (
+                                <span className="text-lg">{getLanguageFlag(lang)}</span>
+                              ))}
+                          </div>
+                        </div>
                         <Chip 
                           size="sm" 
                           color={getGenderColor(voice.gender)}
@@ -195,23 +273,11 @@ export default function VoiceShowcase({
                   </div>
 
                   {/* Description */}
-                  <p className="text-sm text-default-500 mb-4 line-clamp-2">
+                  <p className="text-sm text-default-500 mb-4 line-clamp-2 flex-grow">
                     {voice.description || "Professional voice actor"}
                   </p>
 
-                  {/* Languages */}
-                  <div className="flex gap-2 flex-wrap">
-                    {voice.languages.map((lang) => (
-                      <Chip
-                        key={lang}
-                        size="sm"
-                        variant="flat"
-                        startContent={<span className="text-lg">{getLanguageFlag(lang)}</span>}
-                      >
-                        {lang.toLowerCase()}
-                      </Chip>
-                    ))}
-                  </div>
+
 
                   {/* Playing Indicator */}
                   {playingId === voice.id && (
@@ -231,7 +297,7 @@ export default function VoiceShowcase({
         
         {/* Additional cards that animate in/out */}
         <AnimatePresence>
-          {showAll && voices.slice(maxVoices).map((voice, index) => (
+          {showAll && filteredVoices.slice(maxVoices).map((voice, index) => (
             <motion.div
               key={voice.id}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -251,8 +317,8 @@ export default function VoiceShowcase({
                 ease: [0.4, 0, 0.2, 1]
               }}
             >
-            <Card className="hover:shadow-lg transition-shadow duration-300 border-default-100">
-              <CardBody className="p-6">
+            <Card className="hover:shadow-lg transition-shadow duration-300 border-default-100 h-full">
+              <CardBody className="p-6 flex flex-col h-full">
                 {/* Voice Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -294,12 +360,12 @@ export default function VoiceShowcase({
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-default-500 mb-4 line-clamp-2">
+                <p className="text-sm text-default-500 mb-4 line-clamp-2 flex-grow">
                   {voice.description || "Professional voice actor"}
                 </p>
 
                 {/* Languages */}
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap mt-auto">
                   {voice.languages.map((lang) => (
                     <Chip
                       key={lang}
@@ -329,9 +395,10 @@ export default function VoiceShowcase({
           ))}
         </AnimatePresence>
       </div>
+      )}
 
       {/* Show More/Less Button - matching TemplateContainer style */}
-      {voices.length > maxVoices && (
+      {filteredVoices.length > maxVoices && (
         <motion.div 
           className="text-center mt-12"
           initial={{ opacity: 0 }}
@@ -349,7 +416,7 @@ export default function VoiceShowcase({
               </>
             ) : (
               <>
-                Show {voices.length - maxVoices} More Voices
+                Show {filteredVoices.length - maxVoices} More Voices
                 <ChevronDownIcon className="w-4 h-4" />
               </>
             )}
