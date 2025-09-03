@@ -1,7 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
 import { Badge, Button, cn, Form, Image, Tooltip } from "@heroui/react";
-import { VisuallyHidden } from "@react-aria/visually-hidden";
-import { PaperClipIcon, XMarkIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import PromptInput from "./PromptInput";
 
 type Props = {
@@ -16,7 +15,6 @@ export default function PromptInputFullLine({ value, onChange, onSubmit, disable
   const [assets, setAssets] = useState<string[]>([]);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = useCallback(() => {
     if (!value || disabled) return;
@@ -56,18 +54,6 @@ export default function PromptInputFullLine({ value, onChange, onSubmit, disable
     }
   }, []);
 
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    files.forEach((file) => {
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = () => setAssets((prev) => [...prev, String(reader.result)]);
-        reader.readAsDataURL(file);
-      }
-    });
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }, []);
-
   return (
     <Form className="rounded-medium bg-default-100 dark:bg-default-100 flex w-full flex-col items-start gap-0" validationBehavior="native" onSubmit={onFormSubmit}>
       <div className={cn("group flex gap-2 pr-3 pl-[20px]", assets.length > 0 ? "pt-4" : "")}> 
@@ -92,7 +78,7 @@ export default function PromptInputFullLine({ value, onChange, onSubmit, disable
         classNames={{
           innerWrapper: "relative",
           input: "text-medium h-auto w-full",
-          inputWrapper: "bg-transparent! shadow-none group-data-[focus-visible=true]:ring-0 group-data-[focus-visible=true]:ring-offset-0 pr-3 pl-[20px] pt-3 pb-4",
+          inputWrapper: "bg-transparent! shadow-none group-data-[focus-visible=true]:ring-0 group-data-[focus-visible=true]:ring-offset-0 pr-3 pl-[20px] pt-3 pb-3",
         }}
         maxRows={16}
         minRows={2}
@@ -107,7 +93,7 @@ export default function PromptInputFullLine({ value, onChange, onSubmit, disable
         onValueChange={onChange}
         isDisabled={disabled}
       />
-      <div className="flex w-full flex-row items-center justify-between px-3 pb-3">
+      <div className="flex w-full flex-row items-center justify-between px-3 py-3">
         <div></div>
         <Button isIconOnly color={!value ? "default" : "primary"} isDisabled={!value || disabled} radius="md" size="sm" type="submit" variant="solid">
           <SparklesIcon className={!value ? "text-default-600 h-5 w-5" : "text-primary-foreground h-5 w-5"} />

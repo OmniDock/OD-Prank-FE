@@ -14,7 +14,11 @@ function genId() {
   return Math.random().toString(36).slice(2);
 }
 
-export default function ChatWindow() {
+type ChatWindowProps = {
+  onExpand?: () => void;
+};
+
+export default function ChatWindow({ onExpand }: ChatWindowProps = {}) {
   const { user } = useAuth();
   const userName = (user as any)?.user_metadata?.full_name || (user as any)?.user_metadata?.name || user?.email || "You";
   const userAvatar = (user as any)?.user_metadata?.avatar_url || (user as any)?.user_metadata?.picture || undefined;
@@ -38,9 +42,14 @@ export default function ChatWindow() {
     return Array.isArray(q) ? q.join("\n") : q;
   }
 
-  async function submitInitial() {
-    const content = initialInput.trim();
+  async function submitInitial(contentOverride?: string) {
+    const content = (contentOverride ?? initialInput).trim();
     if (!content || waiting || messages.length > 0) return;
+
+    if (contentOverride) setInitialInput(contentOverride);
+
+    // Notify wrapper that chat is expanding (first action)
+    try { onExpand && onExpand(); } catch {}
 
     const userMsg: Message = { id: genId(), role: "user", content, ts: Date.now() };
     setMessages(prev => [...prev, userMsg]);
@@ -126,16 +135,9 @@ export default function ChatWindow() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto">
       <div className="rounded-3xl border border-purple-300/30 dark:border-purple-800/30 bg-white/40 dark:bg-gray-950/40 backdrop-blur-xl shadow-xl shadow-primary-500/20">
-        <div className="p-4 md:p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col">
-                <h2 className="text-lg font-semibold">Chat</h2>
-              </div>
-            </div>
-          </div>
+        <div className="p-3 md:p-6">
 
           <div className="space-y-3 max-h-[380px] overflow-y-auto p-2 rounded-xl bg-white/30 dark:bg-gray-900/30 border border-white/20 dark:border-white/5">
             {!initialSent && !!saved && (
@@ -149,7 +151,7 @@ export default function ChatWindow() {
                       {saved}
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" color="primary" onPress={submitInitial} isDisabled={!initialInput.trim() || waiting}>
+                      <Button size="sm" color="primary" onPress={() => submitInitial()} isDisabled={!initialInput.trim() || waiting}>
                         Use as-is
                       </Button>
                       <Button size="sm" variant="flat" onPress={replacePrompt} isDisabled={waiting}>
@@ -160,6 +162,27 @@ export default function ChatWindow() {
                 }
                 status={"success"}
               />
+            )}
+            {messages.length === 0 && !waiting && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 mb-4">
+                  {[
+                    "Prank a coworker with a fake IT support call about a password reset.",
+                    "Call my friend as a delivery driver with a package mix-up.",
+                    "Pretend to be a neighbor worried about a mysterious late-night noise.",
+                    "Offer an absurd subscription service in a telemarketer style."
+                  ].map((ex, i) => (
+                    <Button
+                      key={i}
+                      variant="flat"
+                      className="justify-start h-auto py-3 whitespace-normal text-left"
+                      onPress={() => setInitialInput(ex)}
+                    >
+                      {ex}
+                    </Button>
+                  ))}
+                </div>
+              </div>
             )}
             {messages.map(m => (
               <MessageCard
@@ -182,12 +205,9 @@ export default function ChatWindow() {
                 <Spinner size="sm" /> Waiting for AI response…
               </div>
             )}
-            {!messages.length && (
-              <div className="text-xs text-default-500 px-2 py-1">No messages yet</div>
-            )}
           </div>
 
-          {!initialSent && (
+          {!hasAssistant && !finished && (
             <PromptInputFullLine
               value={initialInput}
               onChange={setInitialInput}

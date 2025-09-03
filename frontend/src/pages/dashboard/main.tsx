@@ -1,9 +1,9 @@
-import ChatWindow from "@/components/chat/ChatWindow";
 
+import ChatWindowWrapper from "@/components/chat/ChatWindowWrapper";
 export default function DashboardMain() {
 	return (
-		<section className="space-y-6">
-			<ChatWindow />
+		<section className="h-full">
+			<ChatWindowWrapper />
 		</section>
 	);
 }
