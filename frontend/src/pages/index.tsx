@@ -3,6 +3,9 @@ import Hero from "@/components/landing/Hero";
 import ChatWindow from "@/components/landing/ChatWindow";
 import { SpeakerWaveIcon, PhoneIcon } from "@heroicons/react/24/solid";
 import Stats from "@/components/landing/Stats";
+import TemplateContainer from "@/components/landing/TemplateContainer";
+
+
 
 export default function IndexPage() {
   return (
@@ -57,21 +60,10 @@ export default function IndexPage() {
       </section>
 
       <section className="py-20 md:py-28">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Feature
-            title="Scenario Builder"
-            desc="Design elaborate prank setups with branching flows."
-          />
-          <Feature
-            title="Realistic Voices"
-            desc="Choose from a growing catalog of ultra-realistic voices."
-          />
-          <Feature
-            title="One-click Calls"
-            desc="Launch a call and monitor it from your dashboard."
-          />
-        </div>
+        <TemplateContainer />
       </section>
+
+  
     </DefaultLayout>
   );
 }
