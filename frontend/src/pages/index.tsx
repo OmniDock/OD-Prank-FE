@@ -2,6 +2,8 @@ import DefaultLayout from "@/layouts/default";
 import Hero from "@/components/landing/Hero";
 import ChatWindow from "@/components/landing/ChatWindow";
 import { SpeakerWaveIcon, PhoneIcon } from "@heroicons/react/24/solid";
+import Stats from "@/components/landing/Stats";
+
 export default function IndexPage() {
   return (
     <DefaultLayout>
@@ -51,6 +53,7 @@ export default function IndexPage() {
       <section className="relative min-h-screen flex flex-col justify-center items-center gap-20">
         <Hero />
         <ChatWindow />
+        <Stats />
       </section>
 
       <section className="py-20 md:py-28">
