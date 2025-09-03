@@ -4,27 +4,31 @@ import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import DefaultLayout from "@/layouts/default";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
-import { PhoneIcon, TrashIcon, PlusIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
+import { PhoneIcon, PlusIcon, ShieldCheckIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
+import { addToBlacklist } from "@/lib/api.blacklist";
 
 export default function BlacklistPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [blacklistedNumbers, setBlacklistedNumbers] = useState<string[]>([
-    "+49 151 12345678",
-    "+1 555 0123",
-    "+44 20 7946 0958",
-  ]);
+  const [loading, setLoading] = useState(false);
+  const [successE164, setSuccessE164] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleAddNumber = () => {
+  const handleAddNumber = async () => {
     const trimmed = phoneNumber.trim();
-    if (trimmed && !blacklistedNumbers.includes(trimmed)) {
-      setBlacklistedNumbers([...blacklistedNumbers, trimmed]);
+    if (!trimmed) return;
+    setLoading(true);
+    setErrorMsg(null);
+    setSuccessE164(null);
+    try {
+      const res = await addToBlacklist(trimmed, "DE");
+      setSuccessE164(res.phone_number_e164);
       setPhoneNumber("");
+    } catch (e: any) {
+      setErrorMsg(e?.message ?? "Failed to add to blacklist");
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleRemoveNumber = (number: string) => {
-    setBlacklistedNumbers(blacklistedNumbers.filter((n) => n !== number));
   };
 
   return (
@@ -51,7 +55,7 @@ export default function BlacklistPage() {
 
           <Card className="backdrop-blur-md bg-white/80 dark:bg-neutral-900/80">
             <CardHeader className="pb-4">
-              <h2 className="text-xl font-semibold">Manage Blacklisted Numbers</h2>
+              <h2 className="text-xl font-semibold">Add a Number to the Blacklist</h2>
             </CardHeader>
             <CardBody className="space-y-6">
               <div className="flex gap-2">
@@ -63,44 +67,24 @@ export default function BlacklistPage() {
                   startContent={<PhoneIcon className="w-4 h-4 text-neutral-400" />}
                   className="flex-1"
                 />
-                <Button color="primary" onPress={handleAddNumber} startContent={<PlusIcon className="w-4 h-4" />} className="bg-gradient-primary">
+                <Button color="primary" isLoading={loading} onPress={handleAddNumber} startContent={<PlusIcon className="w-4 h-4" />} className="bg-gradient-primary">
                   Add to Blacklist
                 </Button>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
-                  Currently Blacklisted Numbers ({blacklistedNumbers.length})
-                </p>
-                {blacklistedNumbers.length === 0 ? (
-                  <div className="text-center py-8 text-neutral-500">No numbers blacklisted yet</div>
-                ) : (
-                  <div className="grid gap-2">
-                    {blacklistedNumbers.map((number) => (
-                      <motion.div
-                        key={number}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        className="flex items-center justify-between p-3 rounded-lg bg-neutral-100 dark:bg-neutral-800"
-                      >
-                        <div className="flex items-center gap-3">
-                          <PhoneIcon className="w-5 h-5 text-neutral-500" />
-                          <span className="font-mono">{number}</span>
-                        </div>
-                        <Button size="sm" color="danger" variant="flat" isIconOnly onPress={() => handleRemoveNumber(number)}>
-                          <TrashIcon className="w-4 h-4" />
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {successE164 && (
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <CheckCircleIcon className="w-5 h-5" />
+                  <span className="text-sm">Added to blacklist: <span className="font-mono">{successE164}</span></span>
+                </div>
+              )}
+              {errorMsg && (
+                <div className="text-sm text-red-600 dark:text-red-400">{errorMsg}</div>
+              )}
 
               <div className="mt-6 p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800">
                 <p className="text-sm text-purple-700 dark:text-purple-300">
-                  <strong>Important:</strong> Blacklisted numbers will be permanently blocked from receiving any prank calls.
-                  This helps ensure responsible use of our service and protects individuals who should not be contacted.
+                  <strong>Important:</strong> Once added, removal requires manual support intervention. We do not argue.
                 </p>
               </div>
             </CardBody>
