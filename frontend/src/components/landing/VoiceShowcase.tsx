@@ -8,7 +8,8 @@ import {
   PauseIcon, 
   SpeakerWaveIcon,
   UserIcon,
-  SparklesIcon
+  ChevronDownIcon,
+  ChevronUpIcon
 } from "@heroicons/react/24/solid";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -35,6 +36,7 @@ export default function VoiceShowcase({
   const [voices, setVoices] = useState<Voice[]>([]);
   const [loading, setLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -59,8 +61,8 @@ export default function VoiceShowcase({
       
       if (response.ok) {
         const data = await response.json();
-        // Limit to maxVoices for showcase
-        setVoices(data.voices.slice(0, maxVoices));
+        // Store all voices
+        setVoices(data.voices);
       }
     } catch (error) {
       console.error('Error fetching voices:', error);
@@ -138,15 +140,18 @@ export default function VoiceShowcase({
 
       {/* Voice Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <AnimatePresence>
-          {voices.map((voice, index) => (
-            <motion.div
-              key={voice.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ delay: index * 0.1 }}
-            >
+        {/* Always visible cards */}
+        {voices.slice(0, maxVoices).map((voice, index) => (
+          <motion.div
+            key={voice.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ 
+              duration: 0.4,
+              delay: index * 0.08,
+              ease: "easeOut"
+            }}
+          >
               <Card className="hover:shadow-lg transition-shadow duration-300 border-default-100">
                 <CardBody className="p-6">
                   {/* Voice Header */}
@@ -221,18 +226,135 @@ export default function VoiceShowcase({
                   )}
                 </CardBody>
               </Card>
+          </motion.div>
+        ))}
+        
+        {/* Additional cards that animate in/out */}
+        <AnimatePresence>
+          {showAll && voices.slice(maxVoices).map((voice, index) => (
+            <motion.div
+              key={voice.id}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ 
+                opacity: 1,
+                y: 0,
+                scale: 1
+              }}
+              exit={{ 
+                opacity: 0,
+                y: 20,
+                scale: 0.95
+              }}
+              transition={{ 
+                duration: 0.3,
+                delay: index * 0.05,
+                ease: [0.4, 0, 0.2, 1]
+              }}
+            >
+            <Card className="hover:shadow-lg transition-shadow duration-300 border-default-100">
+              <CardBody className="p-6">
+                {/* Voice Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full bg-${getGenderColor(voice.gender)}-100 dark:bg-${getGenderColor(voice.gender)}-900/30`}>
+                      <UserIcon className={`w-5 h-5 text-${getGenderColor(voice.gender)}`} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">{voice.name}</h3>
+                      <Chip 
+                        size="sm" 
+                        color={getGenderColor(voice.gender)}
+                        variant="flat"
+                      >
+                        {voice.gender.toLowerCase()}
+                      </Chip>
+                    </div>
+                  </div>
+                  
+                  {/* Play Button */}
+                  <Button
+                    isIconOnly
+                    size="lg"
+                    color={playingId === voice.id ? "success" : "primary"}
+                    variant={playingId === voice.id ? "flat" : "light"}
+                    onClick={() => handlePlayPause(voice)}
+                    className="transition-all"
+                  >
+                    {playingId === voice.id ? (
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      >
+                        <PauseIcon className="w-5 h-5" />
+                      </motion.div>
+                    ) : (
+                      <PlayIcon className="w-5 h-5" />
+                    )}
+                  </Button>
+                </div>
+
+                {/* Description */}
+                <p className="text-sm text-default-500 mb-4 line-clamp-2">
+                  {voice.description || "Professional voice actor"}
+                </p>
+
+                {/* Languages */}
+                <div className="flex gap-2 flex-wrap">
+                  {voice.languages.map((lang) => (
+                    <Chip
+                      key={lang}
+                      size="sm"
+                      variant="flat"
+                      startContent={<span className="text-lg">{getLanguageFlag(lang)}</span>}
+                    >
+                      {lang.toLowerCase()}
+                    </Chip>
+                  ))}
+                </div>
+
+                {/* Playing Indicator */}
+                {playingId === voice.id && (
+                  <motion.div
+                    className="mt-4 flex items-center gap-2 text-success"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <SpeakerWaveIcon className="w-4 h-4" />
+                    <span className="text-xs">Playing preview...</span>
+                  </motion.div>
+                )}
+              </CardBody>
+            </Card>
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
 
-      {/* View All Button - matching TemplateContainer style */}
-      {voices.length === maxVoices && (
-        <div className="text-center mt-12">
-          <button className="px-8 py-3 rounded-full bg-gradient-primary text-white font-semibold hover:scale-105 transition-transform">
-            Explore All Voices
+      {/* Show More/Less Button - matching TemplateContainer style */}
+      {voices.length > maxVoices && (
+        <motion.div 
+          className="text-center mt-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <button 
+            onClick={() => setShowAll(!showAll)}
+            className="px-8 py-3 rounded-full bg-gradient-primary text-white font-semibold hover:scale-105 transition-transform inline-flex items-center gap-2"
+          >
+            {showAll ? (
+              <>
+                Show Less
+                <ChevronUpIcon className="w-4 h-4" />
+              </>
+            ) : (
+              <>
+                Show {voices.length - maxVoices} More Voices
+                <ChevronDownIcon className="w-4 h-4" />
+              </>
+            )}
           </button>
-        </div>
+        </motion.div>
       )}
     </div>
   );
