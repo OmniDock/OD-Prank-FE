@@ -8,7 +8,6 @@ export default function ChatWindow() {
   const [input, setInput] = useState("");
   const [placeholder, setPlaceholder] = useState("");
   const navigate = useNavigate();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Typewriter effect placeholders
   const placeholders = [
@@ -58,41 +57,25 @@ export default function ChatWindow() {
     }
   }
 
-  // Handle keyboard events manually since HeroUI Textarea doesn't have onKeyDown
-  useEffect(() => {
-    const textarea = textareaRef.current?.querySelector('textarea');
-    if (!textarea) return;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        goNext();
-      }
-    };
-
-    textarea.addEventListener('keydown', handleKeyDown);
-    return () => textarea.removeEventListener('keydown', handleKeyDown);
-  }, [input]);
 
   return (
     <div className="w-full max-w-4xl mx-auto">
       <div className="rounded-3xl border border-primary-300 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-xl shadow-primary-500/40">
         <div className="p-2">
           <div className="flex items-end gap-3">
-            <div ref={textareaRef} className="flex-1">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={placeholder}
-                classNames={{
-                  input: "min-h-[60px] py-4 resize-none text-[16px]",
-                  inputWrapper: "bg-transparent border-0 shadow-none data-[hover=true]:bg-transparent group-data-[focus=true]:bg-transparent"
-                }}
-                minRows={3}
-                maxRows={10}
-                variant="flat"
-              />
-            </div>
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={placeholder}
+              classNames={{
+                input: "min-h-[60px] py-4 resize-none text-[16px]",
+                inputWrapper: "bg-transparent border-0 shadow-none data-[hover=true]:bg-transparent group-data-[focus=true]:bg-transparent"
+              }}
+              minRows={3}
+              maxRows={10}
+              variant="flat"
+            />
             <div className="pb-2 pr-2">
               <Button
                 onPress={goNext}
