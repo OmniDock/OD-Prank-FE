@@ -46,7 +46,7 @@ export default function VoiceCard({
   className = "",
 }: VoiceCardProps) {
   return (
-    <Card className={`hover:shadow-lg hover:scale-110 transition-transform duration-300 transform-gpu border-default-100 h-full shadow-primary-500/40 ${className}`}>
+    <Card className={`shadow-lg hover:scale-110 transition-transform duration-300 transform-gpu border-default-100 h-full ${className}`}>
       <CardBody className="p-6 flex flex-col h-full">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
