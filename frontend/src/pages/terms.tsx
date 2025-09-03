@@ -25,8 +25,8 @@ export default function TermsPage() {
             <p className="text-lg text-neutral-600 dark:text-neutral-400">Terms and Conditions</p>
           </div>
 
-          <Card className="backdrop-blur-md bg-white/80 dark:bg-neutral-900/80">
-            <CardBody className="prose dark:prose-invert max-w-none p-8">
+          <Card className="backdrop-blur-md bg-gradient-surface glass-card ">
+            <CardBody className="prose dark:prose-invert max-w-none p-6">
               <h2>§ 1 Geltungsbereich</h2>
               <p>
                 (1) Diese Allgemeinen Geschäftsbedingungen (nachfolgend "AGB") gelten für alle über unsere Webseite

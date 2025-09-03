@@ -25,8 +25,8 @@ export default function PrivacyPage() {
             <p className="text-lg text-neutral-600 dark:text-neutral-400">How we handle your data</p>
           </div>
 
-          <Card className="backdrop-blur-md bg-white/80 dark:bg-neutral-900/80">
-            <CardBody className="prose dark:prose-invert max-w-none p-8">
+          <Card className="backdrop-blur-md bg-gradient-surface glass-card ">
+            <CardBody className="prose dark:prose-invert max-w-none p-6">
               <h2>Introduction</h2>
               <p>
                 We value your privacy. This Privacy Policy explains what data we collect, how we use it,

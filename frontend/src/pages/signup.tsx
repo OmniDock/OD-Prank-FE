@@ -136,7 +136,7 @@ export default function SignUpPage() {
 					transition={{ duration: 0.5 }}
 					className="w-full max-w-md"
 				>
-					<Card className="shadow-primary-500/40 shadow-2xl border-default-100">
+					<Card className="shadow-primary-500/40 shadow-2xl border-default-100 bg-gradient-surface glass-card">
 						<CardBody className="p-8">
 							{/* Header with animation */}
 							<motion.div 

@@ -15,6 +15,7 @@ import BlacklistPage from "@/pages/blacklist";
 import ImprintPage from "@/pages/imprint";
 import TermsPage from "@/pages/terms";
 import PrivacyPage from "@/pages/privacy";
+import PricingPage from "@/pages/pricing";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
       <Route element={<ImprintPage />} path="/imprint" />
       <Route element={<PrivacyPage />} path="/privacy" />
       <Route element={<BlacklistPage />} path="/blacklist" />
+      <Route element={<PricingPage />} path="/pricing" />
       <Route element={<PublicOnlyRoute />}>
         <Route element={<SignInPage />} path="/signin" />
         <Route element={<SignUpPage />} path="/signup" />

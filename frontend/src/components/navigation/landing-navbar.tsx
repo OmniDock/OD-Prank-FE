@@ -57,6 +57,9 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
           <Link href="/#voices" className="font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
             Voices
           </Link>
+          <Link href="/pricing" className="font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+            Pricing
+          </Link>
         </div>
 
         {!hideAuthButtons ? (

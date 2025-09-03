@@ -62,7 +62,7 @@ export default function BlacklistPage() {
             </p>
           </div>
 
-          <Card className="backdrop-blur-md bg-white/80 dark:bg-neutral-900/80 rounded-2xl shadow-lg">
+          <Card className="backdrop-blur-md bg-gradient-surface glass-card ">
             <CardHeader className="px-6 py-4 border-b border-default-200 dark:border-default-800">
               <h2 className="text-lg font-semibold">Add a Number to the Blacklist</h2>
             </CardHeader>

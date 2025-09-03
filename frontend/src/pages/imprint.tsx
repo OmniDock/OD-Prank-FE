@@ -24,8 +24,8 @@ export default function ImprintPage() {
             </h1>
           </div>
 
-          <Card className="backdrop-blur-md bg-white/80 dark:bg-neutral-900/80">
-            <CardBody className="prose dark:prose-invert max-w-none p-8">
+          <Card className="backdrop-blur-md bg-gradient-surface glass-card ">
+            <CardBody className="prose dark:prose-invert max-w-none p-6">
               <h2>Angaben gemäß § 5 TMG</h2>
 
               <h3>Betreiber</h3>
