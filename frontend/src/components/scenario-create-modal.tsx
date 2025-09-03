@@ -115,6 +115,7 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
       
       const response = await processScenario({
         session_id: sessionId,
+        clarifying_questions: clarifyingQuestions,
         clarifications: processedClarifications,
       });
       
