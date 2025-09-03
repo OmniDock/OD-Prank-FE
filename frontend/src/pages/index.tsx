@@ -74,18 +74,18 @@ export default function IndexPage() {
         ))}
       </div>
 
-      <section className="relative min-h-screen flex flex-col justify-center items-center gap-20">
+      <section id="hero" className="relative min-h-screen flex flex-col justify-center items-center gap-20">
         <Hero />
         <ChatWindow />
         <Stats />
       </section>
 
-      <section className="py-20 md:py-28">
+      <section id="templates" className="py-20 md:py-28">
         <TemplateContainer />
       </section>
 
       {/* Voice Showcase Section */}
-      <section className="py-20 md:py-28 bg-transparent dark:bg-default-950/30">
+      <section id="voices" className="py-20 md:py-28 bg-transparent dark:bg-default-950/30">
         <div className="container mx-auto px-6 max-w-7xl">
           <VoiceShowcase 
             title="Meet Some of Our Voices"

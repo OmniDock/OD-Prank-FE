@@ -19,6 +19,13 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const handleScrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50 max-w-[90%] mx-auto">
       <nav
@@ -43,6 +50,28 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
             Call It AI
           </span>
         </Link>
+
+        {/* Navigation Links */}
+        <div className="hidden md:flex items-center gap-6">
+          <button
+            onClick={() => handleScrollToSection('hero')}
+            className="font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer"
+          >
+            Home
+          </button>
+          <button
+            onClick={() => handleScrollToSection('templates')}
+            className="font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer"
+          >
+            Templates
+          </button>
+          <button
+            onClick={() => handleScrollToSection('voices')}
+            className="font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer"
+          >
+            Voices
+          </button>
+        </div>
 
         {!hideAuthButtons && (
           user ? (
