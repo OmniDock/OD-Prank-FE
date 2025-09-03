@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import DefaultLayout from "@/layouts/default";
 import Hero from "@/components/landing/Hero";
 import ChatWindow from "@/components/landing/ChatWindow";
@@ -7,9 +8,27 @@ import TemplateContainer from "@/components/landing/TemplateContainer";
 import Footer from "@/components/landing/Footer";
 import VoiceShowcase from "@/components/landing/VoiceShowcase";
 
-
-
 export default function IndexPage() {
+  // Memoize floating icons positions to prevent regeneration on every render
+  const floatingPhones = useMemo(() => 
+    Array.from({ length: 15 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 10,
+      duration: 15 + Math.random() * 10
+    })), []
+  );
+  
+  const floatingSpeakers = useMemo(() => 
+    Array.from({ length: 15 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 10 + 5,
+      duration: 20 + Math.random() * 10
+    })), []
+  );
   return (
     <DefaultLayout>
       {/* Combined animated gradient background + floating phone icons */}
@@ -23,15 +42,15 @@ export default function IndexPage() {
         />
 
         {/* Floating phone icons */}
-        {[...Array(15)].map((_, i) => (
+        {floatingPhones.map((phone) => (
           <div
-            key={i}
+            key={`phone-${phone.id}`}
             className="absolute opacity-[0.05] dark:opacity-[0.09] animate-float"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 10}s`,
-              animationDuration: `${15 + Math.random() * 10}s`
+              left: `${phone.left}%`,
+              top: `${phone.top}%`,
+              animationDelay: `${phone.delay}s`,
+              animationDuration: `${phone.duration}s`
             }}
           >
             <PhoneIcon className="w-14 h-14 text-purple-600 dark:text-purple-400" />
@@ -39,15 +58,15 @@ export default function IndexPage() {
         ))}
         
         {/* Additional message/chat bubble icons for variety */}
-        {[...Array(15)].map((_, i) => (
+        {floatingSpeakers.map((speaker) => (
           <div
-            key={`msg-${i}`}
+            key={`speaker-${speaker.id}`}
             className="absolute opacity-[0.05] dark:opacity-[0.09] animate-float"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 10 + 5}s`,
-              animationDuration: `${20 + Math.random() * 10}s`
+              left: `${speaker.left}%`,
+              top: `${speaker.top}%`,
+              animationDelay: `${speaker.delay}s`,
+              animationDuration: `${speaker.duration}s`
             }}
           >
             <SpeakerWaveIcon className="w-14 h-14 text-purple-600 dark:text-purple-400" />
@@ -66,7 +85,7 @@ export default function IndexPage() {
       </section>
 
       {/* Voice Showcase Section */}
-      <section className="py-20 md:py-28 bg-default-50 dark:bg-default-950/30">
+      <section className="py-20 md:py-28 bg-transparent dark:bg-default-950/30">
         <div className="container mx-auto px-6 max-w-7xl">
           <VoiceShowcase 
             title="Meet Some of Our Voices"

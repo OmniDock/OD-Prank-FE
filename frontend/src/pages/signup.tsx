@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
@@ -27,6 +27,27 @@ export default function SignUpPage() {
 	const [message, setMessage] = useState<string | null>(null);
 
 	const toggleVisibility = () => setIsVisible(!isVisible);
+	
+	// Memoize floating icons positions to prevent regeneration on every render
+	const floatingPhones = useMemo(() => 
+		Array.from({ length: 12 }, (_, i) => ({
+			id: i,
+			left: Math.random() * 100,
+			top: Math.random() * 100,
+			delay: Math.random() * 10,
+			duration: 15 + Math.random() * 10
+		})), []
+	);
+	
+	const floatingChats = useMemo(() => 
+		Array.from({ length: 10 }, (_, i) => ({
+			id: i,
+			left: Math.random() * 100,
+			top: Math.random() * 100,
+			delay: Math.random() * 10 + 5,
+			duration: 20 + Math.random() * 10
+		})), []
+	);
 
 	async function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -76,15 +97,15 @@ export default function SignUpPage() {
 				/>
 
 				{/* Floating phone icons */}
-				{[...Array(12)].map((_, i) => (
+				{floatingPhones.map((phone) => (
 					<div
-						key={i}
+						key={`phone-${phone.id}`}
 						className="absolute opacity-[0.03] dark:opacity-[0.06] animate-float"
 						style={{
-							left: `${Math.random() * 100}%`,
-							top: `${Math.random() * 100}%`,
-							animationDelay: `${Math.random() * 10}s`,
-							animationDuration: `${15 + Math.random() * 10}s`
+							left: `${phone.left}%`,
+							top: `${phone.top}%`,
+							animationDelay: `${phone.delay}s`,
+							animationDuration: `${phone.duration}s`
 						}}
 					>
 						<PhoneIcon className="w-12 h-12 text-purple-600 dark:text-purple-400" />
@@ -92,15 +113,15 @@ export default function SignUpPage() {
 				))}
 				
 				{/* Chat bubble icons */}
-				{[...Array(10)].map((_, i) => (
+				{floatingChats.map((chat) => (
 					<div
-						key={`chat-${i}`}
+						key={`chat-${chat.id}`}
 						className="absolute opacity-[0.03] dark:opacity-[0.06] animate-float"
 						style={{
-							left: `${Math.random() * 100}%`,
-							top: `${Math.random() * 100}%`,
-							animationDelay: `${Math.random() * 10 + 5}s`,
-							animationDuration: `${20 + Math.random() * 10}s`
+							left: `${chat.left}%`,
+							top: `${chat.top}%`,
+							animationDelay: `${chat.delay}s`,
+							animationDuration: `${chat.duration}s`
 						}}
 					>
 						<ChatBubbleLeftRightIcon className="w-10 h-10 text-pink-600 dark:text-pink-400" />
