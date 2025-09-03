@@ -4,7 +4,11 @@ import { Link } from "@heroui/link";
 import { useAuth } from "@/context/AuthProvider";
 import { Logo } from "@/components/icons";
 
-export default function LandingNavbar() {
+interface LandingNavbarProps {
+  hideAuthButtons?: boolean;
+}
+
+export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbarProps) {
   const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
 
@@ -40,28 +44,30 @@ export default function LandingNavbar() {
           </span>
         </Link>
 
-        {user ? (
-          <Button
-            as={Link}
-            href="/dashboard"
-            color="primary"
-            variant="solid"
-            size={scrolled ? "md" : "md"}
-            className="bg-gradient-primary"
-          >
-            Dashboard
-          </Button>
-        ) : (
-          <Button
-            as={Link}
-            href="/signin"
-            color="primary"
-            variant="shadow"
-            size={scrolled ? "md" : "md"}
-            className="bg-gradient-primary"
-          >
-            Sign In
-          </Button>
+        {!hideAuthButtons && (
+          user ? (
+            <Button
+              as={Link}
+              href="/dashboard"
+              color="primary"
+              variant="solid"
+              size={scrolled ? "md" : "md"}
+              className="bg-gradient-primary"
+            >
+              Dashboard
+            </Button>
+          ) : (
+            <Button
+              as={Link}
+              href="/signin"
+              color="primary"
+              variant="shadow"
+              size={scrolled ? "md" : "md"}
+              className="bg-gradient-primary"
+            >
+              Sign In
+            </Button>
+          )
         )}
       </nav>
     </div>
