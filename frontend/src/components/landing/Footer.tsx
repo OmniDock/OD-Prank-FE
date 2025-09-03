@@ -16,9 +16,6 @@ export default function Footer() {
             <Link to="/imprint" className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
               Impressum
             </Link>
-            <Link to="/disclaimer" className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-              Disclaimer
-            </Link>
             <Link to="/blacklist" className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
               Blacklist your number
             </Link>

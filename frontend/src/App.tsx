@@ -24,13 +24,13 @@ function App() {
       <Route element={<TermsPage />} path="/terms" />
       <Route element={<ImprintPage />} path="/imprint" />
       <Route element={<PrivacyPage />} path="/privacy" />
+      <Route element={<BlacklistPage />} path="/blacklist" />
       <Route element={<PublicOnlyRoute />}>
         <Route element={<SignInPage />} path="/signin" />
         <Route element={<SignUpPage />} path="/signup" />
       </Route>
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/blacklist" element={<BlacklistPage />} />
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardMain />} />
           <Route path="scenarios" element={<ScenariosPage />} />

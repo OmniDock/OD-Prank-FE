@@ -63,7 +63,7 @@ export default function BlacklistPage() {
                   startContent={<PhoneIcon className="w-4 h-4 text-neutral-400" />}
                   className="flex-1"
                 />
-                <Button color="primary" onPress={handleAddNumber} startContent={<PlusIcon className="w-4 h-4" />}>
+                <Button color="primary" onPress={handleAddNumber} startContent={<PlusIcon className="w-4 h-4" />} className="bg-gradient-primary">
                   Add to Blacklist
                 </Button>
               </div>

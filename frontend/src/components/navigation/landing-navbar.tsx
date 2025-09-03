@@ -26,7 +26,7 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
       <nav
         className={[
           "transition-all duration-300 ease-in-out transform-gpu",
-          "container mx-auto flex items-center justify-between ",
+          "container mx-auto grid items-center grid-cols-[1fr_auto_1fr]",
           "border",
           scrolled
             ? "max-w-6xl mt-3 px-6 py-6 rounded-full shadow-xl border-purple-300/30 dark:border-purple-800/30 bg-white/40 dark:bg-gray-950/40 backdrop-blur-xl shadow-primary-500/20"
@@ -34,7 +34,7 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
           scrolled ? "scale-100" : "scale-100",
         ].join(" ")}
       >
-        <Link href="/" color="foreground" className="flex items-center gap-2">
+        <Link href="/" color="foreground" className="flex items-center gap-2 justify-self-start">
           <Logo size={scrolled ? 32 : 32} />
           <span
             className={[
@@ -47,7 +47,7 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
         </Link>
 
         {/* Navigation Links */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-6 justify-self-center">
           <Link href="/#hero" className="font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
             Home
           </Link>
@@ -59,7 +59,7 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
           </Link>
         </div>
 
-        {!hideAuthButtons && (
+        {!hideAuthButtons ? (
           user ? (
             <Button
               as={Link}
@@ -67,7 +67,7 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
               color="primary"
               variant="solid"
               size={scrolled ? "md" : "md"}
-              className="bg-gradient-primary"
+              className="bg-gradient-primary justify-self-end"
             >
               Dashboard
             </Button>
@@ -78,12 +78,12 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
               color="primary"
               variant="shadow"
               size={scrolled ? "md" : "md"}
-              className="bg-gradient-primary"
+              className="bg-gradient-primary justify-self-end"
             >
               Sign In
             </Button>
           )
-        )}
+        ): <div className="justify-self-end" />}
       </nav>
     </div>
   );

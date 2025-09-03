@@ -317,7 +317,7 @@ export default function VoiceShowcase({
                 ease: [0.4, 0, 0.2, 1]
               }}
             >
-            <Card className="hover:shadow-lg transition-shadow duration-300 border-default-100 h-full">
+            <Card className="hover:shadow-lg hover:scale-110 transition-shadow transition-all duration-300 border-default-100 h-full">
               <CardBody className="p-6 flex flex-col h-full">
                 {/* Voice Header */}
                 <div className="flex items-start justify-between mb-4">
