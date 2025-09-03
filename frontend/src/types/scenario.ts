@@ -55,14 +55,14 @@ export interface ScenarioCreateResponse {
 export interface ScenarioProcessRequest {
   scenario?: ScenarioCreateRequest;
   session_id?: string;
-  clarifying_questions?: string[];
-  clarifications?: string[];
+  clarifying_questions?: string | string[];
+  clarifications?: string | string[];
 }
 
 export interface ScenarioProcessResponse {
   status: 'needs_clarification' | 'complete' | 'error';
   session_id?: string;
-  clarifying_questions?: string[];
+  clarifying_questions?: string | string[];
   scenario_id?: number;
   error?: string;
 }

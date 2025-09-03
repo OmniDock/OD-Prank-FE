@@ -1,6 +1,7 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/navigation/sidebar";
+import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import { Button } from "@heroui/react";
 import { ArrowLeftIcon, ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/context/AuthProvider";
@@ -55,13 +56,14 @@ export default function DashboardLayout() {
 
   return (
     <div className={`h-screen w-screen grid grid-rows-[auto_1fr] grid-cols-1 lg:grid-rows-1 ${collapsed ? "lg:grid-cols-[4rem_1fr]" : "lg:grid-cols-[10rem_1fr]"}`}>
+      <AnimatedBackground variant="mixed" density={15} />
       {/* Sidebar */}
       <Sidebar collapsed={true} onToggle={toggleSidebar} />
 
       {/* Main */}
       <div className="flex flex-col min-h-0">
         {/* Topbar */}
-        <header className="h-16 border-b border-default-200 bg-content1 flex items-center justify-between px-4">
+        <header className="h-16 bg-transparent rounded-2xl mx-3 my-3 flex items-center justify-between px-4 shadow-xl shadow-primary-500/10">
           <div className="flex items-center gap-2">
             {showBack && (
               <Button isIconOnly size="sm" variant="light" onPress={handleBack} aria-label="Go back">
@@ -79,8 +81,8 @@ export default function DashboardLayout() {
                 await signOut();
                 navigate("/signin", { replace: true });
               }}
+              isIconOnly
             >
-              Logout
             </Button>
           </div>
         </header>

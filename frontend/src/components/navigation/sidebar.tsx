@@ -1,13 +1,14 @@
 import { NavLink } from "react-router-dom";
 import { HomeIcon, PhoneIcon, VideoCameraIcon } from "@heroicons/react/24/outline";
+import { Logo } from "@/components/icons";
 import { Tooltip } from "@heroui/react";
 import clsx from "clsx";
 
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   return (
-    <aside className={clsx("hidden lg:flex flex-col border-r border-default-200 bg-content1")}> 
+    <aside className={clsx("hidden lg:flex flex-col bg-white/30 dark:bg-gray-950/30 backdrop-blur-xl border-r border-white/15 dark:border-white/10 shadow-xl shadow-primary-500/10")}> 
       <div className={clsx("flex items-center gap-2.5", collapsed ? "h-14 px-3 justify-center" : "h-14 px-3")}> 
-        <img src="/android-chrome-192x192.png" alt="Logo" className={clsx(collapsed ? "h-7 w-7" : "h-7 w-7", "rounded-md")} />
+        <Logo size={28} />
         {!collapsed && <div className="text-base font-semibold truncate">Cally AI</div>}
       </div>
 
@@ -34,10 +35,10 @@ function NavItem({ to, icon, children, collapsed, end }: { to: string; icon: Rea
       to={to}
       className={({ isActive }) =>
         clsx(
-          "flex items-center gap-3 rounded-medium px-3 py-2 text-sm transition-colors",
+          "flex items-center gap-3 rounded-medium px-3 py-2 text-sm transition-colors border",
           isActive
-            ? "bg-primary-50 text-primary-700 dark:bg-primary-100/10 dark:text-primary-400"
-            : "hover:bg-default-100 text-default-700",
+            ? "bg-primary-500/10 border-primary-500/30 text-primary-700 dark:text-primary-400"
+            : "hover:bg-white/40 dark:hover:bg-white/10 text-default-700 border-transparent",
           collapsed && "justify-center px-2"
         )
       }

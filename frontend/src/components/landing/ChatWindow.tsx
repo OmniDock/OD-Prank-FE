@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { useNavigate } from "react-router-dom";
 import { Textarea } from "@heroui/input";
@@ -52,8 +52,10 @@ export default function ChatWindow() {
 
   function goNext() {
     if (input.trim()) {
-      // Fake flow: ignore content and redirect
-      navigate("/signin");
+      try {
+        localStorage.setItem("initialPrompt", input.trim());
+      } catch {}
+      navigate("/dashboard");
     }
   }
 
