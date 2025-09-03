@@ -29,8 +29,17 @@ export async function apiFetch(input: string, options: ApiRequestOptions = {}) {
 	});
 
 	if (!response.ok) {
-		// Optionally handle 401/403 or throw an error
-		throw new Error(`Request failed with status ${response.status}`);
+		let message = `Request failed with status ${response.status}`;
+		try {
+			const ct = response.headers.get("content-type") || "";
+			if (ct.includes("application/json")) {
+				const data = await response.json();
+				message = data?.detail || data?.error || message;
+			} else {
+				message = `${message}\n${await response.text()}`;
+			}
+		} catch {}
+		throw new Error(message);
 	}
 	return response;
 }

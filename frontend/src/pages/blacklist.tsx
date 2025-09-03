@@ -7,6 +7,9 @@ import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import { PhoneIcon, PlusIcon, ShieldCheckIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import { addToBlacklist } from "@/lib/api.blacklist";
+import { addToast } from "@heroui/react";
+
+
 
 export default function BlacklistPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -25,7 +28,13 @@ export default function BlacklistPage() {
       setSuccessE164(res.phone_number_e164);
       setPhoneNumber("");
     } catch (e: any) {
-      setErrorMsg(e?.message ?? "Failed to add to blacklist");
+      const message = e?.message ?? "Failed to add to blacklist";
+      addToast({
+        title: "Could not add number",
+        description: message,
+        color: "danger",
+        timeout: 4000,
+      });
     } finally {
       setLoading(false);
     }
@@ -53,12 +62,19 @@ export default function BlacklistPage() {
             </p>
           </div>
 
-          <Card className="backdrop-blur-md bg-white/80 dark:bg-neutral-900/80">
-            <CardHeader className="pb-4">
-              <h2 className="text-xl font-semibold">Add a Number to the Blacklist</h2>
+          <Card className="backdrop-blur-md bg-white/80 dark:bg-neutral-900/80 rounded-2xl shadow-lg">
+            <CardHeader className="px-6 py-4 border-b border-default-200 dark:border-default-800">
+              <h2 className="text-lg font-semibold">Add a Number to the Blacklist</h2>
             </CardHeader>
-            <CardBody className="space-y-6">
+            <CardBody className="px-6 py-5 space-y-4">
+
+              <div className="mb-6 p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800">
+                <p className="text-sm text-purple-700 dark:text-purple-300">
+                  <strong>Important:</strong> Once added, removal requires manual support intervention.
+                </p>
+              </div>
               <div className="flex gap-2">
+                
                 <Input
                   type="tel"
                   placeholder="Enter phone number to blacklist"
@@ -75,18 +91,13 @@ export default function BlacklistPage() {
               {successE164 && (
                 <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                   <CheckCircleIcon className="w-5 h-5" />
-                  <span className="text-sm">Added to blacklist: <span className="font-mono">{successE164}</span></span>
+                  <span className="text-sm">Added to Blacklist: <span className="font-mono">{successE164}</span></span>
                 </div>
               )}
               {errorMsg && (
                 <div className="text-sm text-red-600 dark:text-red-400">{errorMsg}</div>
               )}
 
-              <div className="mt-6 p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800">
-                <p className="text-sm text-purple-700 dark:text-purple-300">
-                  <strong>Important:</strong> Once added, removal requires manual support intervention. We do not argue.
-                </p>
-              </div>
             </CardBody>
           </Card>
         </motion.div>
