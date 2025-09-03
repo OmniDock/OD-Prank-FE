@@ -35,4 +35,129 @@
   .animate-float {
     animation: float 20s ease-in-out infinite;
   }
+
+  /* Page transition animations */
+  .transition-portal {
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, 
+      rgb(147, 51, 234) 0%, 
+      rgb(168, 85, 247) 30%, 
+      rgb(196, 181, 253) 60%, 
+      transparent 70%
+    );
+    animation: portal-expand 2.5s ease-in-out forwards;
+    box-shadow: 
+      0 0 100px 20px rgba(147, 51, 234, 0.5),
+      0 0 200px 40px rgba(168, 85, 247, 0.3);
+  }
+
+  @keyframes portal-expand {
+    0% {
+      width: 0;
+      height: 0;
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      width: 300vmax;
+      height: 300vmax;
+      opacity: 0;
+    }
+  }
+
+  .transition-vortex {
+    background: conic-gradient(
+      from 0deg at 50% 50%,
+      transparent,
+      rgba(147, 51, 234, 0.1),
+      transparent,
+      rgba(168, 85, 247, 0.1),
+      transparent
+    );
+    animation: vortex-spin 2.5s linear forwards;
+    opacity: 0;
+  }
+
+  @keyframes vortex-spin {
+    0% {
+      transform: rotate(0deg) scale(0);
+      opacity: 0;
+    }
+    20% {
+      opacity: 0.3;
+    }
+    80% {
+      opacity: 0.3;
+    }
+    100% {
+      transform: rotate(720deg) scale(5);
+      opacity: 0;
+    }
+  }
+
+  /* Additional cinematic effects */
+  .page-entering {
+    animation: page-enter 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: scale(1.1) translateZ(100px);
+      filter: blur(10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateZ(0);
+      filter: blur(0);
+    }
+  }
+
+  /* Ripple effect for button */
+  .button-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .button-ripple::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.8s, height 0.8s;
+  }
+
+  .button-ripple.ripple-active::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  /* Fade in animations */
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
