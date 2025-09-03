@@ -11,17 +11,26 @@ import PhoneCallPage from "@/pages/dashboard/phone-call";
 import DashboardLayout from "@/layouts/dashboard";
 import ScenarioDetailPage from "@/pages/dashboard/scenarios-detail";
 import ActiveCallPage from "@/pages/dashboard/active-call";
+import BlacklistPage from "@/pages/blacklist";
+import ImprintPage from "@/pages/imprint";
+import TermsPage from "@/pages/terms";
+import PrivacyPage from "@/pages/privacy";
 
 function App() {
   return (
     <Routes>
       <Route element={<IndexPage />} path="/" />
+      {/* Public legal pages */}
+      <Route element={<TermsPage />} path="/terms" />
+      <Route element={<ImprintPage />} path="/imprint" />
+      <Route element={<PrivacyPage />} path="/privacy" />
       <Route element={<PublicOnlyRoute />}>
         <Route element={<SignInPage />} path="/signin" />
         <Route element={<SignUpPage />} path="/signup" />
       </Route>
 
       <Route element={<ProtectedRoute />}>
+        <Route path="/blacklist" element={<BlacklistPage />} />
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardMain />} />
           <Route path="scenarios" element={<ScenariosPage />} />

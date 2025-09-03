@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
@@ -14,8 +14,8 @@ import {
 	LockClosedIcon,
 	SparklesIcon
 } from "@heroicons/react/24/outline";
-import { PhoneIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/solid";
 import AuthLayout from "@/layouts/auth";
+import AnimatedBackground from "@/components/ui/AnimatedBackground";
 
 export default function SignInPage() {
 	const [email, setEmail] = useState("");
@@ -29,26 +29,7 @@ export default function SignInPage() {
 
 	const toggleVisibility = () => setIsVisible(!isVisible);
 	
-	// Memoize floating icons positions to prevent regeneration on every render
-	const floatingPhones = useMemo(() => 
-		Array.from({ length: 12 }, (_, i) => ({
-			id: i,
-			left: Math.random() * 100,
-			top: Math.random() * 100,
-			delay: Math.random() * 10,
-			duration: 15 + Math.random() * 10
-		})), []
-	);
-	
-	const floatingChats = useMemo(() => 
-		Array.from({ length: 10 }, (_, i) => ({
-			id: i,
-			left: Math.random() * 100,
-			top: Math.random() * 100,
-			delay: Math.random() * 10 + 5,
-			duration: 20 + Math.random() * 10
-		})), []
-	);
+
 
 	async function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -87,48 +68,7 @@ export default function SignInPage() {
 
 	return (
 		<AuthLayout>
-			{/* Same background as landing page */}
-			<div className="fixed inset-0 -z-10 overflow-hidden">
-				<div className="absolute inset-0 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-950 dark:to-pink-950 opacity-20" />
-				<div 
-					className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
-					style={{
-						backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")`,
-					}}
-				/>
-
-				{/* Floating phone icons */}
-				{floatingPhones.map((phone) => (
-					<div
-						key={`phone-${phone.id}`}
-						className="absolute opacity-[0.03] dark:opacity-[0.06] animate-float"
-						style={{
-							left: `${phone.left}%`,
-							top: `${phone.top}%`,
-							animationDelay: `${phone.delay}s`,
-							animationDuration: `${phone.duration}s`
-						}}
-					>
-						<PhoneIcon className="w-12 h-12 text-purple-600 dark:text-purple-400" />
-					</div>
-				))}
-				
-				{/* Chat bubble icons */}
-				{floatingChats.map((chat) => (
-					<div
-						key={`chat-${chat.id}`}
-						className="absolute opacity-[0.03] dark:opacity-[0.06] animate-float"
-						style={{
-							left: `${chat.left}%`,
-							top: `${chat.top}%`,
-							animationDelay: `${chat.delay}s`,
-							animationDuration: `${chat.duration}s`
-						}}
-					>
-						<ChatBubbleLeftRightIcon className="w-10 h-10 text-pink-600 dark:text-pink-400" />
-					</div>
-				))}
-			</div>
+			<AnimatedBackground variant="phones" density={12} />
 			
 			<div className="relative flex items-center justify-center min-h-[calc(100vh-120px)] px-4 py-12">
 				<motion.div

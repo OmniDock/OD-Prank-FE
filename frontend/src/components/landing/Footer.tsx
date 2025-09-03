@@ -11,7 +11,10 @@ export default function Footer() {
               Privacy Policy
             </Link>
             <Link to="/terms" className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-              Terms of Service
+              Terms of Service / AGB
+            </Link>
+            <Link to="/imprint" className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+              Impressum
             </Link>
             <Link to="/disclaimer" className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
               Disclaimer
