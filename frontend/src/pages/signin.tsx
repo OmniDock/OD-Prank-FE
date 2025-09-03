@@ -153,7 +153,7 @@ export default function SignInPage() {
 							<div className="relative my-6">
 								<Divider className="bg-default-200" />
 								<span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-default-400 uppercase tracking-wider">
-									or continue with email
+									Sign in with email
 								</span>
 							</div>
 

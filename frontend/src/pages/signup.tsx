@@ -152,7 +152,7 @@ export default function SignUpPage() {
 							<div className="relative my-6">
 								<Divider className="bg-default-200" />
 								<span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-default-400 uppercase tracking-wider">
-									or sign up with email
+									 sign up with email
 								</span>
 							</div>
 
