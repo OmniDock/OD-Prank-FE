@@ -5,6 +5,7 @@ import { SpeakerWaveIcon, PhoneIcon } from "@heroicons/react/24/solid";
 import Stats from "@/components/landing/Stats";
 import TemplateContainer from "@/components/landing/TemplateContainer";
 import Footer from "@/components/landing/Footer";
+import VoiceShowcase from "@/components/landing/VoiceShowcase";
 
 
 
@@ -62,6 +63,17 @@ export default function IndexPage() {
 
       <section className="py-20 md:py-28">
         <TemplateContainer />
+      </section>
+
+      {/* Voice Showcase Section */}
+      <section className="py-20 md:py-28 bg-default-50 dark:bg-default-950/30">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <VoiceShowcase 
+            title="Meet Some of Our Voices"
+            subtitle="Professional voices from around the world, ready to bring your pranks to life"
+            maxVoices={6}
+          />
+        </div>
       </section>
 
       <Footer />
