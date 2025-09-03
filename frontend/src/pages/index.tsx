@@ -4,6 +4,7 @@ import ChatWindow from "@/components/landing/ChatWindow";
 import { SpeakerWaveIcon, PhoneIcon } from "@heroicons/react/24/solid";
 import Stats from "@/components/landing/Stats";
 import TemplateContainer from "@/components/landing/TemplateContainer";
+import Footer from "@/components/landing/Footer";
 
 
 
@@ -63,16 +64,7 @@ export default function IndexPage() {
         <TemplateContainer />
       </section>
 
-  
+      <Footer />
     </DefaultLayout>
-  );
-}
-
-function Feature({ title, desc }: { title: string; desc: string }) {
-  return (
-    <div className="rounded-2xl border border-black/10 p-6 dark:border-white/10">
-      <div className="font-semibold mb-2">{title}</div>
-      <div className="text-sm text-neutral-600 dark:text-neutral-300">{desc}</div>
-    </div>
   );
 }
