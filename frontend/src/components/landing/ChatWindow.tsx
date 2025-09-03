@@ -61,7 +61,8 @@ export default function ChatWindow() {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <div className="rounded-3xl border border-primary-300 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-xl shadow-primary-500/40">
+      
+      <div className="rounded-3xl border border-purple-300/30 dark:border-purple-800/30 bg-white/40 dark:bg-gray-950/40 backdrop-blur-xl shadow-xl shadow-primary-500/20">
         <div className="p-2">
           <div className="flex items-end gap-3">
             <Textarea

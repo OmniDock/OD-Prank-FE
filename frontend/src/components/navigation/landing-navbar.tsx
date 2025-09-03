@@ -21,10 +21,10 @@ export default function LandingNavbar() {
         className={[
           "transition-all duration-300 ease-in-out transform-gpu",
           "container mx-auto flex items-center justify-between ",
-          "border border-transparent dark:border-transparent",
+          "border",
           scrolled
-            ? "max-w-6xl mt-3 px-6 py-6 rounded-full shadow-lg border-white/20 dark:border-white/10 bg-white dark:bg-neutral-900/60 shadow-primary-300 shadow-lg"
-            : "max-w-7xl px-6 py-6 bg-white",
+            ? "max-w-6xl mt-3 px-6 py-6 rounded-full shadow-xl border-purple-300/30 dark:border-purple-800/30 bg-white/40 dark:bg-gray-950/40 backdrop-blur-xl shadow-primary-500/20"
+            : "max-w-7xl px-6 py-6 bg-transparent border-transparent",
           scrolled ? "scale-100" : "scale-100",
         ].join(" ")}
       >
