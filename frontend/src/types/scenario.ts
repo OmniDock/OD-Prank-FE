@@ -55,6 +55,7 @@ export interface ScenarioCreateResponse {
 export interface ScenarioProcessRequest {
   scenario?: ScenarioCreateRequest;
   session_id?: string;
+  clarifying_questions?: string[];
   clarifications?: string[];
 }
 
