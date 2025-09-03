@@ -1,28 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Card, CardBody } from "@heroui/card";
-import { Button } from "@heroui/button";
-import { Chip } from "@heroui/chip";
+import VoiceCard, { type Voice as VoiceType } from "@/components/landing/VoiceCard";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  PlayIcon, 
-  PauseIcon, 
-  SpeakerWaveIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  FunnelIcon,
-  UserIcon
-} from "@heroicons/react/24/solid";
+import { SpeakerWaveIcon, ChevronDownIcon, ChevronUpIcon, FunnelIcon } from "@heroicons/react/24/solid";
 import { Tabs, Tab } from "@heroui/tabs";
 import { supabase } from "@/lib/supabaseClient";
 
-interface Voice {
-  id: string;
-  name: string;
-  description: string;
-  languages: string[];
-  gender: string;
-  preview_url: string;
-}
+type Voice = VoiceType;
 
 interface VoiceShowcaseProps {
   title?: string;
@@ -98,19 +81,16 @@ export default function VoiceShowcase({
     }
   };
 
-  const getGenderColor = (gender: string) => {
-    return gender === 'FEMALE' ? 'secondary' : 'primary';
-  };
-
+  // helpers moved to VoiceCard
   const getLanguageFlag = (language: string) => {
     const flags: Record<string, string> = {
-      'GERMAN': '🇩🇪',
-      'ENGLISH': '🇬🇧',
-      'SPANISH': '🇪🇸',
-      'FRENCH': '🇫🇷',
-      'ITALIAN': '🇮🇹'
+      GERMAN: "🇩🇪",
+      ENGLISH: "🇬🇧",
+      SPANISH: "🇪🇸",
+      FRENCH: "🇫🇷",
+      ITALIAN: "🇮🇹",
     };
-    return flags[language] || '🌍';
+    return flags[language] || "🌍";
   };
   
   // Filter voices based on selected criteria
@@ -219,79 +199,15 @@ export default function VoiceShowcase({
             animate={{ opacity: 1, y: 0 }}
             transition={{ 
               duration: 0.4,
-              delay: index * 0.08,
+              delay: index * 0.06,
               ease: "easeOut"
             }}
           >
-              <Card className="hover:shadow-lg transition-shadow duration-300 border-default-100 h-full">
-                <CardBody className="p-6 flex flex-col h-full">
-                  {/* Voice Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full bg-${getGenderColor(voice.gender)}-100 dark:bg-${getGenderColor(voice.gender)}-900/30`}>
-                        <UserIcon className={`w-5 h-5 text-${getGenderColor(voice.gender)}`} />
-                      </div>
-                      <div>
-                        <div className="flex flex-row items-center gap-2 justify-center">
-                          <h3 className="text-lg font-semibold">{voice.name}</h3>
-                          <div className="flex gap-2 flex-wrap">
-                            {voice.languages.map((lang) => (
-                                <span className="text-lg">{getLanguageFlag(lang)}</span>
-                              ))}
-                          </div>
-                        </div>
-                        <Chip 
-                          size="sm" 
-                          color={getGenderColor(voice.gender)}
-                          variant="flat"
-                        >
-                          {voice.gender.toLowerCase()}
-                        </Chip>
-                      </div>
-                    </div>
-                    
-                    {/* Play Button */}
-                    <Button
-                      isIconOnly
-                      size="lg"
-                      color={playingId === voice.id ? "success" : "primary"}
-                      variant={playingId === voice.id ? "flat" : "light"}
-                      onClick={() => handlePlayPause(voice)}
-                      className="transition-all"
-                    >
-                      {playingId === voice.id ? (
-                        <motion.div
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 1, repeat: Infinity }}
-                        >
-                          <PauseIcon className="w-5 h-5" />
-                        </motion.div>
-                      ) : (
-                        <PlayIcon className="w-5 h-5" />
-                      )}
-                    </Button>
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-sm text-default-500 mb-4 line-clamp-2 flex-grow">
-                    {voice.description || "Professional voice actor"}
-                  </p>
-
-
-
-                  {/* Playing Indicator */}
-                  {playingId === voice.id && (
-                    <motion.div
-                      className="mt-4 flex items-center gap-2 text-success"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    >
-                      <SpeakerWaveIcon className="w-4 h-4" />
-                      <span className="text-xs">Playing preview...</span>
-                    </motion.div>
-                  )}
-                </CardBody>
-              </Card>
+            <VoiceCard
+              voice={voice}
+              isPlaying={playingId === voice.id}
+              onTogglePlay={handlePlayPause}
+            />
           </motion.div>
         ))}
         
@@ -300,97 +216,16 @@ export default function VoiceShowcase({
           {showAll && filteredVoices.slice(maxVoices).map((voice, index) => (
             <motion.div
               key={voice.id}
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ 
-                opacity: 1,
-                y: 0,
-                scale: 1
-              }}
-              exit={{ 
-                opacity: 0,
-                y: 20,
-                scale: 0.95
-              }}
-              transition={{ 
-                duration: 0.3,
-                delay: index * 0.05,
-                ease: [0.4, 0, 0.2, 1]
-              }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.4, delay: index * 0.06, ease: "easeOut" }}
             >
-            <Card className="hover:shadow-lg hover:scale-110 transition-shadow transition-all duration-300 border-default-100 h-full">
-              <CardBody className="p-6 flex flex-col h-full">
-                {/* Voice Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full bg-${getGenderColor(voice.gender)}-100 dark:bg-${getGenderColor(voice.gender)}-900/30`}>
-                      <UserIcon className={`w-5 h-5 text-${getGenderColor(voice.gender)}`} />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">{voice.name}</h3>
-                      <Chip 
-                        size="sm" 
-                        color={getGenderColor(voice.gender)}
-                        variant="flat"
-                      >
-                        {voice.gender.toLowerCase()}
-                      </Chip>
-                    </div>
-                  </div>
-                  
-                  {/* Play Button */}
-                  <Button
-                    isIconOnly
-                    size="lg"
-                    color={playingId === voice.id ? "success" : "primary"}
-                    variant={playingId === voice.id ? "flat" : "light"}
-                    onClick={() => handlePlayPause(voice)}
-                    className="transition-all"
-                  >
-                    {playingId === voice.id ? (
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 1, repeat: Infinity }}
-                      >
-                        <PauseIcon className="w-5 h-5" />
-                      </motion.div>
-                    ) : (
-                      <PlayIcon className="w-5 h-5" />
-                    )}
-                  </Button>
-                </div>
-
-                {/* Description */}
-                <p className="text-sm text-default-500 mb-4 line-clamp-2 flex-grow">
-                  {voice.description || "Professional voice actor"}
-                </p>
-
-                {/* Languages */}
-                <div className="flex gap-2 flex-wrap mt-auto">
-                  {voice.languages.map((lang) => (
-                    <Chip
-                      key={lang}
-                      size="sm"
-                      variant="flat"
-                      startContent={<span className="text-lg">{getLanguageFlag(lang)}</span>}
-                    >
-                      {lang.toLowerCase()}
-                    </Chip>
-                  ))}
-                </div>
-
-                {/* Playing Indicator */}
-                {playingId === voice.id && (
-                  <motion.div
-                    className="mt-4 flex items-center gap-2 text-success"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    <SpeakerWaveIcon className="w-4 h-4" />
-                    <span className="text-xs">Playing preview...</span>
-                  </motion.div>
-                )}
-              </CardBody>
-            </Card>
+              <VoiceCard
+                voice={voice}
+                isPlaying={playingId === voice.id}
+                onTogglePlay={handlePlayPause}
+              />
             </motion.div>
           ))}
         </AnimatePresence>
