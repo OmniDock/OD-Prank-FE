@@ -14,6 +14,7 @@ import {
 	CheckCircleIcon,
 	UserPlusIcon
 } from "@heroicons/react/24/outline";
+import { PhoneIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/solid";
 import AuthLayout from "@/layouts/auth";
 
 export default function SignUpPage() {
@@ -64,34 +65,48 @@ export default function SignUpPage() {
 
 	return (
 		<AuthLayout>
-			{/* Animated background gradient */}
-			<div className="absolute inset-0 bg-gradient-to-br from-secondary-50 via-background to-primary-50 dark:from-secondary-950 dark:via-background dark:to-primary-950" />
-			
-			{/* Animated orbs - different positions than signin */}
-			<motion.div
-				className="absolute top-40 right-20 w-72 h-72 bg-secondary-200/30 dark:bg-secondary-800/30 rounded-full blur-3xl"
-				animate={{
-					x: [0, -100, 0],
-					y: [0, 50, 0],
-				}}
-				transition={{
-					duration: 22,
-					repeat: Infinity,
-					ease: "easeInOut"
-				}}
-			/>
-			<motion.div
-				className="absolute bottom-40 left-20 w-96 h-96 bg-primary-200/30 dark:bg-primary-800/30 rounded-full blur-3xl"
-				animate={{
-					x: [0, 100, 0],
-					y: [0, -50, 0],
-				}}
-				transition={{
-					duration: 28,
-					repeat: Infinity,
-					ease: "easeInOut"
-				}}
-			/>
+			{/* Same background as landing page */}
+			<div className="fixed inset-0 -z-10 overflow-hidden">
+				<div className="absolute inset-0 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-950 dark:to-pink-950 opacity-20" />
+				<div 
+					className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
+					style={{
+						backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")`,
+					}}
+				/>
+
+				{/* Floating phone icons */}
+				{[...Array(12)].map((_, i) => (
+					<div
+						key={i}
+						className="absolute opacity-[0.03] dark:opacity-[0.06] animate-float"
+						style={{
+							left: `${Math.random() * 100}%`,
+							top: `${Math.random() * 100}%`,
+							animationDelay: `${Math.random() * 10}s`,
+							animationDuration: `${15 + Math.random() * 10}s`
+						}}
+					>
+						<PhoneIcon className="w-12 h-12 text-purple-600 dark:text-purple-400" />
+					</div>
+				))}
+				
+				{/* Chat bubble icons */}
+				{[...Array(10)].map((_, i) => (
+					<div
+						key={`chat-${i}`}
+						className="absolute opacity-[0.03] dark:opacity-[0.06] animate-float"
+						style={{
+							left: `${Math.random() * 100}%`,
+							top: `${Math.random() * 100}%`,
+							animationDelay: `${Math.random() * 10 + 5}s`,
+							animationDuration: `${20 + Math.random() * 10}s`
+						}}
+					>
+						<ChatBubbleLeftRightIcon className="w-10 h-10 text-pink-600 dark:text-pink-400" />
+					</div>
+				))}
+			</div>
 			
 			<div className="relative flex items-center justify-center min-h-[calc(100vh-120px)] px-4 py-12">
 				<motion.div
@@ -100,7 +115,7 @@ export default function SignUpPage() {
 					transition={{ duration: 0.5 }}
 					className="w-full max-w-md"
 				>
-					<Card className="backdrop-blur-xl bg-background/80 shadow-2xl border-default-100">
+					<Card className="shadow-primary-500/40 shadow-2xl border-default-100">
 						<CardBody className="p-8">
 							{/* Header with animation */}
 							<motion.div 
