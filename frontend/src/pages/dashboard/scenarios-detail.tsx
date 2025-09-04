@@ -142,11 +142,13 @@ export default function ScenarioDetailPage() {
         </Card>
       )}
 
-      <VoiceLinesTable 
-        scenario={scenario}
-        onRefetchScenario={refetchScenario}
-        onOpenPlayer={onOpenPlayer}
-      />
+      {scenario.preferred_voice_id && (
+        <VoiceLinesTable 
+          scenario={scenario}
+          onRefetchScenario={refetchScenario}
+          onOpenPlayer={onOpenPlayer}
+        />
+      )}
 
 
       {scenario && (

@@ -13,8 +13,7 @@ interface VoiceSectionProps {
 }
 
 export function VoiceSection({ scenario, voices, onSelect }: VoiceSectionProps) {
-  //const hasVoice = !!scenario.preferred_voice_id;
-  const hasVoice = false;
+  const hasVoice = !!scenario.preferred_voice_id;
   if (hasVoice) {
     const vid = scenario.preferred_voice_id!;
     const v = voices.find(x => x.id === vid);

@@ -5,7 +5,7 @@ import DeleteConfirmationModal from "@/components/delete-confirmation-modal";
 import SetActiveModal from "@/components/set-active-modal";
 import { deleteScenario } from "@/lib/api.scenarios";
 import { TrashIcon, PowerIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
-
+import { useNavigate } from "react-router-dom";
 interface ScenarioInfoProps {
   scenario: Scenario;
   onRefresh?: () => Promise<void>;
@@ -15,18 +15,21 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isActiveModalOpen, setIsActiveModalOpen] = useState(false);
   const [expanded, setExpanded] = useState(true);
-
+  const navigate = useNavigate();
 
   async function handleDeleteConfirm() {
     if (!scenario) return;
     
-    await deleteScenario(scenario.id);
+    const res = await deleteScenario(scenario.id);
+    if (res.success) {
     addToast({
       title: "Scenario deleted",
       description: `Successfully deleted "${scenario.title}"`,
       color: "success",
       timeout: 3000,
     });
+    navigate("/dashboard/scenarios");
+    }
   }
 
   return (
