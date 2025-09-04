@@ -62,10 +62,10 @@ export function CallStartBox({ scenario }: { scenario: Scenario }) {
 
   return (
     <div className="flex justify-center">
-      <Card className="ring-1 ring-success-200 border-success-200 bg-success-50/60 max-w-xl w-xl">
+      <Card className="ring-1 ring-primary-200 border-primary-200 bg-primary-50/60 max-w-xl w-xl">
         <CardHeader className="pb-2">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-success/10 text-success">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary">
               <span aria-hidden>📞</span>
             </div>
             <div>
@@ -91,7 +91,7 @@ export function CallStartBox({ scenario }: { scenario: Scenario }) {
             />
             <Button
               size="md"
-              color="success"
+              color="primary"
               className="font-semibold text-white w-full"
               onPress={startCall}
               isDisabled={!canAct}

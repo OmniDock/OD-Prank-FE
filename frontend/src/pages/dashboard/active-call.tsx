@@ -144,11 +144,28 @@ function ActiveCallContent() {
           };
           progressRafRef.current = requestAnimationFrame(loop);
         } else {
-          // No duration known: keep active highlight only, no animated progress
-          confStartAtRef.current = null;
-          confTargetMsRef.current = null;
-          confCurrentLineIdRef.current = voiceLineId;
-          setProgress(0);
+          // No duration known: animate linear curtain with a default duration
+          const DEFAULT_MS = 3000;
+          confTargetMsRef.current = DEFAULT_MS;
+          confStartAtRef.current = performance.now();
+          const loop = () => {
+            if (confStartAtRef.current == null || confTargetMsRef.current == null) return;
+            const elapsed = performance.now() - confStartAtRef.current;
+            const p = Math.min(elapsed / confTargetMsRef.current, 1);
+            setProgress(p);
+            if (p < 1 && confCurrentLineIdRef.current === voiceLineId) {
+              progressRafRef.current = requestAnimationFrame(loop);
+            } else {
+              progressRafRef.current = null;
+              confStartAtRef.current = null;
+              confTargetMsRef.current = null;
+              confCurrentLineIdRef.current = null;
+              setIsPaused(false);
+              setIsPlaying(false);
+              setPlayingLineId((id) => (id === voiceLineId ? null : id));
+            }
+          };
+          progressRafRef.current = requestAnimationFrame(loop);
         }
       } catch (error) {
         console.error("Failed to play voice line to conference:", error);
@@ -389,8 +406,8 @@ function ActiveCallContent() {
                             }`}
                             onClick={() => playVoiceLine(vl.id)}
                           >
-                            {/* Progress overlay (local always; conference only if duration known) */}
-                            {isActive && (!result?.conference_name || Boolean(scenario?.voice_lines.find(x => x.id === vl.id)?.preferred_audio?.duration_ms)) && (
+                            {/* Progress overlay (curtain) */}
+                            {isActive && (
                               <div className="absolute inset-0 z-0 overflow-hidden rounded-medium pointer-events-none">
                                 <div
                                   className={`h-full bg-emerald-500/30 ${isPaused ? "opacity-60" : "opacity-90"}`}
@@ -460,6 +477,7 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
+  const [pstnJoined, setPstnJoined] = useState(false);
 
   const handleInterrupt = async () => {
     try {
@@ -550,6 +568,18 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
 
+      // helper to draw rounded rectangles
+      const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
+        const rr = Math.max(0, Math.min(r, w / 2, h / 2));
+        ctx.beginPath();
+        ctx.moveTo(x + rr, y);
+        ctx.arcTo(x + w, y, x + w, y + rr, rr);
+        ctx.arcTo(x + w, y + h, x + w - rr, y + h, rr);
+        ctx.arcTo(x, y + h, x, y + h - rr, rr);
+        ctx.arcTo(x, y, x + rr, y, rr);
+        ctx.closePath();
+      };
+
       const draw = () => {
         if (!canvas || !ctx2d || !analyserRef.current) return;
         const { width, height } = canvas;
@@ -575,8 +605,12 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
           const yTop = height / 2 - barHeight;
 
           ctx2d.fillStyle = "rgba(34,197,94,0.85)";
-          ctx2d.fillRect(x, yTop, barWidth * 0.8, barHeight);
-          ctx2d.fillRect(x, height / 2, barWidth * 0.8, barHeight);
+          const rw = barWidth * 0.8;
+          const radius = Math.min(rw / 2, 6);
+          drawRoundedRect(ctx2d, x, yTop, rw, barHeight, radius);
+          ctx2d.fill();
+          drawRoundedRect(ctx2d, x, height / 2, rw, barHeight, radius);
+          ctx2d.fill();
         }
 
         rafRef.current = requestAnimationFrame(draw);
@@ -590,6 +624,26 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
     return () => teardown();
   }, [remoteStream, connectionState]);
 
+  // Poll backend for PSTN presence status
+  useEffect(() => {
+    if (!conference) return;
+    let stopped = false;
+    const poll = async () => {
+      try {
+        const res = await apiFetch(`/telnyx/call/status?conference_name=${encodeURIComponent(conference)}`);
+        if (!stopped) {
+          const data = await res.json();
+          setPstnJoined(Boolean(data?.pstn_joined));
+        }
+      } catch {
+        // ignore transient
+      }
+    };
+    const id = window.setInterval(poll, 1500);
+    void poll();
+    return () => { stopped = true; window.clearInterval(id); };
+  }, [conference]);
+
   return (
     <Card className="mb-4">
       <CardHeader>
@@ -600,12 +654,12 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
       <CardBody>
         <div className="flex flex-col items-center gap-4">
           <div className="text-sm">
-            {connectionState === "connected" ? (
-              <span className="text-success font-medium">● Live</span>
-            ) : connectionState === "connecting" ? (
+            {connectionState !== "connected" ? (
               <span className="text-warning font-medium">● Connecting…</span>
+            ) : !pstnJoined ? (
+              <span className="text-default-500">● Waiting for called to join…</span>
             ) : (
-              <span className="text-default-500">● Not Live</span>
+              <span className="text-success font-medium">● Live</span>
             )}
           </div>
           <div className="w-full flex justify-center">
@@ -619,7 +673,7 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
               variant="solid"
               onPress={handleInterrupt}
               startContent={<StopIcon className="w-4 h-4" />}
-              isDisabled={connectionState !== "connected"}
+              isDisabled={connectionState !== "connected" || !pstnJoined}
             >
               Interrupt
             </Button>

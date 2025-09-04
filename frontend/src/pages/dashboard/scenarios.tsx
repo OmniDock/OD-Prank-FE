@@ -52,12 +52,6 @@ export default function ScenariosPage() {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-end">
-
-        <Button color="primary" size="sm" onPress={() => setIsCreateOpen(true)}>
-          New Scenario
-        </Button>
-      </div>
 
       {loading ? (
         <div className="flex justify-center py-8">
@@ -71,7 +65,10 @@ export default function ScenariosPage() {
         >
           <div>
             {scenarios.length === 0 ? (
-                <div className="text-default-500 text-sm">No scenarios yet</div>
+                <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
+                  <div className="text-default-500 text-4xl font-semibold text-gradient">No Scenario yet</div>
+                  <div className="text-default-500 text-2xl ">Create a new scenario to get started</div>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   {scenarios.map((s) => (

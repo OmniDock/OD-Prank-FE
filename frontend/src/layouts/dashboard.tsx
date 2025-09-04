@@ -33,8 +33,8 @@ export default function DashboardLayout() {
     // Static mappings first
     const staticMappings: Record<string, string> = {
       "/dashboard": "",
-      "/dashboard/scenarios": "Scenarios",
-      "/dashboard/phone-call": "Phone Call",
+      "/dashboard/scenarios": "",
+      "/dashboard/phone-call": "",
     };
     
     if (staticMappings[path]) {
