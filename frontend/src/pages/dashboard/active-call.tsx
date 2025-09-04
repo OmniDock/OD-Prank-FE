@@ -144,24 +144,11 @@ function ActiveCallContent() {
           };
           progressRafRef.current = requestAnimationFrame(loop);
         } else {
-          // No duration known: keep subtle activity by pulsing progress 0->0.3 repeatedly
-          confTargetMsRef.current = 1200;
-          confStartAtRef.current = performance.now();
-          const loop = () => {
-            if (confStartAtRef.current == null || confTargetMsRef.current == null) return;
-            const elapsed = (performance.now() - confStartAtRef.current) % confTargetMsRef.current;
-            const p = 0.15 + 0.15 * Math.sin((elapsed / confTargetMsRef.current) * Math.PI * 2);
-            setProgress(p);
-            if (confCurrentLineIdRef.current === voiceLineId) {
-              progressRafRef.current = requestAnimationFrame(loop);
-            } else {
-              progressRafRef.current = null;
-              confStartAtRef.current = null;
-              confTargetMsRef.current = null;
-              confCurrentLineIdRef.current = null;
-            }
-          };
-          progressRafRef.current = requestAnimationFrame(loop);
+          // No duration known: keep active highlight only, no animated progress
+          confStartAtRef.current = null;
+          confTargetMsRef.current = null;
+          confCurrentLineIdRef.current = voiceLineId;
+          setProgress(0);
         }
       } catch (error) {
         console.error("Failed to play voice line to conference:", error);
@@ -402,8 +389,8 @@ function ActiveCallContent() {
                             }`}
                             onClick={() => playVoiceLine(vl.id)}
                           >
-                            {/* Progress overlay (local or conference) */}
-                            {isActive && (
+                            {/* Progress overlay (local always; conference only if duration known) */}
+                            {isActive && (!result?.conference_name || Boolean(scenario?.voice_lines.find(x => x.id === vl.id)?.preferred_audio?.duration_ms)) && (
                               <div className="absolute inset-0 z-0 overflow-hidden rounded-medium pointer-events-none">
                                 <div
                                   className={`h-full bg-emerald-500/30 ${isPaused ? "opacity-60" : "opacity-90"}`}
