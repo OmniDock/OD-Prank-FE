@@ -354,8 +354,8 @@ export default function ChatWindow({ onExpand, onStartTyping }: ChatWindowProps 
             />
           </div>
           
-          {/* Generate Button - Show when there's content */}
-          {hasStarted && currentDraft && (
+          {/* Generate Button - User decides readiness; show once chat started */}
+          {hasStarted && (
             <div className="mt-3">
               <Button
                 color="primary"
