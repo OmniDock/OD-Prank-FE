@@ -1,235 +1,388 @@
-import { useEffect, useMemo, useState } from "react";
-import { Button, Spinner } from "@heroui/react";
+
+
+import { useEffect, useRef, useState } from "react";
+import { Button, Spinner, Chip, Switch } from "@heroui/react";
+import { useNavigate } from "react-router-dom";
 import MessageCard from "@/components/ai/MessageCard";
-import { Logo } from "@/components/icons";
 import PromptInputFullLine from "@/components/ai/PromptInputFullLine";
 import { useAuth } from "@/context/AuthProvider";
-import { processScenario, fetchScenario } from "@/lib/api.scenarios";
-import type { ScenarioProcessResponse } from "@/types/scenario";
-
-type Role = "user" | "assistant";
-type Message = { id: string; role: Role; content: string; ts: number };
-
-function genId() {
-  return Math.random().toString(36).slice(2);
-}
+import { DesignChatWebSocket } from "@/lib/api.design-chat";
+import { processScenario } from "@/lib/api.scenarios";
+import type { DesignChatMessage, DesignChatResponse } from "@/types/design-chat";
+import { CheckCircleIcon, SparklesIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { Logo } from "@/components/icons";
 
 type ChatWindowProps = {
   onExpand?: () => void;
+  onStartTyping?: () => void;
 };
 
-export default function ChatWindow({ onExpand }: ChatWindowProps = {}) {
+export default function ChatWindow({ onExpand, onStartTyping }: ChatWindowProps = {}) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const userName = (user as any)?.user_metadata?.full_name || (user as any)?.user_metadata?.name || user?.email || "You";
   const userAvatar = (user as any)?.user_metadata?.avatar_url || (user as any)?.user_metadata?.picture || undefined;
-  const saved = typeof window !== "undefined" ? localStorage.getItem("initialPrompt") || "" : "";
-  const [initialInput, setInitialInput] = useState<string>(saved);
-  const [answerInput, setAnswerInput] = useState<string>("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [waiting, setWaiting] = useState<boolean>(false);
-  const [finished, setFinished] = useState<boolean>(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-
-  const hasAssistant = useMemo(() => messages.some(m => m.role === "assistant"), [messages]);
-  const initialSent = useMemo(() => messages.find(m => m.role === "user"), [messages]);
-
+  
+  const [messages, setMessages] = useState<DesignChatMessage[]>([]);
+  const [input, setInput] = useState<string>("");
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [streamingMessage, setStreamingMessage] = useState<string>("");
+  
+  // Design chat state
+  const [isReady, setIsReady] = useState(false);
+  const [missingAspects, setMissingAspects] = useState<string[]>([]);
+  const [currentDraft, setCurrentDraft] = useState("");
+  const [targetName, setTargetName] = useState<string>();
+  const [scenarioTitle, setScenarioTitle] = useState<string>();
+  const [showDetails, setShowDetails] = useState(false);
+  
+  const wsRef = useRef<DesignChatWebSocket | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const hasStarted = messages.length > 0;
+  
+  // Auto-connect when user starts typing or on mount
   useEffect(() => {
-    if (saved && !initialInput) setInitialInput(saved);
-  }, [saved]);
-
-  function formatClarifying(q: ScenarioProcessResponse["clarifying_questions"]) {
-    if (!q) return "";
-    return Array.isArray(q) ? q.join("\n") : q;
-  }
-
-  async function submitInitial(contentOverride?: string) {
-    const content = (contentOverride ?? initialInput).trim();
-    if (!content || waiting || messages.length > 0) return;
-
-    if (contentOverride) setInitialInput(contentOverride);
-
-    // Notify wrapper that chat is expanding (first action)
-    try { onExpand && onExpand(); } catch {}
-
-    const userMsg: Message = { id: genId(), role: "user", content, ts: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
-    setWaiting(true);
-
+    if (!wsRef.current && !isConnecting) {
+      connectWebSocket();
+    }
+    
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.disconnect();
+        wsRef.current = null;
+      }
+    };
+  }, []);
+  
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+  
+  const connectWebSocket = async () => {
+    if (wsRef.current?.isConnected()) return;
+    
+    setIsConnecting(true);
+    setError(null);
+    
     try {
-      const resp = await processScenario({
-        scenario: {
-          title: "Draft from chat",
-          target_name: "Unknown",
-          description: content,
-          language: "GERMAN",
+      const ws = new DesignChatWebSocket();
+      
+      await ws.connect(
+        handleWebSocketMessage,
+        (error) => {
+          console.error('WebSocket error:', error);
+          setError('Verbindung verloren. Bitte Seite neu laden.');
+          setIsConnected(false);
         },
-      });
-
-      if (resp.status === "needs_clarification") {
-        setSessionId(resp.session_id || null);
-        const aiText = formatClarifying(resp.clarifying_questions) || "Please provide a bit more detail.";
-        const ai: Message = { id: genId(), role: "assistant", content: aiText, ts: Date.now() };
-        setMessages(prev => [...prev, ai]);
-      } else if (resp.status === "complete" && resp.scenario_id) {
-        const scenario = await fetchScenario(resp.scenario_id);
-        const aiText = `Scenario created: "${scenario.title}" (ID: ${scenario.id}). View it under Scenarios.`;
-        const ai: Message = { id: genId(), role: "assistant", content: aiText, ts: Date.now() };
-        setMessages(prev => [...prev, ai]);
-        setFinished(true);
-      } else if (resp.status === "error") {
-        const ai: Message = { id: genId(), role: "assistant", content: `Error: ${resp.error || "Unknown error"}`, ts: Date.now() };
-        setMessages(prev => [...prev, ai]);
-        setFinished(true);
-      }
-    } catch (err) {
-      const ai: Message = { id: genId(), role: "assistant", content: `Request failed: ${err instanceof Error ? err.message : String(err)}`, ts: Date.now() };
-      setMessages(prev => [...prev, ai]);
-      setFinished(true);
+        () => {
+          console.log('WebSocket closed');
+          setIsConnected(false);
+        }
+      );
+      
+      wsRef.current = ws;
+      setIsConnected(true);
+      
+      // Initial greeting will come from backend
+      
+    } catch (error) {
+      console.error('Failed to connect:', error);
+      setError('Konnte keine Verbindung herstellen. Bitte versuche es später erneut.');
     } finally {
-      setWaiting(false);
+      setIsConnecting(false);
     }
-  }
-
-  async function submitAnswer() {
-    const content = answerInput.trim();
-    if (!content || waiting || finished || !hasAssistant || !sessionId) return;
-
-    const userMsg: Message = { id: genId(), role: "user", content, ts: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
-    setWaiting(true);
-
+  };
+  
+  const handleWebSocketMessage = (data: any) => {
+    if (data.type === 'typing') {
+      // Show/hide typing indicator
+      setIsAiTyping(data.status === 'start');
+      setStreamingMessage("");
+      
+    } else if (data.type === 'stream') {
+      // Handle streaming content
+      setStreamingMessage(prev => prev + (data.content || ""));
+      setIsAiTyping(true);
+      
+    } else if (data.type === 'response') {
+      // Final response - add complete message
+      const finalMessage = data.suggestion || streamingMessage;
+      
+      if (finalMessage) {
+        setMessages(prev => {
+          // Check for duplicates using the current state
+          const isDuplicate = prev.some(msg => 
+            msg.role === 'assistant' && msg.content === finalMessage
+          );
+          
+          if (!isDuplicate) {
+            const assistantMessage: DesignChatMessage = {
+              id: Date.now().toString(),
+              role: 'assistant',
+              content: finalMessage,
+              timestamp: Date.now()
+            };
+            return [...prev, assistantMessage];
+          }
+          return prev;
+        });
+      }
+      
+      // Clear streaming message and hide typing indicator
+      setStreamingMessage("");
+      setIsAiTyping(false);
+      
+      // Update state only if there's meaningful content
+      setIsReady(data.is_ready || false);
+      setMissingAspects(data.missing || []);
+      if (data.draft && data.draft.length > 50) {  // Only show draft if it's substantial
+        setCurrentDraft(data.draft);
+      }
+      setTargetName(data.target_name || undefined);
+      setScenarioTitle(data.title || undefined);
+      
+    } else if (data.type === 'finalized') {
+      // Scenario is ready, now generate it
+      handleGenerateScenario(data.description || currentDraft);
+      
+    } else if (data.type === 'error') {
+      setError(data.message || 'Ein Fehler ist aufgetreten.');
+      setIsAiTyping(false);
+      setStreamingMessage("");
+    }
+  };
+  
+  const handleSendMessage = async (content?: string) => {
+    const messageContent = (content || input).trim();
+    if (!messageContent) return;
+    
+    // Expand on first message
+    if (!hasStarted) {
+      try { onExpand && onExpand(); } catch {}
+    }
+    
+    // Ensure connected
+    if (!wsRef.current?.isConnected()) {
+      await connectWebSocket();
+      // Wait a bit for connection
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    if (!wsRef.current?.isConnected()) {
+      setError('Keine Verbindung. Bitte versuche es erneut.');
+      return;
+    }
+    
+    // Add user message to UI
+    const userMessage: DesignChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: messageContent,
+      timestamp: Date.now()
+    };
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Send to WebSocket
+    wsRef.current.sendMessage(messageContent);
+    
+    // Clear input and show typing indicator
+    setInput('');
+    setIsAiTyping(true);
+  };
+  
+  const handleGenerateScenario = async (description: string) => {
+    setIsGenerating(true);
+    setError(null);
+    
     try {
-      const resp = await processScenario({
-        session_id: sessionId,
-        clarifications: content,
+      // Generate scenario using the main processor
+      const response = await processScenario({
+        scenario: {
+          title: scenarioTitle || 'Prank aus Chat',
+          target_name: targetName || 'Unbekannt',
+          description: description,
+          language: 'GERMAN'
+        }
       });
-
-      if (resp.status === "complete" && resp.scenario_id) {
-        const scenario = await fetchScenario(resp.scenario_id);
-        const aiText = `Scenario created: "${scenario.title}" (ID: ${scenario.id}). View it under Scenarios.`;
-        const ai: Message = { id: genId(), role: "assistant", content: aiText, ts: Date.now() };
-        setMessages(prev => [...prev, ai]);
-        setFinished(true);
-      } else if (resp.status === "needs_clarification") {
-        // If backend ever asks again, show new clarifying text and keep going
-        const aiText = formatClarifying(resp.clarifying_questions) || "Please provide more detail.";
-        const ai: Message = { id: genId(), role: "assistant", content: aiText, ts: Date.now() };
-        setMessages(prev => [...prev, ai]);
-      } else if (resp.status === "error") {
-        const ai: Message = { id: genId(), role: "assistant", content: `Error: ${resp.error || "Unknown error"}`, ts: Date.now() };
-        setMessages(prev => [...prev, ai]);
-        setFinished(true);
+      
+      if (response.status === 'complete' && response.scenario_id) {
+        // Success message
+        const successMessage: DesignChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `🎉 Perfekt! Dein Szenario "${scenarioTitle || 'Prank'}" wurde erstellt! Du wirst gleich weitergeleitet...`,
+          timestamp: Date.now()
+        };
+        setMessages(prev => [...prev, successMessage]);
+        
+        // Navigate after short delay
+        setTimeout(() => {
+          navigate(`/dashboard/scenarios/${response.scenario_id}`);
+        }, 2000);
+      } else if (response.status === 'error') {
+        setError(response.error || 'Fehler beim Generieren des Szenarios.');
       }
-    } catch (err) {
-      const ai: Message = { id: genId(), role: "assistant", content: `Request failed: ${err instanceof Error ? err.message : String(err)}`, ts: Date.now() };
-      setMessages(prev => [...prev, ai]);
-      setFinished(true);
+    } catch (error) {
+      console.error('Failed to generate scenario:', error);
+      setError('Konnte Szenario nicht generieren. Bitte versuche es erneut.');
     } finally {
-      setWaiting(false);
+      setIsGenerating(false);
     }
-  }
-
-  function replacePrompt() {
-    localStorage.removeItem("initialPrompt");
-    setInitialInput("");
-  }
-
+  };
+  
+  const handleFinalize = () => {
+    if (wsRef.current?.isConnected()) {
+      wsRef.current.finalize();
+    }
+  };
+  
   return (
-    <div className="w-full max-w-5xl mx-auto">
-      <div className="rounded-3xl border border-purple-300/30 dark:border-purple-800/30 bg-white/40 dark:bg-gray-950/40 backdrop-blur-xl shadow-xl shadow-primary-500/20">
-        <div className="p-3 md:p-6">
-
-          <div className="space-y-3 max-h-[380px] overflow-y-auto p-2 rounded-xl bg-white/30 dark:bg-gray-900/30 border border-white/20 dark:border-white/5">
-            {!initialSent && !!saved && (
+    <div className="w-full max-w-4xl mx-auto">
+      {/* Chat Container with Border */}
+      <div className="bg-background/60 backdrop-blur-md border border-divider rounded-2xl shadow-lg">
+        {/* Messages Area */}
+        <div className="p-6 space-y-4 max-h-[50vh] overflow-y-auto scrollbar-hide">
+          {messages.map((message) => (
+            <MessageCard
+              key={message.id}
+              avatar={message.role === 'user' ? userAvatar : undefined}
+              avatarName={message.role === 'user' ? userName : 'AI'}
+              avatarNode={message.role === 'assistant' ? <Logo size={32} /> : undefined}
+              message={message.content}
+              side={message.role === 'user' ? 'right' : 'left'}
+            />
+          ))}
+          
+          {/* Streaming Message or Typing Indicator */}
+          {(isAiTyping || streamingMessage) && (
+            streamingMessage ? (
               <MessageCard
+                avatarNode={<Logo size={32} />}
+                avatarName="AI"
+                message={streamingMessage}
                 side="left"
-                avatarNode={<Logo size={30} />}
-                message={
-                  <div className="space-y-3">
-                    <div className="text-xs text-default-500">We found your prompt from the landing page:</div>
-                    <div className="text-sm whitespace-pre-wrap rounded-medium bg-default-100/70 dark:bg-default-100/10 border border-default-200/50 p-3">
-                      {saved}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" color="primary" onPress={() => submitInitial()} isDisabled={!initialInput.trim() || waiting}>
-                        Use as-is
-                      </Button>
-                      <Button size="sm" variant="flat" onPress={replacePrompt} isDisabled={waiting}>
-                        Replace
-                      </Button>
-                    </div>
-                  </div>
-                }
-                status={"success"}
               />
-            )}
-            {messages.length === 0 && !waiting && (
-              <div className="space-y-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 mb-4">
-                  {[
-                    "Prank a coworker with a fake IT support call about a password reset.",
-                    "Call my friend as a delivery driver with a package mix-up.",
-                    "Pretend to be a neighbor worried about a mysterious late-night noise.",
-                    "Offer an absurd subscription service in a telemarketer style."
-                  ].map((ex, i) => (
-                    <Button
-                      key={i}
-                      variant="flat"
-                      className="justify-start h-auto py-3 whitespace-normal text-left"
-                      onPress={() => setInitialInput(ex)}
-                    >
-                      {ex}
-                    </Button>
-                  ))}
+            ) : (
+              <div className="flex items-center ml-12 text-default-400">
+                <div className="flex space-x-1">
+                  <div className="w-1 h-1 bg-default-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-1 h- bg-default-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-1 h- bg-default-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                 </div>
               </div>
-            )}
-            {messages.map(m => (
-              <MessageCard
-                key={m.id}
-                side={m.role === "user" ? "right" : "left"}
-                avatar={m.role === "user" ? userAvatar : undefined}
-                avatarName={m.role === "user" ? userName : undefined}
-                avatarNode={m.role === "assistant" ? <Logo size={36} /> : undefined}
-                message={
-                  <>
-                    <div className="text-xs mb-1 text-default-500">{m.role === "user" ? "You" : "AI"}</div>
-                    <div>{m.content}</div>
-                  </>
-                }
-                status={"success"}
+            )
+          )}
+          
+          {isConnecting && (
+            <div className="flex justify-center py-4">
+              <Spinner size="sm" label="Verbinde..." />
+            </div>
+          )}
+          
+          {error && (
+            <div className="bg-danger-50 text-danger p-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+          
+          <div ref={messagesEndRef} />
+        </div>
+        
+        {/* Toggle Details Button */}
+        {hasStarted && currentDraft && (
+          <div className="px-6 py-2 border-t border-divider">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-default-500">Szenario-Entwurf anzeigen</span>
+              <Switch
+                size="sm"
+                isSelected={showDetails}
+                onValueChange={setShowDetails}
+                startContent={<EyeIcon className="w-3 h-3" />}
+                endContent={<EyeSlashIcon className="w-3 h-3" />}
               />
-            ))}
-            {waiting && (
-              <div className="flex items-center gap-2 text-default-500 text-sm px-1 py-2">
-                <Spinner size="sm" /> Waiting for AI response…
-              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Current Draft Preview - Only show when toggled */}
+        {showDetails && currentDraft && hasStarted && (
+          <div className="px-6 py-3 bg-primary-50/50 border-t border-divider">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-primary-600 font-medium">Aktueller Entwurf:</p>
+              {isReady && (
+                <Chip
+                  size="sm"
+                  color="success"
+                  variant="flat"
+                  startContent={<CheckCircleIcon className="w-3 h-3" />}
+                >
+                  Bereit
+                </Chip>
+              )}
+            </div>
+            <p className="text-sm whitespace-pre-wrap">{currentDraft}</p>
+            {targetName && (
+              <p className="text-xs text-default-500 mt-2">Ziel: {targetName}</p>
             )}
           </div>
-
-          {!hasAssistant && !finished && (
+        )}
+        
+        {/* Input Area */}
+        <div className="p-4 border-t border-divider">
+          <div className="flex gap-2">
             <PromptInputFullLine
-              value={initialInput}
-              onChange={setInitialInput}
-              onSubmit={submitInitial}
-              disabled={waiting}
-              placeholder="Describe your prank scenario..."
+              value={input}
+              onChange={(value) => {
+                setInput(value);
+                // Hide header when user starts typing
+                if (value && onStartTyping) {
+                  onStartTyping();
+                }
+              }}
+              onSubmit={() => handleSendMessage()}
+              disabled={isGenerating || isConnecting}
+              placeholder={
+                hasStarted 
+                  ? "Schreibe deine Antwort..." 
+                  : "Beschreibe deine Prank-Idee..."
+              }
             />
+          </div>
+          
+          {/* Generate Button - Show when there's content */}
+          {hasStarted && currentDraft && (
+            <div className="mt-3">
+              <Button
+                color="primary"
+                size="md"
+                fullWidth
+                onClick={handleFinalize}
+                isLoading={isGenerating}
+                startContent={!isGenerating && <SparklesIcon className="w-5 h-5" />}
+                className="bg-gradient-primary"
+              >
+                {isGenerating ? 'Szenario wird generiert...' : 'Szenario jetzt erstellen'}
+              </Button>
+            </div>
           )}
-
-          {hasAssistant && !finished && (
-            <PromptInputFullLine
-              value={answerInput}
-              onChange={setAnswerInput}
-              onSubmit={submitAnswer}
-              disabled={waiting}
-              placeholder="Provide the details the AI asked for…"
-            />
-          )}
-
-          {finished && (
-            <div className="text-sm text-default-500">
-              Conversation finished. You can Reset to start over.
+          
+          {/* Connection Status */}
+          {!isConnected && !isConnecting && hasStarted && (
+            <div className="mt-2 text-xs text-warning">
+              Nicht verbunden. 
+              <Button
+                size="sm"
+                variant="light"
+                onClick={connectWebSocket}
+                className="ml-2"
+              >
+                Erneut verbinden
+              </Button>
             </div>
           )}
         </div>
