@@ -6,6 +6,7 @@ import { Button } from "@heroui/react";
 import { ArrowLeftIcon, ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/context/AuthProvider";
 import { useLocation } from "react-router-dom";
+import UserDropdown from "@/pages/components/userDropdown";
 
 export default function DashboardLayout() {
   const location = useLocation();
@@ -73,17 +74,7 @@ export default function DashboardLayout() {
             <div className="font-semibold text-xl">{getPageTitle()}</div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="flat"
-              startContent={<ArrowRightStartOnRectangleIcon className="h-4 w-4" />}
-              onPress={async () => {
-                await signOut();
-                navigate("/signin", { replace: true });
-              }}
-              isIconOnly
-            >
-            </Button>
+            <UserDropdown />
           </div>
         </header>
         <main className="flex-1 overflow-auto p-4 lg:p-6"><Outlet /></main>
