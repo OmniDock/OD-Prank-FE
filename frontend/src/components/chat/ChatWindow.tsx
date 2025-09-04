@@ -2,24 +2,25 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button, Spinner, Chip, Switch } from "@heroui/react";
-import { useNavigate } from "react-router-dom";
 import MessageCard from "@/components/ai/MessageCard";
 import PromptInputFullLine from "@/components/ai/PromptInputFullLine";
 import { useAuth } from "@/context/AuthProvider";
 import { DesignChatWebSocket } from "@/lib/api.design-chat";
-import { processScenario } from "@/lib/api.scenarios";
-import type { DesignChatMessage, DesignChatResponse } from "@/types/design-chat";
+import type { DesignChatMessage } from "@/types/design-chat";
 import { CheckCircleIcon, SparklesIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { Logo } from "@/components/icons";
+import { apiFetch } from "@/lib/api";
 
-type ChatWindowProps = {
+interface ChatWindowProps {
   onExpand?: () => void;
   onStartTyping?: () => void;
-};
+  loading?: boolean;
+  setLoading?: (val: boolean) => void;
+  onScenarioResult?: (result: { status: string; scenario_id?: number; error?: string }) => void;
+}
 
-export default function ChatWindow({ onExpand, onStartTyping }: ChatWindowProps = {}) {
+export default function ChatWindow({ onExpand, onStartTyping, loading, setLoading, onScenarioResult }: ChatWindowProps = {}) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const userName = (user as any)?.user_metadata?.full_name || (user as any)?.user_metadata?.name || user?.email || "You";
   const userAvatar = (user as any)?.user_metadata?.avatar_url || (user as any)?.user_metadata?.picture || undefined;
   
@@ -27,17 +28,14 @@ export default function ChatWindow({ onExpand, onStartTyping }: ChatWindowProps 
   const [input, setInput] = useState<string>("");
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [streamingMessage, setStreamingMessage] = useState<string>("");
   
   // Design chat state
   const [isReady, setIsReady] = useState(false);
-  const [missingAspects, setMissingAspects] = useState<string[]>([]);
   const [currentDraft, setCurrentDraft] = useState("");
   const [targetName, setTargetName] = useState<string>();
-  const [scenarioTitle, setScenarioTitle] = useState<string>();
   const [showDetails, setShowDetails] = useState(false);
   
   const wsRef = useRef<DesignChatWebSocket | null>(null);
@@ -139,12 +137,10 @@ export default function ChatWindow({ onExpand, onStartTyping }: ChatWindowProps 
       
       // Update state only if there's meaningful content
       setIsReady(data.is_ready || false);
-      setMissingAspects(data.missing || []);
       if (data.draft && data.draft.length > 50) {  // Only show draft if it's substantial
         setCurrentDraft(data.draft);
       }
       setTargetName(data.target_name || undefined);
-      setScenarioTitle(data.title || undefined);
       
     } else if (data.type === 'finalized') {
       // Scenario is ready, now generate it
@@ -196,49 +192,26 @@ export default function ChatWindow({ onExpand, onStartTyping }: ChatWindowProps 
   };
   
   const handleGenerateScenario = async (description: string) => {
-    setIsGenerating(true);
+    if (setLoading) setLoading(true);
     setError(null);
-    
     try {
-      // Generate scenario using the main processor
-      const response = await processScenario({
-        scenario: {
-          title: scenarioTitle || 'Prank aus Chat',
-          target_name: targetName || 'Unbekannt',
-          description: description,
-          language: 'GERMAN'
-        }
+      // Generate scenario using the main processor (REST)
+      const response = await apiFetch("/scenario/process/chat", {
+        method: "POST",
+        body: JSON.stringify({ description }),
       });
-      
-      if (response.status === 'complete' && response.scenario_id) {
-        // Success message
-        const successMessage: DesignChatMessage = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: `🎉 Perfekt! Dein Szenario "${scenarioTitle || 'Prank'}" wurde erstellt! Du wirst gleich weitergeleitet...`,
-          timestamp: Date.now()
-        };
-        setMessages(prev => [...prev, successMessage]);
-        
-        // Navigate after short delay
-        setTimeout(() => {
-          navigate(`/dashboard/scenarios/${response.scenario_id}`);
-        }, 2000);
-      } else if (response.status === 'error') {
-        setError(response.error || 'Fehler beim Generieren des Szenarios.');
-      }
+      const data = await response.json();
+      if (onScenarioResult) onScenarioResult(data);
     } catch (error) {
-      console.error('Failed to generate scenario:', error);
-      setError('Konnte Szenario nicht generieren. Bitte versuche es erneut.');
+      if (onScenarioResult) onScenarioResult({ status: 'error', error: 'Konnte Szenario nicht generieren. Bitte versuche es erneut.' });
     } finally {
-      setIsGenerating(false);
+      if (setLoading) setLoading(false);
     }
   };
   
   const handleFinalize = () => {
-    if (wsRef.current?.isConnected()) {
-      wsRef.current.finalize();
-    }
+    // Instead of WebSocket finalize, use REST
+    handleGenerateScenario(currentDraft || "");
   };
   
   return (
@@ -345,7 +318,7 @@ export default function ChatWindow({ onExpand, onStartTyping }: ChatWindowProps 
                 }
               }}
               onSubmit={() => handleSendMessage()}
-              disabled={isGenerating || isConnecting}
+              disabled={loading}
               placeholder={
                 hasStarted 
                   ? "Schreibe deine Antwort..." 
@@ -362,11 +335,12 @@ export default function ChatWindow({ onExpand, onStartTyping }: ChatWindowProps 
                 size="md"
                 fullWidth
                 onClick={handleFinalize}
-                isLoading={isGenerating}
-                startContent={!isGenerating && <SparklesIcon className="w-5 h-5" />}
+                isLoading={loading}
+                startContent={!loading && <SparklesIcon className="w-5 h-5" />}
                 className="bg-gradient-primary"
+                disabled={loading}
               >
-                {isGenerating ? 'Szenario wird generiert...' : 'Szenario jetzt erstellen'}
+                {loading ? 'Szenario wird generiert...' : 'Szenario jetzt erstellen'}
               </Button>
             </div>
           )}

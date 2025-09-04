@@ -33,7 +33,7 @@ export default function DashboardLayout() {
     
     // Static mappings first
     const staticMappings: Record<string, string> = {
-      "/dashboard": "Dashboard",
+      "/dashboard": "",
       "/dashboard/scenarios": "Scenarios",
       "/dashboard/phone-call": "Phone Call",
     };
@@ -46,7 +46,7 @@ export default function DashboardLayout() {
       return "Scenario Details";
     }
 
-    return "Dashboard";
+    return "";
   };
 
   // Back icon only when nested beyond /dashboard/<section>
@@ -64,7 +64,7 @@ export default function DashboardLayout() {
       {/* Main */}
       <div className="flex flex-col min-h-0">
         {/* Topbar */}
-        <header className="h-16 bg-transparent rounded-2xl mx-3 my-3 flex items-center justify-between px-4 shadow-xl shadow-primary-500/10">
+        <header className="h-16 bg-transparent rounded-2xl mx-3 my-3 flex items-center justify-between px-4 ">
           <div className="flex items-center gap-2">
             {showBack && (
               <Button isIconOnly size="sm" variant="light" onPress={handleBack} aria-label="Go back">

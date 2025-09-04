@@ -6,7 +6,7 @@ import clsx from "clsx";
 
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   return (
-    <aside className={clsx("hidden lg:flex flex-col bg-white/30 dark:bg-gray-950/30 backdrop-blur-xl border-r border-white/15 dark:border-white/10 shadow-xl shadow-primary-500/10")}> 
+    <aside className={clsx("hidden lg:flex flex-col bg-transparent shadow-xl rounded-2xl m-1 shadow-primary-500/10")}> 
       <div className={clsx("flex items-center gap-2.5", collapsed ? "h-14 px-3 justify-center" : "h-14 px-3")}> 
         <Logo size={28} />
         {!collapsed && <div className="text-base font-semibold truncate">Cally AI</div>}
