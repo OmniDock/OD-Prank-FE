@@ -218,8 +218,9 @@ function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: In
         </div>
 
         <div className="rounded-large border border-default-200 bg-default-50/50 p-3">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] items-center gap-3">
-            <div className="w-full">
+          {/* <div className="grid grid-cols-2 justify-center md:grid-cols-[1fr_auto_auto] items-center gap-3"> */}
+          <div className="flex flex-row items-center justify-center gap-12">
+            {/* <div className="w-full">
               <Input
                 size="md"
                 placeholder="Search by name, id, description, language…"
@@ -228,7 +229,7 @@ function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: In
                 variant="faded"
                 className="w-full bg-transparent"
               />
-            </div>
+            </div> */}
             <div className="flex items-center justify-start md:justify-center">
               <div className="inline-flex items-center gap-1 rounded-medium bg-default-100 p-1">
                 <Button size="sm" variant={genderFilter === "ALL" ? "solid" : "light"} color="primary" onClick={() => setGenderFilter("ALL")}>All</Button>

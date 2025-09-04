@@ -17,6 +17,7 @@ import { VoiceLinesTable } from "@/components/ui/voice-lines-table";
 import { VoiceGenerationStatus } from "@/components/ui/voice-generation-status";
 import type { VoiceItem } from "@/types/tts";
 import { motion } from "framer-motion";
+import { CallStartBox } from "@/components/ui/call-start-box";
 
 export default function ScenarioDetailPage() {
   const { id } = useParams();
@@ -142,9 +143,10 @@ export default function ScenarioDetailPage() {
 
       <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">Title: {scenario.title}</h1>
-          <Chip color={scenario.is_safe ? "success" : "danger"} variant="flat">
+          {/* <Chip color={scenario.is_safe ? "success" : "danger"} variant="flat">
             {scenario.is_safe ? "Safe" : "Unsafe"}
-          </Chip>
+          </Chip> */}
+          <div></div>
       </div>
 
       <ScenarioInfo scenario={scenario} onRefresh={refetchScenario} />
@@ -163,6 +165,11 @@ export default function ScenarioDetailPage() {
         voices={voices}
         onSelect={(id) => void persistPreferredVoice(id)}
       />
+      )}
+
+      {/* Green Call Box between details and voice lines */}
+      {scenario.is_safe && scenario.preferred_voice_id && (
+        <CallStartBox scenario={scenario} />
       )}
 
       {scenario.preferred_voice_id && (
