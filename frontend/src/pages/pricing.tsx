@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DefaultLayout from "@/layouts/default";
 import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
@@ -6,9 +7,42 @@ import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import BillingToggle from "@/components/pricing/BillingToggle";
 import PlanCard, { Plan } from "@/components/pricing/PlanCard";
 import FAQ from "@/components/pricing/FAQ";
+import { useAuth } from "@/context/AuthProvider";
+
 
 export default function PricingPage() {
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+  const navigate = useNavigate();
+
+  const { user, loading } = useAuth();
+  const isLoggedIn = !!user;
+  localStorage.setItem("loginFromPricing", isLoggedIn.toString())
+
+  const handlePlanSelect = (plan: Plan) => {
+    const currentPrice = billing === "annual" ? plan.priceAnnual : plan.priceMonthly;
+    
+    console.log('Plan selected:', {
+      id: plan.id,
+      name: plan.name,
+      price: currentPrice,
+      billing: billing,
+      features: plan.features,
+      tagline: plan.tagline
+    });
+    const params = new URLSearchParams({
+      planId: plan.id,
+      planName: plan.name,
+      price: currentPrice?.toString() || '0',
+      billing: billing,
+      tagline: plan.tagline,
+      features: JSON.stringify(plan.features),
+      priceMonthly: plan.priceMonthly?.toString() || '0',
+      priceAnnual: plan.priceAnnual?.toString() || '0',
+      popular: plan.popular?.toString() || 'false'
+    });
+
+    navigate(`/checkout?${params.toString()}`);
+  };
 
   const plans = useMemo<Plan[]>(() => [
     {
@@ -96,7 +130,12 @@ export default function PricingPage() {
       <section className="py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {plans.map((p) => (
-            <PlanCard key={p.id} plan={p} billing={billing} />
+            <PlanCard 
+              key={p.id} 
+              plan={p} 
+              billing={billing} 
+              onPlanSelect={handlePlanSelect}
+            />
           ))}
         </div>
 

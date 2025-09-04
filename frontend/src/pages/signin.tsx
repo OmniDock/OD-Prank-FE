@@ -28,9 +28,10 @@ export default function SignInPage() {
 	const location = useLocation() as any;
 
 	const toggleVisibility = () => setIsVisible(!isVisible);
+
+	const loginFromPricing = localStorage.getItem("loginFromPricing") === "true";
+
 	
-
-
 	async function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setLoading(true);

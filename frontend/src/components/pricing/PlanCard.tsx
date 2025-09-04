@@ -17,9 +17,11 @@ export type Plan = {
 export default function PlanCard({
   plan,
   billing,
+  onPlanSelect,
 }: {
   plan: Plan;
   billing: "monthly" | "annual";
+  onPlanSelect?: (plan: Plan) => void;
 }) {
   const price =
     billing === "annual" ? plan.priceAnnual : plan.priceMonthly;
@@ -61,11 +63,10 @@ export default function PlanCard({
       </CardBody>
       <CardFooter className="pt-0">
         <Button
-          as={Link}
-          href={plan.ctaHref}
           color="primary"
           variant={plan.popular ? "solid" : "bordered"}
           className={plan.popular ? "bg-gradient-primary w-full" : "w-full"}
+          onClick={() => onPlanSelect?.(plan)}
         >
           {plan.ctaLabel}
         </Button>
