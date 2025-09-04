@@ -37,7 +37,6 @@ function App() {
           <Route index element={<DashboardMain />} />
           <Route path="scenarios" element={<ScenariosPage />} />
           <Route path="scenarios/:id" element={<ScenarioDetailPage />} />
-          <Route path="phone-call" element={<PhoneCallPage />} />
           <Route path="active-call" element={<ActiveCallPage />} />
         </Route>
       </Route>

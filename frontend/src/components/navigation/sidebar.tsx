@@ -19,9 +19,6 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         <NavItem to="/dashboard/scenarios" icon={<ListBulletIcon className="h-5 w-5" />} collapsed={collapsed}>
           Scenarios
         </NavItem>
-        <NavItem to="/dashboard/phone-call" icon={<PhoneIcon className="h-5 w-5" />} collapsed={collapsed}>
-          Phone Call
-        </NavItem>
       </nav>
 
 
