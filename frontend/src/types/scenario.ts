@@ -23,14 +23,40 @@ export interface VoiceLine {
   preferred_audio?: VoiceLineAudio | null;
 }
 
+// Scenario analysis typing
+export type SafetyRecommendation = "allow" | "modify" | "review" | "reject";
+
+export interface ScenarioPersonaAnalysis {
+  persona_name: string;
+  persona_gender: "MALE" | "FEMALE";
+  company_service: string;
+  conversation_goals: string[];
+  believability_anchors: string[];
+  escalation_plan: string[];
+  cultural_context: string;
+  voice_hints?: string | null;
+}
+
+export interface ScenarioSafetyAnalysis {
+  issues: string[];
+  recommendation: SafetyRecommendation;
+  reasoning: string;
+  confidence: number;
+}
+
+export interface ScenarioAnalysisPayload {
+  analysis?: ScenarioPersonaAnalysis;
+  safety?: ScenarioSafetyAnalysis;
+}
+
 export interface Scenario {
   id: number;
   title: string;
   description?: string | null;
   language: Language;
   preferred_voice_id?: string | null;
-  target_name: string;
-  scenario_analysis?: Record<string, unknown> | null;
+  target_name?: string | null;
+  scenario_analysis?: ScenarioAnalysisPayload | null;
   is_safe: boolean;
   is_not_safe_reason?: string | null;
   is_public: boolean;

@@ -67,19 +67,20 @@ export function VoiceSection({ scenario, voices, onSelect }: VoiceSectionProps) 
     );
   }
 
-  return <InlineSelector voices={voices} onSelect={onSelect} defaultLanguage={scenario.language} />;
+  return <InlineSelector voices={voices} onSelect={onSelect} defaultLanguage={scenario.language} defaultGender={scenario.scenario_analysis?.analysis?.persona_gender} />;
 }
 
 interface InlineSelectorProps {
   voices: VoiceItem[];
   onSelect: (voiceId: string) => Promise<void> | void;
   defaultLanguage?: "GERMAN" | "ENGLISH";
+  defaultGender?: "MALE" | "FEMALE";
 }
 
-function InlineSelector({ voices, onSelect, defaultLanguage }: InlineSelectorProps) {
+function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: InlineSelectorProps) {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [genderFilter, setGenderFilter] = useState<"ALL" | "MALE" | "FEMALE">("ALL");
+  const [genderFilter, setGenderFilter] = useState<"ALL" | "MALE" | "FEMALE">(defaultGender || "ALL");
   const [languageFilter, setLanguageFilter] = useState<"ALL" | "GERMAN" | "ENGLISH">(defaultLanguage || "ALL");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -212,7 +213,7 @@ function InlineSelector({ voices, onSelect, defaultLanguage }: InlineSelectorPro
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-foreground">Select Voice</h3>
-            <p className="text-sm text-default-500">Choose a voice to enable MP3 generation. This cannot be changed later.</p>
+            <p className="text-sm text-default-500">Choose a voice to enable audio generation. This cannot be changed later.</p>
           </div>
         </div>
 

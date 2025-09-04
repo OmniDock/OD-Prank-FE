@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
-import { Button, Card, CardBody, addToast, Tabs, Tab, Chip, Spinner } from "@heroui/react";
+import { addToast, Spinner } from "@heroui/react";
 import { generateSingleTTS, fetchVoiceLinesSummary } from "@/lib/api.tts";
-import { PauseIcon, PlayIcon, PlusIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import type { Scenario } from "@/types/scenario";
 
 interface VoiceLinesTableProps {
@@ -23,12 +22,13 @@ export function VoiceLinesTable({
 }: VoiceLinesTableProps) {
   const [generating, setGenerating] = useState<Set<number>>(new Set());
   const [pending, setPending] = useState<Set<number>>(new Set());
-  const [activeTab, setActiveTab] = useState<"ALL" | "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING" | "FILLER">("ALL");
+  const [activeTab] = useState<"ALL" | "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING" | "FILLER">("ALL");
   const [summaryEtag, setSummaryEtag] = useState<string | undefined>(undefined);
   const [pollInterval, setPollInterval] = useState(2000);
   const [, setConsecutiveNoChanges] = useState(0);
 
-  const isInteractive = !!onSelectionChange;
+  void onOpenPlayer;
+  void onEnhanceSelected;
 
   // Inline audio playback state
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -45,16 +45,47 @@ export function VoiceLinesTable({
     return !!(voiceLine?.preferred_audio?.signed_url);
   };
 
-  // Memoize filtered and sorted voice lines to prevent unnecessary re-renders
-  const filteredVoiceLines = useMemo(() => {
-    if (!scenario) return [];
-    const filtered = activeTab === 'ALL' 
-      ? scenario.voice_lines 
+  // Define display order for types
+  const typeOrder: Array<"OPENING" | "FILLER" | "QUESTION" | "RESPONSE" | "CLOSING"> = [
+    "OPENING",
+    "FILLER",
+    "QUESTION",
+    "RESPONSE",
+    "CLOSING",
+  ];
+
+  // Group voice lines by type and sort inside each group by order_index
+  const groupedVoiceLines = useMemo(() => {
+    const result: Record<string, typeof scenario.voice_lines> = {} as any;
+    if (!scenario?.voice_lines) return result;
+
+    const source = activeTab === "ALL"
+      ? scenario.voice_lines
       : scenario.voice_lines.filter(vl => vl.type === activeTab);
-    
-    const sorted = filtered.slice().sort((a, b) => a.order_index - b.order_index);
-    return sorted;
+
+    for (const t of typeOrder) {
+      result[t] = [] as any;
+    }
+
+    for (const vl of source) {
+      if (!result[vl.type]) result[vl.type] = [] as any;
+      result[vl.type].push(vl);
+    }
+
+    for (const t of Object.keys(result)) {
+      result[t] = (result[t] || []).slice().sort((a, b) => a.order_index - b.order_index);
+    }
+
+    return result;
   }, [scenario?.voice_lines, activeTab]);
+
+  const typeDisplayName: Record<string, string> = {
+    OPENING: "Opening",
+    FILLER: "Filler",
+    QUESTION: "Questions",
+    RESPONSE: "Responses",
+    CLOSING: "Closing",
+  };
 
   async function onGenerateSelectedAudio() {
     if (!scenario || !scenario.preferred_voice_id) {
@@ -209,6 +240,10 @@ export function VoiceLinesTable({
       });
     }
   }
+
+  // Mark local handlers as used for linter when UI controls are not rendering them directly
+  void onGenerateSelectedAudio;
+  void onCreateAudio;
 
   // Summary polling with ETag (only when there are pending items)
   useEffect(() => {
@@ -406,53 +441,59 @@ export function VoiceLinesTable({
   };
 
   return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {filteredVoiceLines.map((vl) => {
-          const hasAudio = isAudioAvailable(vl.id);
-          const isLoading = loadingId === vl.id;
-          const isActive = playingId === vl.id;
-          const url = scenario.voice_lines.find(x => x.id === vl.id)?.preferred_audio?.signed_url || null;
+      <div className="flex flex-col gap-4">
+        {typeOrder.map((t) => {
+          const items = groupedVoiceLines[t] || [];
+          if (!items.length) return null;
           return (
-            <div
-              key={vl.id}
-              className={`relative ${isActive ? "ring-1 ring-success bg-success-400 hover:bg-success-400" : ""} bg-gradient-surface glass-card shadow-lg shadow rounded-medium p-3 cursor-pointer transition-colors ${
-                isLoading ? "bg-default-200 animate-pulse" : "bg-content1 hover:bg-default-100"
-              }`}
-              onClick={() => handlePlayCard(vl.id, url)}
-            >
-              {isActive && (
-                <div className="absolute inset-0 z-0 overflow-hidden rounded-medium pointer-events-none">
-                  <div
-                    className={`h-full bg-emerald-500/30 ${isPaused ? "opacity-60" : "opacity-90"}`}
-                    style={{ width: `${Math.min(progress * 100, 100)}%` }}
-                  />
+            <div key={t} className="mb-4">
+              <div className="flex flex-row items-center justify-start w-full rounded-lg bg-primary-100 mb-2 p-2 border-1 border-primary-500 shadow-md ">
+                <div className="text-small font-medium text-primary uppercase tracking-wide">
+                  {typeDisplayName[t] || t}
                 </div>
-              )}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {items.map((vl) => {
+                  const isLoading = loadingId === vl.id;
+                  const isActive = playingId === vl.id;
+                  const url = scenario.voice_lines.find(x => x.id === vl.id)?.preferred_audio?.signed_url || null;
+                  return (
+                    <div
+                      key={vl.id}
+                      className={`relative inline-flex border-1 border-default-900 ${isActive ? "ring-1 ring-success bg-success-400 hover:bg-success-400" : ""}  bg-gradient-surface glass-card shadow-lg shadow rounded-medium p-3 cursor-pointer transition-colors ${
+                        isLoading ? "bg-default-200 animate-pulse" : "bg-content1 hover:bg-default-100"
+                      }`}
+                      onClick={() => handlePlayCard(vl.id, url)}
+                    >
+                      {isActive && (
+                        <div className="absolute inset-0 z-0 overflow-hidden rounded-medium pointer-events-none">
+                          <div
+                            className={`h-full bg-emerald-500/30 ${isPaused ? "opacity-60" : "opacity-90"}`}
+                            style={{ width: `${Math.min(progress * 100, 100)}%` }}
+                          />
+                        </div>
+                      )}
 
-              <div className="relative z-10">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Chip size="sm" variant="flat" color="primary" className="capitalize">{vl.type}</Chip>
-                  </div>
-                  {hasAudio ? (
-                      isActive ? (
-                      <PauseIcon className={`w-5 h-5 font-semibold ${isActive ? "opacity-100" : "opacity-80"}`} />
-                    ) : (
-                      <PlayIcon className={`w-5 h-5 font-semibold ${isActive ? "opacity-100" : "opacity-80"}`} />
-                    )
-                  ) : (
-                    <Chip size="sm" variant="flat" color="default">No audio</Chip>
-                  )}
-                </div>
-                <div className="mt-2 text-small whitespace-pre-wrap break-words">
-                  {vl.text}
-                </div>
+                      <div className="relative z-10">
+                        <div className="flex items-start justify-end gap-2">
+                          {/* We intentionally display type section above; no ID shown here */}
+                        </div>
+                        <div className="mt-1  whitespace-pre-wrap break-words">
+                          {(vl.text || "")
+                            .replace(/\[\[.*?\]\]/gi, "")
+                            .replace(/\[(?!\*)([^[\]]*?)\]/g, "")
+                          }
+                        </div>
 
-                {isLoading && (
-                  <div className="absolute inset-0 grid place-items-center bg-black/5 rounded-medium">
-                    <Spinner size="sm" />
-                  </div>
-                )}
+                        {isLoading && (
+                          <div className="absolute inset-0 grid place-items-center bg-black/5 rounded-medium">
+                            <Spinner size="sm" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
