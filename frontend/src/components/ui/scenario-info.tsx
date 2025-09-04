@@ -4,7 +4,7 @@ import type { Scenario } from "@/types/scenario";
 import DeleteConfirmationModal from "@/components/delete-confirmation-modal";
 import SetActiveModal from "@/components/set-active-modal";
 import { deleteScenario } from "@/lib/api.scenarios";
-import { TrashIcon, PowerIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { TrashIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 
 interface ScenarioInfoProps {
@@ -39,9 +39,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
         <div className="flex flex-row justify-between cursor-pointer items-center" onClick={() => setExpanded((v) => !v)}>
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+              <span className="text-primary" aria-hidden>📋</span>
             </div>
             <div>
               <h2 className="text-xl font-semibold text-foreground">Scenario Details</h2>
@@ -76,9 +74,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-primary/5 to-primary/10">
               <div className="flex items-center gap-2 mb-2">
-                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+                <span className="text-primary" aria-hidden>🎯</span>
                 <span className="text-xs font-medium text-primary">Target Name</span>
               </div>
               <div className="text-base font-semibold text-foreground">{scenario.target_name}</div>
@@ -86,9 +82,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
             
             <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-secondary/5 to-secondary/10">
               <div className="flex items-center gap-2 mb-2">
-                <svg className="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                </svg>
+                <span className="text-secondary" aria-hidden>🗣️</span>
                 <span className="text-xs font-medium text-secondary">Language</span>
               </div>
               <div className="text-base font-semibold text-foreground">{scenario.language}</div>
@@ -98,9 +92,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
             
             <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-secondary/5 to-secondary/10">
               <div className="flex items-center gap-2 mb-2">
-                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+                <span className="text-primary" aria-hidden>🎭</span>
                 <span className="text-xs font-medium text-secondary">Calling Persona</span>
               </div>
               <div className="text-base font-semibold text-foreground">{scenario.scenario_analysis?.analysis?.persona_name}</div>
@@ -108,9 +100,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
             
             <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-secondary/5 to-secondary/10">
               <div className="flex items-center gap-2 mb-2">
-                <svg className="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                </svg>
+                <span className="text-secondary" aria-hidden>🚻</span>
                 <span className="text-xs font-medium text-secondary">Calling Gender</span>
               </div>
               <div className="text-base font-semibold text-foreground">{scenario.scenario_analysis?.analysis?.persona_gender}</div>
@@ -121,9 +111,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
           {scenario.description && (
             <div className="p-5 rounded-xl border border-default-200 bg-gradient-to-br from-default-50 to-default-100/50">
               <div className="flex items-center gap-2 mb-3">
-                <svg className="w-4 h-4 text-default-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-                </svg>
+                <span className="text-default-600" aria-hidden>📝</span>
                 <span className="text-sm font-semibold text-default-700">Description</span>
               </div>
               <p className="text-default-900 whitespace-pre-wrap leading-relaxed">{scenario.description}</p>

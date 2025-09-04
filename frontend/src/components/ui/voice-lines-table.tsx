@@ -446,12 +446,41 @@ export function VoiceLinesTable({
           const items = groupedVoiceLines[t] || [];
           if (!items.length) return null;
           return (
-            <div key={t} className="mb-4">
-              <div className="flex flex-row items-center justify-start w-full rounded-lg bg-primary-100 mb-2 p-2 border-1 border-primary-500 shadow-md ">
-                <div className="text-small font-medium text-primary uppercase tracking-wide">
-                  {typeDisplayName[t] || t}
+            <div key={t} className="mb-4 ring-1 ring-default-200 glass-card bg-gradient-surface p-3 rounded-lg">
+              <div className="mb-2">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`
+                      w-10 h-10 rounded-full flex items-center justify-center
+                      ${t === 'OPENING' ? 'bg-primary/20 text-primary' :
+                        t === 'QUESTION' ? 'bg-secondary/20 text-secondary' :
+                        t === 'RESPONSE' ? 'bg-success/20 text-success' :
+                        t === 'CLOSING' ? 'bg-warning/20 text-warning' :
+                        t === 'FILLER' ? 'bg-warning/20 text-warning' :
+                        'bg-default-100 text-default-700'}
+                    `}
+                  >
+                    {t === 'OPENING' ? '👋' :
+                     t === 'QUESTION' ? '❓' :
+                     t === 'RESPONSE' ? '💬' :
+                     t === 'CLOSING' ? '👋' :
+                     t === 'FILLER' ? '👋' :
+                     '👋'}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">
+                      {t === 'OPENING' ? 'Opening Lines' :
+                       t === 'QUESTION' ? 'Questions' :
+                       t === 'RESPONSE' ? 'Responses' :
+                       t === 'CLOSING' ? 'Closing Lines' :
+                       t === 'FILLER' ? 'Fillers' :
+                       (typeDisplayName[t] || t)}
+                    </h3>
+                    <p className="text-xs text-default-500">{items.length} available</p>
+                  </div>
                 </div>
               </div>
+              <hr className="my-2 text-default-100" />
               <div className="flex flex-wrap gap-3">
                 {items.map((vl) => {
                   const isLoading = loadingId === vl.id;
@@ -460,7 +489,7 @@ export function VoiceLinesTable({
                   return (
                     <div
                       key={vl.id}
-                      className={`relative inline-flex border-1 border-default-900 ${isActive ? "ring-1 ring-success bg-success-400 hover:bg-success-400" : ""}  bg-gradient-surface glass-card shadow-lg shadow rounded-medium p-3 cursor-pointer transition-colors ${
+                      className={`relative shadow-md inline-flex  ${isActive ? "ring-1 ring-success bg-success-400 hover:bg-success-400" : "ring-1 ring-default-100"}  bg-gradient-surface glass-card rounded-medium p-3 cursor-pointer transition-colors ${
                         isLoading ? "bg-default-200 animate-pulse" : "bg-content1 hover:bg-default-100"
                       }`}
                       onClick={() => handlePlayCard(vl.id, url)}
