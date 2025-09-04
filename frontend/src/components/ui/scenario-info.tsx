@@ -14,7 +14,7 @@ interface ScenarioInfoProps {
 export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isActiveModalOpen, setIsActiveModalOpen] = useState(false);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
 
   async function handleDeleteConfirm() {
@@ -33,9 +33,9 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
   }
 
   return (
-    <Card className="ring-1 ring-default-200 cursor-pointer glass-card bg-gradient-surface">
-      <CardBody className="gap-6" onClick={() => setExpanded((v) => !v)}>
-        <div className="flex flex-row justify-between items-center">
+    <Card className="ring-1 ring-default-200  glass-card bg-gradient-surface">
+      <CardBody className="gap-6" >
+        <div className="flex flex-row justify-between cursor-pointer items-center" onClick={() => setExpanded((v) => !v)}>
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,7 +48,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
             </div>
           </div>
           <div className="flex flex-row gap-2 items-center">
-            <Button 
+            {/* <Button 
               color={scenario.is_active ? "warning" : "success"} 
               variant="flat"
               size="sm"
@@ -56,16 +56,8 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
               onPress={() => setIsActiveModalOpen(true)}
             >
               {scenario.is_active ? "Deactivate" : "Set Active"}
-            </Button>
-            <Button 
-              color="danger" 
-              variant="flat"
-              size="sm"
-              startContent={<TrashIcon className="w-4 h-4" />}
-              onPress={() => setIsDeleteOpen(true)}
-            >
-              Delete
-            </Button>
+            </Button> */}
+
             <Button
               isIconOnly
               variant="light"
@@ -114,8 +106,21 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
               <p className="text-default-900 whitespace-pre-wrap leading-relaxed">{scenario.description}</p>
             </div>
           )}
+          <div className="flex justify-end">
+            <Button 
+                color="danger" 
+                variant="flat"
+                size="sm"
+                startContent={<TrashIcon className="w-4 h-4" />}
+                onPress={() => setIsDeleteOpen(true)}
+              >
+              Delete
+            </Button> 
+          </div>
         </div>
         )}
+
+
 
         <DeleteConfirmationModal
           isOpen={isDeleteOpen}

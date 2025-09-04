@@ -9,11 +9,12 @@ import {
 } from "@heroui/react";
 import { fetchScenario, updateScenarioPreferredVoice } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
-import { fetchVoices } from "@/lib/api.tts";
+import { fetchVoices, generateScenarioTTS } from "@/lib/api.tts";
 import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
 import { ScenarioInfo } from "@/components/ui/scenario-info";
 import { VoiceSection } from "@/components/ui/voice-section";
 import { VoiceLinesTable } from "@/components/ui/voice-lines-table";
+import { VoiceGenerationStatus } from "@/components/ui/voice-generation-status";
 import type { VoiceItem } from "@/types/tts";
 import { motion } from "framer-motion";
 
@@ -24,6 +25,7 @@ export default function ScenarioDetailPage() {
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [playerCurrentIndex, setPlayerCurrentIndex] = useState(0);
   const [voices, setVoices] = useState<VoiceItem[]>([]);
+  const [tableKey, setTableKey] = useState(0);
   
 
 
@@ -89,6 +91,26 @@ export default function ScenarioDetailPage() {
         color: "success",
         timeout: 3000,
       });
+      // Trigger bulk TTS generation for all voice lines
+      void generateScenarioTTS({ scenario_id: scenario.id, voice_id: voiceId })
+        .then((res) => {
+          addToast({
+            title: "Generation started",
+            description: `Starting audio generation for ${res.total_processed ?? "all"} lines`,
+            color: "primary",
+            timeout: 2500,
+          });
+          // Remount table to re-run its summary discovery
+          setTableKey((k) => k + 1);
+        })
+        .catch(() => {
+          addToast({
+            title: "Generation failed",
+            description: "Could not start scenario TTS generation.",
+            color: "danger",
+            timeout: 4000,
+          });
+        });
     } catch (e) {
       addToast({
         title: "Update failed",
@@ -127,13 +149,6 @@ export default function ScenarioDetailPage() {
 
       <ScenarioInfo scenario={scenario} onRefresh={refetchScenario} />
 
-
-      <VoiceSection 
-        scenario={scenario}
-        voices={voices}
-        onSelect={(id) => void persistPreferredVoice(id)}
-      />
-
       {!scenario.is_safe && scenario.is_not_safe_reason && (
         <Card>
           <CardBody>
@@ -142,12 +157,25 @@ export default function ScenarioDetailPage() {
         </Card>
       )}
 
+      {scenario.is_safe && ! scenario.preferred_voice_id && (
+      <VoiceSection 
+        scenario={scenario}
+        voices={voices}
+        onSelect={(id) => void persistPreferredVoice(id)}
+      />
+      )}
+
+
       {scenario.preferred_voice_id && (
-        <VoiceLinesTable 
-          scenario={scenario}
-          onRefetchScenario={refetchScenario}
-          onOpenPlayer={onOpenPlayer}
-        />
+        <>
+          <VoiceGenerationStatus scenarioId={scenario.id} totalCount={scenario.voice_lines.length} />
+          <VoiceLinesTable 
+            key={tableKey}
+            scenario={scenario}
+            onRefetchScenario={refetchScenario}
+            onOpenPlayer={onOpenPlayer}
+          />
+        </>
       )}
 
 
