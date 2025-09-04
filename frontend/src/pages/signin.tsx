@@ -29,9 +29,11 @@ export default function SignInPage() {
 
 	const toggleVisibility = () => setIsVisible(!isVisible);
 
-	const loginFromPricing = localStorage.getItem("loginFromPricing") === "true";
+	const FromPricing = localStorage.getItem("FromPricing");
+	console.log("FromPricing", FromPricing);
 
-	
+
+
 	async function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setLoading(true);
@@ -42,6 +44,12 @@ export default function SignInPage() {
 			setError(signInError.message);
 			return;
 		}
+		if (FromPricing) {
+			// Clear the flag and redirect to checkout page
+			localStorage.removeItem("FromPricing");
+			navigate("/checkout", { replace: true });
+			return;
+		}
 		const redirectTo = location.state?.from?.pathname ?? "/dashboard";
 		navigate(redirectTo, { replace: true });
 	}
@@ -50,10 +58,15 @@ export default function SignInPage() {
 		setGoogleLoading(true);
 		setError(null);
 		
+		// Determine redirect URL based on FromPricing flag
+		const redirectUrl = FromPricing 
+			? `${window.location.origin}/checkout`
+			: `${window.location.origin}/dashboard`;
+		
 		const { error } = await supabase.auth.signInWithOAuth({
 			provider: 'google',
 			options: {
-				redirectTo: `${window.location.origin}/dashboard`,
+				redirectTo: redirectUrl,
 				queryParams: {
 					access_type: 'offline',
 					prompt: 'consent',
@@ -64,6 +77,9 @@ export default function SignInPage() {
 		if (error) {
 			setError(error.message);
 			setGoogleLoading(false);
+		} else if (FromPricing) {
+			// Clear the flag after successful OAuth redirect setup
+			localStorage.removeItem("FromPricing");
 		}
 	}
 

@@ -16,6 +16,7 @@ import ImprintPage from "@/pages/imprint";
 import TermsPage from "@/pages/terms";
 import PrivacyPage from "@/pages/privacy";
 import PricingPage from "@/pages/pricing";
+import CheckoutPage from "@/pages/checkout";
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
       </Route>
 
       <Route element={<ProtectedRoute />}>
+        <Route element={<CheckoutPage />} path="/checkout" />
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardMain />} />
           <Route path="scenarios" element={<ScenariosPage />} />
