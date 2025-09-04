@@ -1,5 +1,9 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState, useCallback } from "react";
+import {loadStripe} from '@stripe/stripe-js';
+import {
+  EmbeddedCheckoutProvider,
+  EmbeddedCheckout
+} from '@stripe/react-stripe-js';
 import DefaultLayout from "@/layouts/default";
 import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
@@ -8,41 +12,44 @@ import BillingToggle from "@/components/pricing/BillingToggle";
 import PlanCard, { Plan } from "@/components/pricing/PlanCard";
 import FAQ from "@/components/pricing/FAQ";
 import { useAuth } from "@/context/AuthProvider";
+import { apiFetch } from "@/lib/api";
+
+// Make sure to call `loadStripe` outside of a component's render to avoid
+// recreating the `Stripe` object on every render.
+const stripePublishableKey = import.meta.env.VITE_STRIPE_SB_PUBLIC_KEY;
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 
 export default function PricingPage() {
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
-  const navigate = useNavigate();
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [showCheckout, setShowCheckout] = useState(false);
 
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const isLoggedIn = !!user;
   localStorage.setItem("loginFromPricing", isLoggedIn.toString())
 
   const handlePlanSelect = (plan: Plan) => {
-    const currentPrice = billing === "annual" ? plan.priceAnnual : plan.priceMonthly;
-    
-    console.log('Plan selected:', {
-      id: plan.id,
-      name: plan.name,
-      price: currentPrice,
-      billing: billing,
-      features: plan.features,
-      tagline: plan.tagline
-    });
-    const params = new URLSearchParams({
-      planId: plan.id,
-      planName: plan.name,
-      price: currentPrice?.toString() || '0',
-      billing: billing,
-      tagline: plan.tagline,
-      features: JSON.stringify(plan.features),
-      priceMonthly: plan.priceMonthly?.toString() || '0',
-      priceAnnual: plan.priceAnnual?.toString() || '0',
-      popular: plan.popular?.toString() || 'false'
-    });
-
-    navigate(`/checkout?${params.toString()}`);
+    setSelectedPlan(plan);
+    setShowCheckout(true);
   };
+
+  const fetchClientSecret = useCallback(() => {
+    // Create a Checkout Session
+    return apiFetch("/payment/checkout/create-session", {
+      method: "POST",
+    })
+      .then((res) => {
+        console.log("Checkout session response:", res);
+        return res.json();
+      })
+      .then((data) => {
+        console.log("Client secret data:", data);
+        return data.client_secret;
+      });
+  }, []);
+
+  const options = {fetchClientSecret};
 
   const plans = useMemo<Plan[]>(() => [
     {
@@ -107,6 +114,45 @@ export default function PricingPage() {
       ctaHref: "mailto:sales@example.com",
     },
   ], []);
+
+  if (showCheckout) {
+    return (
+      <DefaultLayout>
+        <AnimatedBackground variant="mixed" density={12} />
+        <section className="relative flex flex-col items-center gap-8 pt-8 pb-4">
+          <div className="text-center space-y-4">
+            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-purple-500 bg-purple-500/10 px-3 py-1 rounded-full">
+              Checkout
+            </span>
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+              Complete your purchase
+            </h1>
+            <p className="text-default-500 max-w-2xl mx-auto">
+              You're subscribing to the {selectedPlan?.name} plan
+            </p>
+          </div>
+        </section>
+
+        <section className="py-12">
+          <div id="checkout" className="max-w-2xl mx-auto">
+            {stripePromise ? (
+              <EmbeddedCheckoutProvider
+                stripe={stripePromise}
+                options={options}
+              >
+                <EmbeddedCheckout />
+              </EmbeddedCheckoutProvider>
+            ) : (
+              <div className="text-center p-8 bg-red-50 border border-red-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-red-800 mb-2">Stripe Configuration Error</h3>
+                <p className="text-red-600">Stripe publishable key is not configured. Please check your environment variables.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      </DefaultLayout>
+    );
+  }
 
   return (
     <DefaultLayout>

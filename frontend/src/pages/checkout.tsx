@@ -5,16 +5,17 @@ import {
   EmbeddedCheckout
 } from '@stripe/react-stripe-js';
 import {Navigate} from "react-router-dom";
+import { apiFetch } from "@/lib/api";
 
 // Make sure to call `loadStripe` outside of a component’s render to avoid
 // recreating the `Stripe` object on every render.
 // This is your test publishable API key.
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_SB_PUBLIC_KEY);
 
 export default function CheckoutForm() {
   const fetchClientSecret = useCallback(() => {
     // Create a Checkout Session
-    return fetch("/create-checkout-session", {
+    return apiFetch("/api/v1/payment/checkout/create-session", {
       method: "POST",
     })
       .then((res) => res.json())
@@ -44,7 +45,7 @@ export const Return = () => {
     const urlParams = new URLSearchParams(queryString);
     const sessionId = urlParams.get('session_id');
 
-    fetch(`/session-status?session_id=${sessionId}`)
+    apiFetch(`/api/v1/payment/checkout/session-status?session_id=${sessionId}`)
       .then((res) => res.json())
       .then((data) => {
         setStatus(data.status);
