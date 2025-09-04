@@ -1,25 +1,12 @@
 import { useEffect, useState } from "react";
-import {
-  Button,
-  Card,
-  CardBody,
-  Spinner,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
-  Chip,
-  addToast,
-} from "@heroui/react";
+import { Button, Card, CardBody, Spinner, addToast } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
 import { fetchScenarios, deleteScenario } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
 import ScenarioCreateModal from "@/components/scenario-create-modal";
 import DeleteConfirmationModal from "@/components/delete-confirmation-modal";
 import { motion } from "framer-motion";
-import { ArrowsPointingOutIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { ScenarioCard } from "@/components/ui/scenario-card";
 
 export default function ScenariosPage() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
@@ -82,58 +69,22 @@ export default function ScenariosPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
         >
-          <Card>
-            <CardBody>
-              <Table aria-label="Scenarios table" removeWrapper>
-                <TableHeader>
-                  <TableColumn>Title</TableColumn>
-                  <TableColumn>Target</TableColumn>
-                  <TableColumn>Language</TableColumn>
-                  <TableColumn>Safe</TableColumn>
-                  <TableColumn>Active</TableColumn>
-                  <TableColumn>Created</TableColumn>
-                  <TableColumn> </TableColumn>
-                </TableHeader>
-                <TableBody emptyContent="No scenarios yet">
+          <div>
+            {scenarios.length === 0 ? (
+                <div className="text-default-500 text-sm">No scenarios yet</div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   {scenarios.map((s) => (
-                    <TableRow key={s.id}>
-                      <TableCell className="font-medium">{s.title}</TableCell>
-                      <TableCell>{s.target_name}</TableCell>
-                      <TableCell className="uppercase">{s.language}</TableCell>
-                      <TableCell>
-                        <Chip color={s.is_safe ? "success" : "danger"} size="sm" variant="flat">
-                          {s.is_safe ? "Safe" : "Unsafe"}
-                        </Chip>
-                      </TableCell>
-                      <TableCell>
-                        <Chip color={s.is_active ? "success" : "danger"} size="sm" variant="flat">
-                          {s.is_active ? "Active" : "Inactive"}
-                        </Chip>
-                      </TableCell>
-                      <TableCell>{new Date(s.created_at).toLocaleString()}</TableCell>
-                      <TableCell className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="flat" 
-                          onPress={() => navigate(`/dashboard/scenarios/${s.id}`)} 
-                          isIconOnly 
-                          startContent={<ArrowsPointingOutIcon className="w-4 h-4" />} 
-                        />
-                        <Button 
-                          size="sm" 
-                          variant="flat" 
-                          color="danger"
-                          onPress={() => handleDeleteClick(s)} 
-                          isIconOnly 
-                          startContent={<TrashIcon className="w-4 h-4" />} 
-                        />
-                      </TableCell>
-                    </TableRow>
+                    <ScenarioCard
+                      key={s.id}
+                      scenario={s}
+                      onView={() => navigate(`/dashboard/scenarios/${s.id}`)}
+                      onDelete={() => handleDeleteClick(s)}
+                    />
                   ))}
-                </TableBody>
-              </Table>
-            </CardBody>
-          </Card>
+                </div>
+              )}
+          </div>
         </motion.div>
       )}
 
