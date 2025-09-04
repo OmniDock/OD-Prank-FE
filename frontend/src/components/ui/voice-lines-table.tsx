@@ -489,9 +489,7 @@ export function VoiceLinesTable({
                   return (
                     <div
                       key={vl.id}
-                      className={`relative shadow-md inline-flex  ${isActive ? "ring-1 ring-success bg-success-400 hover:bg-success-400" : "ring-1 ring-default-100"}  bg-gradient-surface glass-card rounded-medium p-3 cursor-pointer transition-colors ${
-                        isLoading ? "bg-default-200 animate-pulse" : "bg-content1 hover:bg-default-100"
-                      }`}
+                      className={` ${url ? "" : "bg-red-200 animate-pulse"} relative shadow-md inline-flex  ${isActive ? "ring-1 ring-success bg-success-400 hover:bg-success-400" : "ring-1 ring-default-100"}  bg-gradient-surface glass-card rounded-medium p-3 cursor-pointer transition-colors `}
                       onClick={() => handlePlayCard(vl.id, url)}
                     >
                       {isActive && (
