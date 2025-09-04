@@ -42,7 +42,7 @@ export default function DashboardLayout() {
     }
     
     if (/^\/dashboard\/scenarios\/[^/]+$/.test(path)) {
-      return "Scenario Details";
+      return "";
     }
 
     return "";
@@ -67,7 +67,7 @@ export default function DashboardLayout() {
           <div className="flex items-center gap-2">
             {showBack && (
               <Button isIconOnly size="sm" variant="light" onPress={handleBack} aria-label="Go back">
-                <ArrowLeftIcon className="h-4 w-4" />
+                <ArrowLeftIcon className="h-6 w-6 text-default-500" />
               </Button>
             )}
             <div className="font-semibold text-xl">{getPageTitle()}</div>

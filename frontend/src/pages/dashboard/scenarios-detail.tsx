@@ -11,9 +11,8 @@ import { fetchScenario, updateScenarioPreferredVoice } from "@/lib/api.scenarios
 import type { Scenario } from "@/types/scenario";
 import { fetchVoices } from "@/lib/api.tts";
 import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
-import { VoicePickerModal } from "@/components/ui/voice-picker-modal";
 import { ScenarioInfo } from "@/components/ui/scenario-info";
-import { VoiceSettings } from "@/components/ui/voice-settings";
+import { VoiceSection } from "@/components/ui/voice-section";
 import { VoiceLinesTable } from "@/components/ui/voice-lines-table";
 import type { VoiceItem } from "@/types/tts";
 import { motion } from "framer-motion";
@@ -25,7 +24,7 @@ export default function ScenarioDetailPage() {
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [playerCurrentIndex, setPlayerCurrentIndex] = useState(0);
   const [voices, setVoices] = useState<VoiceItem[]>([]);
-  const [isVoicePickerOpen, setIsVoicePickerOpen] = useState(false);
+  
 
 
   const refetchScenario = async () => {
@@ -126,14 +125,14 @@ export default function ScenarioDetailPage() {
           </Chip>
       </div>
 
-      <VoiceSettings 
-        scenario={scenario}
-        voices={voices}
-        onOpenVoicePicker={() => setIsVoicePickerOpen(true)}
-      />
-
       <ScenarioInfo scenario={scenario} onRefresh={refetchScenario} />
 
+
+      <VoiceSection 
+        scenario={scenario}
+        voices={voices}
+        onSelect={(id) => void persistPreferredVoice(id)}
+      />
 
       {!scenario.is_safe && scenario.is_not_safe_reason && (
         <Card>
@@ -164,13 +163,7 @@ export default function ScenarioDetailPage() {
         />
       )}
 
-      <VoicePickerModal
-        isOpen={isVoicePickerOpen}
-        onOpenChange={setIsVoicePickerOpen}
-        voices={voices}
-        selectedVoiceId={scenario?.preferred_voice_id}
-        onSelect={(id) => void persistPreferredVoice(id)}
-      />
+      
 
 
     </motion.section>
