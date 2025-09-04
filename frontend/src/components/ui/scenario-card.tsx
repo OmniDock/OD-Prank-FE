@@ -1,6 +1,6 @@
-import { Card, CardBody, Chip, Button } from "@heroui/react";
+import { Card, CardBody, Chip } from "@heroui/react";
 import type { Scenario } from "@/types/scenario";
-import { ArrowsPointingOutIcon, TrashIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { SparklesIcon } from "@heroicons/react/24/outline";
 
 type ScenarioCardProps = {
   scenario: Scenario;
@@ -26,44 +26,23 @@ export function ScenarioCard({ scenario, onView, onDelete }: ScenarioCardProps) 
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-           {/* 
-            <Chip size="sm" variant="flat" color={scenario.is_active ? "success" : "default"}>
-              {scenario.is_active ? "Active" : "Inactive"}
-            </Chip> */}
-            <Button 
-              size="sm" 
-              variant="flat" 
-              onPress={onView} 
-              isIconOnly 
-              startContent={<ArrowsPointingOutIcon className="w-4 h-4" />} 
-            />
-            <Button 
-              size="sm" 
-              variant="flat" 
-              color="danger"
-              onPress={onDelete} 
-              isIconOnly 
-              startContent={<TrashIcon className="w-4 h-4" />} 
-            />
-          </div>
         </div>
 
         <div className="flex items-center flex-wrap gap-2 text-xs">
           {scenario.target_name && (
-          <Chip size="sm" variant="flat" color="default">{scenario.target_name}</Chip>
+            <Chip size="sm" variant="flat" color="default">{scenario.target_name}</Chip>
           )}
           {scenario.target_name && (
-          <span className="text-default-500">•</span>
+            <span className="text-default-500">•</span>
           )}
           {scenario.language && (
-          <span className="uppercase text-default-600">{scenario.language}</span>
+            <span className="uppercase text-default-600">{scenario.language}</span>
           )}
           {scenario.language && (
-          <span className="text-default-500">•</span>
+            <span className="text-default-500">•</span>
           )}
           {voiceLineCount > 0 && (
-          <span className="text-default-600">{voiceLineCount} lines</span>
+            <span className="text-default-600">{voiceLineCount} lines</span>
           )}
         </div>
 
