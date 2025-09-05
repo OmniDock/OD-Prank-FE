@@ -159,7 +159,7 @@ export default function SignUpPage() {
 							</motion.div>
 
 							{/* Google Sign Up with better styling */}
-							<motion.div
+							{/* <motion.div
 								initial={{ opacity: 0, x: -20 }}
 								animate={{ opacity: 1, x: 0 }}
 								transition={{ delay: 0.2 }}
@@ -182,7 +182,7 @@ export default function SignUpPage() {
 								>
 									Sign up with Google
 								</Button>
-							</motion.div>
+							</motion.div> */}
 
 							{/* Divider with better styling */}
 							<div className="relative my-6">
