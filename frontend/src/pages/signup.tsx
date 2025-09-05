@@ -22,7 +22,7 @@ export default function SignUpPage() {
 	const [password, setPassword] = useState("");
 	const [isVisible, setIsVisible] = useState(false);
 	const [loading, setLoading] = useState(false);
-	const [googleLoading, setGoogleLoading] = useState(false);
+	//const [googleLoading, setGoogleLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [message, setMessage] = useState<string | null>(null);
 
@@ -63,26 +63,26 @@ export default function SignUpPage() {
 		setMessage("Check your email to confirm your account!");
 	}
 
-	async function signUpWithGoogle() {
-		setGoogleLoading(true);
-		setError(null);
+	// async function signUpWithGoogle() {
+	// 	setGoogleLoading(true);
+	// 	setError(null);
 		
-		const { error } = await supabase.auth.signInWithOAuth({
-			provider: 'google',
-			options: {
-				redirectTo: `${window.location.origin}/dashboard`,
-				queryParams: {
-					access_type: 'offline',
-					prompt: 'consent',
-				}
-			}
-		});
+	// 	const { error } = await supabase.auth.signInWithOAuth({
+	// 		provider: 'google',
+	// 		options: {
+	// 			redirectTo: `${window.location.origin}/dashboard`,
+	// 			queryParams: {
+	// 				access_type: 'offline',
+	// 				prompt: 'consent',
+	// 			}
+	// 		}
+	// 	});
 		
-		if (error) {
-			setError(error.message);
-			setGoogleLoading(false);
-		}
-	}
+	// 	if (error) {
+	// 		setError(error.message);
+	// 		setGoogleLoading(false);
+	// 	}
+	// }
 
 	return (
 		<AuthLayout>

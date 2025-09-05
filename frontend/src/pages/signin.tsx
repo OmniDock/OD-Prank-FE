@@ -22,7 +22,7 @@ export default function SignInPage() {
 	const [password, setPassword] = useState("");
 	const [isVisible, setIsVisible] = useState(false);
 	const [loading, setLoading] = useState(false);
-	const [googleLoading, setGoogleLoading] = useState(false);
+	//const [googleLoading, setGoogleLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const navigate = useNavigate();
 	const location = useLocation() as any;
@@ -45,26 +45,26 @@ export default function SignInPage() {
 		navigate(redirectTo, { replace: true });
 	}
 
-	async function signInWithGoogle() {
-		setGoogleLoading(true);
-		setError(null);
+	// async function signInWithGoogle() {
+	// 	setGoogleLoading(true);
+	// 	setError(null);
 		
-		const { error } = await supabase.auth.signInWithOAuth({
-			provider: 'google',
-			options: {
-				redirectTo: `${window.location.origin}/dashboard`,
-				queryParams: {
-					access_type: 'offline',
-					prompt: 'consent',
-				}
-			}
-		});
+	// 	const { error } = await supabase.auth.signInWithOAuth({
+	// 		provider: 'google',
+	// 		options: {
+	// 			redirectTo: `${window.location.origin}/dashboard`,
+	// 			queryParams: {
+	// 				access_type: 'offline',
+	// 				prompt: 'consent',
+	// 			}
+	// 		}
+	// 	});
 		
-		if (error) {
-			setError(error.message);
-			setGoogleLoading(false);
-		}
-	}
+	// 	if (error) {
+	// 		setError(error.message);
+	// 		setGoogleLoading(false);
+	// 	}
+	// }
 
 	return (
 		<AuthLayout>
