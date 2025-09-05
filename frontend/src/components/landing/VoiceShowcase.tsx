@@ -38,7 +38,7 @@ export default function VoiceShowcase({
   const fetchVoices = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const apiUrl = import.meta.env.VITE_BACKEND_URL;
       
       const response = await fetch(`${apiUrl}/api/v1/tts/voices`, {
         headers: session ? {
