@@ -57,9 +57,9 @@ export function useTelnyxConference({ conference, autoJoin = true }: UseTelnyxCo
       
       // Create silent stream to bypass getUserMedia
       createSilentStream();
-      
+      const telnyxPhoneNumber = import.meta.env.VITE_TELNYX_PHONE_NUMBER;
       client.newCall({
-        destinationNumber: `+493040739273`,
+        destinationNumber: telnyxPhoneNumber,
         audio: true,  // Keep this true for proper audio negotiation
         video: false,
         customHeaders: [{ name: "X-Conference-Name", value: conference }]
