@@ -8,7 +8,7 @@ type ScenarioCardProps = {
   onDelete: () => void;
 };
 
-export function ScenarioCard({ scenario, onView, onDelete }: ScenarioCardProps) {
+export function ScenarioCard({ scenario, onView }: ScenarioCardProps) {
   const voiceLineCount = scenario.voice_lines?.length ?? 0;
 
   return (

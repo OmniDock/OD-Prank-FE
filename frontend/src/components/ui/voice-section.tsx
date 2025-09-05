@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Card, CardBody, Chip, Input } from "@heroui/react";
+import { Button, Card, CardBody, Chip } from "@heroui/react";
 import { PlayIcon, StopIcon } from "@heroicons/react/24/outline";
 import { UserIcon } from "@heroicons/react/24/solid";
 import type { Scenario } from "@/types/scenario";
@@ -78,7 +78,7 @@ interface InlineSelectorProps {
 }
 
 function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: InlineSelectorProps) {
-  const [query, setQuery] = useState("");
+  const [query] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [genderFilter, setGenderFilter] = useState<"ALL" | "MALE" | "FEMALE">(defaultGender || "ALL");
   const [languageFilter, setLanguageFilter] = useState<"ALL" | "GERMAN" | "ENGLISH">(defaultLanguage || "ALL");

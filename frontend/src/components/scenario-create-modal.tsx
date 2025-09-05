@@ -67,7 +67,7 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
       if (response.status === 'needs_clarification') {
         // Move to clarification step
         setSessionId(response.session_id!);
-        setClarifyingQuestions(response.clarifying_questions || []);
+        setClarifyingQuestions(response.clarifying_questions as string[] || []);
         // Initialize with empty strings (placeholders will show in UI)
         setClarifications(new Array(response.clarifying_questions?.length || 0).fill(''));
         setStep('clarifying');

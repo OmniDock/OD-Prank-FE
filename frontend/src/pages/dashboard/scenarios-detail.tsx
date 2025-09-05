@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import {
   Card,
   CardBody,
-  Chip,
   Spinner,
   addToast,
 } from "@heroui/react";

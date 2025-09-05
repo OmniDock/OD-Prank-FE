@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import { LightBulbIcon } from "@heroicons/react/24/outline";
 import ChatWindow from "@/components/chat/ChatWindow";
 import ScenarioLoadingIndicator from "@/components/ScenarioLoadingIndicator";
 

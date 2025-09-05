@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Card, CardBody, Spinner, addToast } from "@heroui/react";
+import { Spinner, addToast } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
 import { fetchScenarios, deleteScenario } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";

@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
-import { Badge, Button, cn, Form, Image, Tooltip } from "@heroui/react";
+import { Badge, Button, cn, Form, Image } from "@heroui/react";
 import { XMarkIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import PromptInput from "./PromptInput";
 
