@@ -506,10 +506,11 @@ export function VoiceLinesTable({
                           {/* We intentionally display type section above; no ID shown here */}
                         </div>
                         <div className="mt-1  whitespace-pre-wrap break-words">
-                          {(vl.text || "")
+                          {/* {(vl.text || "")
                             .replace(/\[\[.*?\]\]/gi, "")
                             .replace(/\[(?!\*)([^[\]]*?)\]/g, "")
-                          }
+                          } */}
+                          {vl.text || ""}
                         </div>
 
                         {isLoading && (
