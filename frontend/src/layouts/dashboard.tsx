@@ -9,7 +9,7 @@ import { useLocation } from "react-router-dom";
 
 export default function DashboardLayout() {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState<boolean>(false);
+  const [collapsed, setCollapsed] = useState<boolean>(true);
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -48,10 +48,10 @@ export default function DashboardLayout() {
   const handleBack = () => navigate(parentPath);
 
   return (
-    <div className={`h-screen w-screen grid grid-rows-[auto_1fr] grid-cols-1 lg:grid-rows-1 ${collapsed ? "lg:grid-cols-[4rem_1fr]" : "lg:grid-cols-[10rem_1fr]"}`}>
+    <div className={`h-screen w-screen grid grid-rows-[auto_1fr] grid-cols-1 lg:grid-rows-1 ${collapsed ? "lg:grid-cols-[auto_1fr]" : "lg:grid-cols-[10rem_1fr]"}`}>
       <AnimatedBackground variant="mixed" density={15} />
       {/* Sidebar */}
-      <Sidebar collapsed={true} />
+      <Sidebar collapsed={collapsed} />
 
       {/* Main */}
       <div className="flex flex-col min-h-0">
