@@ -54,9 +54,9 @@ export default function DashboardLayout() {
       <Sidebar collapsed={collapsed} />
 
       {/* Main */}
-      <div className="flex flex-col min-h-0">
+      <div className="flex  flex-col min-h-0">
         {/* Topbar */}
-        <header className="h-16 bg-transparent rounded-2xl mx-3 my-3 flex items-center justify-between px-4 ">
+        <header className="sticky top-0 z-20 h-12 bg-transparent rounded-2xl mx-3 mt-3 mb-2 flex items-center justify-between px-4 ">
           <div className="flex items-center gap-2">
             {showBack && (
               <Button isIconOnly size="sm" variant="light" onPress={handleBack} aria-label="Go back">
@@ -79,7 +79,7 @@ export default function DashboardLayout() {
             </Button>
           </div>
         </header>
-        <main className="flex-1 overflow-auto p-4 lg:p-6"><Outlet /></main>
+        <main className="flex-1 overflow-auto px-4 pb-4 lg:px-6 lg:pb-6"><Outlet /></main>
       </div>
     </div>
   );

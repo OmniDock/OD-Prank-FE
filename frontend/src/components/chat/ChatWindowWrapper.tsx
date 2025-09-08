@@ -29,7 +29,7 @@ export default function ChatWindowWrapper({ onExpand }: Props) {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col h-full items-center justify-center gap-8">
+    <div className="w-full max-w-6xl mx-auto flex flex-col flex-1 h-full min-h-0 overflow-hidden items-center justify-start gap-6 py-6">
       {loading ? (
         <ScenarioLoadingIndicator />
       ) : (

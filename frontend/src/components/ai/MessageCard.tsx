@@ -15,7 +15,7 @@ export default function MessageCard({ avatar, avatarName, avatarNode, message, s
 
   if (side === "right") {
     return (
-      <div {...props} className={["flex gap-3 justify-end", className].join(" ")}> 
+      <div {...props} className={["flex gap-3 justify-end mb-3", className].join(" ")}> 
         <div className={[
           "relative px-4 py-3 rounded-medium max-w-[80%]",
           failed ? "bg-danger-100/50 border border-danger-100 text-foreground" : "bg-content2 text-default-600",
@@ -36,7 +36,7 @@ export default function MessageCard({ avatar, avatarName, avatarNode, message, s
   }
 
   return (
-    <div {...props} className={["flex gap-3", className].join(" ")}> 
+    <div {...props} className={["flex gap-3 mb-3", className].join(" ")}> 
       <div className="flex-none">
         {avatarNode ? (
           <div className="h-9 w-9 inline-flex items-center justify-center">

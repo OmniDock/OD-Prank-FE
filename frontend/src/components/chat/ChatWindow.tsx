@@ -1,13 +1,13 @@
 
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Spinner, Chip, Switch } from "@heroui/react";
+import { Button, Spinner, Switch } from "@heroui/react";
 import MessageCard from "@/components/ai/MessageCard";
 import PromptInputFullLine from "@/components/ai/PromptInputFullLine";
 import { useAuth } from "@/context/AuthProvider";
 import { DesignChatWebSocket } from "@/lib/api.design-chat";
 import type { DesignChatMessage } from "@/types/design-chat";
-import { CheckCircleIcon, SparklesIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { SparklesIcon, EyeIcon, EyeSlashIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import { Logo } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
 
@@ -33,15 +33,14 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   const [streamingMessage, setStreamingMessage] = useState<string>("");
   
   // Design chat state
-  const [isReady, setIsReady] = useState(false);
   const [currentDraft, setCurrentDraft] = useState("");
-  const [targetName, setTargetName] = useState<string>();
   const [showDetails, setShowDetails] = useState(false);
   
   const wsRef = useRef<DesignChatWebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const hasInjectedInitialPromptRef = useRef<boolean>(false);
   const hasStarted = messages.length > 0;
+  const hasUserMessage = messages.some((m) => m.role === 'user');
   
   // Auto-connect when user starts typing or on mount
   useEffect(() => {
@@ -55,6 +54,35 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
         wsRef.current = null;
       }
     };
+  }, []);
+  
+  // Hydrate chat history from backend (Redis) on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await apiFetch("/design-chat/history");
+        const data = await response.json();
+        const state = (data && data.state) || {};
+        const msgs = Array.isArray(state.messages) ? state.messages : [];
+        if (msgs.length) {
+          setMessages(
+            msgs.map((m: any, idx: number) => ({
+              id: `${Date.now()}_${idx}`,
+              role: m.role === 'user' ? 'user' : 'assistant',
+              content: String(m.content || ''),
+              timestamp: Date.now() + idx,
+            }))
+          );
+          // Hide header if history exists
+          try { onStartTyping && onStartTyping(); } catch {}
+        }
+        if (typeof state.scenario === 'string' && state.scenario.length > 0) {
+          setCurrentDraft(state.scenario);
+        }
+      } catch (e) {
+        // Ignore hydration errors silently
+      }
+    })();
   }, []);
   
   // Auto-scroll to bottom when new messages arrive
@@ -152,11 +180,9 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
       setIsAiTyping(false);
       
       // Update state only if there's meaningful content
-      setIsReady(data.is_ready || false);
       if (data.draft && data.draft.length > 50) {  // Only show draft if it's substantial
         setCurrentDraft(data.draft);
       }
-      setTargetName(data.target_name || undefined);
       
     } else if (data.type === 'finalized') {
       // Scenario is ready, now generate it
@@ -230,12 +256,37 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
     handleGenerateScenario(currentDraft || "");
   };
   
+  const handleResetChat = async () => {
+    try {
+      const confirmReset = window.confirm("Chat wirklich zurücksetzen?");
+      if (!confirmReset) return;
+      // Clear persisted state on backend
+      try {
+        await apiFetch("/design-chat/history", { method: "DELETE" });
+      } catch {}
+      // Disconnect current WS and reset local state
+      try { wsRef.current?.disconnect(); } catch {}
+      wsRef.current = null;
+      setMessages([]);
+      setInput("");
+      setStreamingMessage("");
+      setIsAiTyping(false);
+      setError(null);
+      setIsConnected(false);
+      setIsConnecting(false);
+      setCurrentDraft("");
+      setShowDetails(false);
+      // Reconnect fresh (will send greeting)
+      await connectWebSocket();
+    } catch {}
+  };
+  
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto h-full ">
       {/* Chat Container with Border */}
-      <div className="bg-background/60 backdrop-blur-md border border-divider rounded-2xl shadow-lg">
-        {/* Messages Area */}
-        <div className="p-6 space-y-4 max-h-[50vh] overflow-y-auto scrollbar-hide">
+      <div className="bg-background/60 backdrop-blur-md border border-divider rounded-2xl shadow-lg flex flex-col h-full min-h-0 overflow-hidden">
+        {/* Scrollable Content (messages + optional details) */}
+        <div className="flex-1 min-h-0 px-6 pt-6 overflow-y-auto scrollbar-hide">
           {messages.map((message) => (
             <MessageCard
               key={message.id}
@@ -278,51 +329,38 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
               {error}
             </div>
           )}
+
+          {/* Toggle Details Button */}
+          {hasStarted && currentDraft && (
+            <div className="px-6 py-2 -mx-6 border-t border-divider">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-default-500">Szenario-Entwurf anzeigen</span>
+                <Switch
+                  size="sm"
+                  isSelected={showDetails}
+                  onValueChange={setShowDetails}
+                  startContent={<EyeIcon className="w-3 h-3" />}
+                  endContent={<EyeSlashIcon className="w-3 h-3" />}
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Current Draft Preview - Only show when toggled */}
+          {showDetails && currentDraft && hasStarted && (
+            <div className="px-6 py-3 -mx-6 bg-primary-50/50 border-divider ">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-primary-600 font-medium">Aktueller Entwurf:</p>
+              </div>
+              <p className="text-sm whitespace-pre-wrap">{currentDraft}</p>
+            </div>
+          )}
           
           <div ref={messagesEndRef} />
         </div>
         
-        {/* Toggle Details Button */}
-        {hasStarted && currentDraft && (
-          <div className="px-6 py-2 border-t border-divider">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-default-500">Szenario-Entwurf anzeigen</span>
-              <Switch
-                size="sm"
-                isSelected={showDetails}
-                onValueChange={setShowDetails}
-                startContent={<EyeIcon className="w-3 h-3" />}
-                endContent={<EyeSlashIcon className="w-3 h-3" />}
-              />
-            </div>
-          </div>
-        )}
-        
-        {/* Current Draft Preview - Only show when toggled */}
-        {showDetails && currentDraft && hasStarted && (
-          <div className="px-6 py-3 bg-primary-50/50 border-t border-divider">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-primary-600 font-medium">Aktueller Entwurf:</p>
-              {isReady && (
-                <Chip
-                  size="sm"
-                  color="success"
-                  variant="flat"
-                  startContent={<CheckCircleIcon className="w-3 h-3" />}
-                >
-                  Bereit
-                </Chip>
-              )}
-            </div>
-            <p className="text-sm whitespace-pre-wrap">{currentDraft}</p>
-            {targetName && (
-              <p className="text-xs text-default-500 mt-2">Ziel: {targetName}</p>
-            )}
-          </div>
-        )}
-        
-        {/* Input Area */}
-        <div className="p-4 border-t border-divider">
+        {/* Input Area (always visible) */}
+        <div className="px-4 py-3 border-t border-divider shrink-0">
           <div className="flex gap-2">
             <PromptInputFullLine
               value={input}
@@ -343,8 +381,8 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
             />
           </div>
           
-          {/* Generate Button - User decides readiness; show once chat started */}
-          {hasStarted && (
+          {/* Generate Button - Show only after first user message */}
+          {hasUserMessage && (
             <div className="mt-3">
               <Button
                 color="primary"
@@ -377,6 +415,18 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
           )}
         </div>
       </div>
+      {(hasStarted || streamingMessage) && (
+        <div className="fixed bottom-6 right-6 z-30">
+          <Button
+            isIconOnly
+            variant="shadow"
+            onPress={handleResetChat}
+            aria-label="Chat zurücksetzen"
+          >
+            <ArrowPathIcon className="w-5 h-5" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
