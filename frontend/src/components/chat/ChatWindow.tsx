@@ -282,7 +282,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   };
   
   return (
-    <div className="w-full max-w-4xl mx-auto h-full ">
+    <div className="w-full max-w-4xl mx-auto max-h-full ">
       {/* Chat Container with Border */}
       <div className="bg-background/60 backdrop-blur-md border border-divider rounded-2xl shadow-lg flex flex-col h-full min-h-0 overflow-hidden">
         {/* Scrollable Content (messages + optional details) */}
@@ -308,11 +308,11 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
                 side="left"
               />
             ) : (
-              <div className="flex items-center ml-12 text-default-400">
+              <div className="flex items-center ml-12 mb-3 text-default-400">
                 <div className="flex space-x-1">
-                  <div className="w-1 h-1 bg-default-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-1 h- bg-default-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-1 h- bg-default-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  <div className="w-1 h-1 bg-default-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-1 h- bg-default-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-1 h- bg-default-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                 </div>
               </div>
             )
