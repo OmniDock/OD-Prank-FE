@@ -52,13 +52,13 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
             Home
           </Link>
           <Link href="/#templates" className="font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-            Templates
+            Szenarien
           </Link>
           <Link href="/#voices" className="font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-            Voices
+            Stimmen
           </Link>
           <Link href="/pricing" className="font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-            Pricing
+            Preise
           </Link>
         </div>
 
@@ -83,7 +83,7 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
               size={scrolled ? "md" : "md"}
               className="bg-gradient-primary justify-self-end"
             >
-              Sign In
+              Anmelden
             </Button>
           )
         ): <div className="justify-self-end" />}

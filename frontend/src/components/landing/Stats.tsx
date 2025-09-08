@@ -9,7 +9,7 @@ export default function Stats() {
         className="px-4 py-5"
       >
         <div className="flex flex-row justify-center items-center gap-2">
-          <span className="text-gradient font-semibold text-lg">50K+</span> <span className="font-semibold">Calls made</span>
+          <span className="text-gradient font-semibold text-lg">50K+</span> <span className="font-semibold">Anrufer</span>
         </div>
       </Chip>
       
@@ -19,7 +19,7 @@ export default function Stats() {
         className="px-4 py-5"
       >
         <div className="flex flex-row justify-center items-center gap-2">
-          <span className="text-gradient font-semibold text-lg">25+</span> <span className="font-semibold">Voices</span>
+          <span className="text-gradient font-semibold text-lg">25+</span> <span className="font-semibold">Stimmen</span>
         </div>
       </Chip>
       
@@ -29,7 +29,7 @@ export default function Stats() {
         className="px-4 py-5"
       >
         <div className="flex flex-row justify-center items-center gap-2">
-          <span className="text-gradient font-semibold text-lg">99%</span> <span className="font-semibold">Laughs Guaranteed</span>
+          <span className="text-gradient font-semibold text-lg">99%</span> <span className="font-semibold">Spaß garantiert</span>
         </div>
       </Chip>
     </div>

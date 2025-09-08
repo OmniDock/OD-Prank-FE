@@ -8,10 +8,10 @@ export default function Footer() {
           {/* Legal Links */}
           <div className="flex flex-wrap justify-center gap-6">
             <Link to="/privacy" className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-              Privacy Policy
+              Datenschutz
             </Link>
             <Link to="/terms" className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-              Terms of Service / AGB
+              Nutzungsbedingungen / AGB
             </Link>
             <Link to="/imprint" className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
               Impressum
