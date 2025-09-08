@@ -58,6 +58,10 @@ export default function ChatWindowWrapper({ onExpand }: Props) {
             loading={loading}
             setLoading={setLoading}
             onScenarioResult={handleScenarioResult}
+            onReset={() => {
+              setHasUserInput(false);
+              setError(null);
+            }}
           />
         </>
       )}

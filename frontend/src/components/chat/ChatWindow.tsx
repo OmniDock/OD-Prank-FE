@@ -1,7 +1,7 @@
 
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Spinner, Switch } from "@heroui/react";
+import { Button, Spinner, Switch, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
 import MessageCard from "@/components/ai/MessageCard";
 import PromptInputFullLine from "@/components/ai/PromptInputFullLine";
 import { useAuth } from "@/context/AuthProvider";
@@ -17,9 +17,10 @@ interface ChatWindowProps {
   loading?: boolean;
   setLoading?: (val: boolean) => void;
   onScenarioResult?: (result: { status: string; scenario_id?: number; error?: string }) => void;
+  onReset?: () => void;
 }
 
-export default function ChatWindow({ onExpand, onStartTyping, loading, setLoading, onScenarioResult }: ChatWindowProps = {}) {
+export default function ChatWindow({ onExpand, onStartTyping, loading, setLoading, onScenarioResult, onReset }: ChatWindowProps = {}) {
   const { user } = useAuth();
   const userName = (user as any)?.user_metadata?.full_name || (user as any)?.user_metadata?.name || user?.email || "You";
   const userAvatar = (user as any)?.user_metadata?.avatar_url || (user as any)?.user_metadata?.picture || undefined;
@@ -35,6 +36,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   // Design chat state
   const [currentDraft, setCurrentDraft] = useState("");
   const [showDetails, setShowDetails] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   
   const wsRef = useRef<DesignChatWebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -258,8 +260,6 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   
   const handleResetChat = async () => {
     try {
-      const confirmReset = window.confirm("Chat wirklich zurücksetzen?");
-      if (!confirmReset) return;
       // Clear persisted state on backend
       try {
         await apiFetch("/design-chat/history", { method: "DELETE" });
@@ -276,9 +276,12 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
       setIsConnecting(false);
       setCurrentDraft("");
       setShowDetails(false);
+      try { onReset && onReset(); } catch {}
       // Reconnect fresh (will send greeting)
       await connectWebSocket();
-    } catch {}
+    } catch {} finally {
+      setIsConfirmOpen(false);
+    }
   };
   
   return (
@@ -418,13 +421,30 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
       {(hasStarted || streamingMessage) && (
         <div className="fixed bottom-6 right-6 z-30">
           <Button
-            isIconOnly
             variant="shadow"
-            onPress={handleResetChat}
-            aria-label="Chat zurücksetzen"
+            onPress={() => setIsConfirmOpen(true)}
+            aria-label="Reset Chat"
+            startContent={<ArrowPathIcon className="w-5 h-5" />}
           >
-            <ArrowPathIcon className="w-5 h-5" />
+            Reset Chat
           </Button>
+
+          <Modal isOpen={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+            <ModalContent>
+              <ModalHeader>Reset Chat</ModalHeader>
+              <ModalBody>
+                Are you sure you want to reset the chat? This will clear the conversation and draft.
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="light" onPress={() => setIsConfirmOpen(false)}>
+                  Cancel
+                </Button>
+                <Button color="primary" onPress={handleResetChat} startContent={<ArrowPathIcon className="w-4 h-4" />}>
+                  Reset Chat
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
         </div>
       )}
     </div>
