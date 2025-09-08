@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import {
   Card,
   CardBody,
-  Spinner,
   addToast,
 } from "@heroui/react";
 import { fetchScenario, updateScenarioPreferredVoice } from "@/lib/api.scenarios";
