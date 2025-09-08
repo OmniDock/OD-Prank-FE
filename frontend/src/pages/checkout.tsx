@@ -11,6 +11,7 @@ import DefaultLayout from "@/layouts/default";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthProvider";
+import { Subscription } from "@/types/enums";
 
 // Make sure to call `loadStripe` outside of a component’s render to avoid
 // recreating the `Stripe` object on every render.
