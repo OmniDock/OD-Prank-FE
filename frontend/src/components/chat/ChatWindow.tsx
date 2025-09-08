@@ -424,6 +424,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
             variant="shadow"
             onPress={() => setIsConfirmOpen(true)}
             aria-label="Reset Chat"
+            color="primary"
             startContent={<ArrowPathIcon className="w-5 h-5" />}
           >
             Reset Chat
