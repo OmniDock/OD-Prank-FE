@@ -40,6 +40,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   
   const wsRef = useRef<DesignChatWebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const hasInjectedInitialPromptRef = useRef<boolean>(false);
   const hasStarted = messages.length > 0;
   
   // Auto-connect when user starts typing or on mount
@@ -60,6 +61,21 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Inject saved initial prompt from landing page after login
+  useEffect(() => {
+    try {
+      if (hasInjectedInitialPromptRef.current) return;
+      const saved = localStorage.getItem("initialPrompt");
+      if (saved && saved.trim()) {
+        hasInjectedInitialPromptRef.current = true;
+        setInput(saved);
+        // Auto-send the saved message so it appears in chat history
+        handleSendMessage(saved);
+        localStorage.removeItem("initialPrompt");
+      }
+    } catch {}
+  }, []);
   
   const connectWebSocket = async () => {
     if (wsRef.current?.isConnected()) return;
