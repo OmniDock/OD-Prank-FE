@@ -19,7 +19,7 @@ export default function AnimatedBackground({
         left: Math.random() * 100,
         top: Math.random() * 100,
         delay: Math.random() * 10,
-        duration: 15 + Math.random() * 10,
+        duration: 7 + Math.random() * 10,
       })),
     [density, variant]
   );
@@ -31,7 +31,7 @@ export default function AnimatedBackground({
         left: Math.random() * 100,
         top: Math.random() * 100,
         delay: Math.random() * 10 + 5,
-        duration: 20 + Math.random() * 10,
+        duration: 12 + Math.random() * 10,
       })),
     [density, variant]
   );
@@ -43,7 +43,7 @@ export default function AnimatedBackground({
         left: Math.random() * 100,
         top: Math.random() * 100,
         delay: Math.random() * 15,
-        duration: 25 + Math.random() * 10,
+        duration: 12 + Math.random() * 10,
       })),
     [density, variant]
   );
