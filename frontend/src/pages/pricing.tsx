@@ -19,7 +19,6 @@ export default function PricingPage() {
       // Redirect to login if user is not authenticated
       localStorage.setItem("FromPricing", "true")
       window.location.href = "/signin";
-      return;
     }
     // Redirect to checkout page
     window.location.href = "/checkout";
