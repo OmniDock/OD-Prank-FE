@@ -1,43 +1,32 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
-  Button,
   Card,
   CardBody,
-  Chip,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  Spinner,
-  Textarea,
   addToast,
 } from "@heroui/react";
-import { enhanceVoiceLines, fetchScenario, updateScenarioPreferredVoice } from "@/lib/api.scenarios";
+import { fetchScenario, updateScenarioPreferredVoice } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
-import { fetchVoices } from "@/lib/api.tts";
+import { fetchVoices, generateScenarioTTS } from "@/lib/api.tts";
 import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
-import { VoicePickerModal } from "@/components/ui/voice-picker-modal";
 import { ScenarioInfo } from "@/components/ui/scenario-info";
-import { VoiceSettings } from "@/components/ui/voice-settings";
+import { VoiceSection } from "@/components/ui/voice-section";
 import { VoiceLinesTable } from "@/components/ui/voice-lines-table";
+import { VoiceGenerationStatus } from "@/components/ui/voice-generation-status";
 import type { VoiceItem } from "@/types/tts";
-import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
+import { CallStartBox } from "@/components/ui/call-start-box";
+import LoadingScreen from '@/components/LoadingScreen';
 
 export default function ScenarioDetailPage() {
   const { id } = useParams();
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [isEnhanceOpen, setIsEnhanceOpen] = useState(false);
-  const [feedback, setFeedback] = useState("");
-  const [enhancing, setEnhancing] = useState(false);
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [playerCurrentIndex, setPlayerCurrentIndex] = useState(0);
   const [voices, setVoices] = useState<VoiceItem[]>([]);
-  const [isVoicePickerOpen, setIsVoicePickerOpen] = useState(false);
+  const [tableKey, setTableKey] = useState(0);
+  
 
 
   const refetchScenario = async () => {
@@ -86,61 +75,7 @@ export default function ScenarioDetailPage() {
     setIsPlayerOpen(true);
   }
 
-  async function onEnhance() {
-    if (!scenario || selected.size === 0 || enhancing) return;
-    setEnhancing(true);
-    try {
-      const res = await enhanceVoiceLines({
-        voice_line_ids: Array.from(selected),
-        user_feedback: feedback,
-      });
-      if (res.success) {
-        // Refetch the complete scenario data to update audio availability
-        await refetchScenario();
-        
-        const successCount = res.successful_enhancements.length;
-        const failedCount = res.failed_enhancements?.length || 0;
-        
-        if (successCount > 0) {
-          addToast({
-            title: "Enhancement completed",
-            description: `Successfully enhanced ${successCount} voice line(s). Audio files have been cleared - regenerate as needed.`,
-            color: "success",
-            timeout: 5000,
-          });
-        }
-        
-        if (failedCount > 0) {
-          addToast({
-            title: "Some enhancements failed",
-            description: `${failedCount} voice line(s) could not be enhanced. Check the logs for details.`,
-            color: "warning",
-            timeout: 5000,
-          });
-        }
-      } else {
-        addToast({
-          title: "Enhancement failed",
-          description: "Failed to enhance voice lines. Please try again.",
-          color: "danger",
-          timeout: 5000,
-        });
-      }
-      setIsEnhanceOpen(false);
-      setSelected(new Set());
-      setFeedback("");
-    } catch (error) {
-      console.error('Enhancement error:', error);
-      addToast({
-        title: "Enhancement failed",
-        description: "An unexpected error occurred. Please try again.",
-        color: "danger",
-        timeout: 5000,
-      });
-    } finally {
-      setEnhancing(false);
-    }
-  }
+  
 
 
 
@@ -156,6 +91,26 @@ export default function ScenarioDetailPage() {
         color: "success",
         timeout: 3000,
       });
+      // Trigger bulk TTS generation for all voice lines
+      void generateScenarioTTS({ scenario_id: scenario.id, voice_id: voiceId })
+        .then((res) => {
+          addToast({
+            title: "Generation started",
+            description: `Starting audio generation for ${res.total_processed ?? "all"} lines`,
+            color: "primary",
+            timeout: 2500,
+          });
+          // Remount table to re-run its summary discovery
+          setTableKey((k) => k + 1);
+        })
+        .catch(() => {
+          addToast({
+            title: "Generation failed",
+            description: "Could not start scenario TTS generation.",
+            color: "danger",
+            timeout: 4000,
+          });
+        });
     } catch (e) {
       addToast({
         title: "Update failed",
@@ -170,9 +125,7 @@ export default function ScenarioDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-10">
-        <Spinner />
-      </div>
+      <LoadingScreen message="Szenario wird geladen..." />
     );
   }
   if (!scenario) return null;
@@ -186,19 +139,14 @@ export default function ScenarioDetailPage() {
     >
 
       <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">{scenario.title}</h1>
-          <Chip color={scenario.is_safe ? "success" : "danger"} variant="flat">
+          <h1 className="text-2xl font-semibold">Title: {scenario.title}</h1>
+          {/* <Chip color={scenario.is_safe ? "success" : "danger"} variant="flat">
             {scenario.is_safe ? "Safe" : "Unsafe"}
-          </Chip>
+          </Chip> */}
+          <div></div>
       </div>
 
       <ScenarioInfo scenario={scenario} onRefresh={refetchScenario} />
-
-      <VoiceSettings 
-        scenario={scenario}
-        voices={voices}
-        onOpenVoicePicker={() => setIsVoicePickerOpen(true)}
-      />
 
       {!scenario.is_safe && scenario.is_not_safe_reason && (
         <Card>
@@ -208,50 +156,31 @@ export default function ScenarioDetailPage() {
         </Card>
       )}
 
-      <VoiceLinesTable 
+      {scenario.is_safe && ! scenario.preferred_voice_id && (
+      <VoiceSection 
         scenario={scenario}
-        onRefetchScenario={refetchScenario}
-        selected={selected}
-        onSelectionChange={setSelected}
-        onOpenPlayer={onOpenPlayer}
-        onEnhanceSelected={() => setIsEnhanceOpen(true)}
+        voices={voices}
+        onSelect={(id) => void persistPreferredVoice(id)}
       />
+      )}
 
-      <Modal isOpen={isEnhanceOpen} onOpenChange={setIsEnhanceOpen} size="2xl">
-        <ModalContent>
-          <ModalHeader>Enhance Voice Lines</ModalHeader>
-          <ModalBody className="space-y-4">
-            <div className="p-4 bg-warning-50 border border-warning-200 rounded-lg">
-              <div className="flex items-start gap-3">
-                <ExclamationTriangleIcon className="flex-shrink-0 w-5 h-5 text-warning-600 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium text-warning-800 mb-1">
-                    Important: Audio deletion notice
-                  </p>
-                  <p className="text-warning-700">
-                    Enhancing voice lines will <strong>permanently delete all existing generated audio</strong> for the selected lines. You'll need to regenerate audio after enhancement.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <Textarea
-              label="Your feedback"
-              placeholder="Make them funnier and add more pauses..."
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" size="sm" onPress={() => setIsEnhanceOpen(false)}>
-              Cancel
-            </Button>
-            <Button color="primary" size="sm" onPress={onEnhance} isLoading={enhancing}>
-              Run Enhancement
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* Green Call Box between details and voice lines */}
+      {scenario.is_safe && scenario.preferred_voice_id && (
+        <CallStartBox scenario={scenario} />
+      )}
+
+      {scenario.preferred_voice_id && (
+        <>
+          <VoiceGenerationStatus scenarioId={scenario.id} totalCount={scenario.voice_lines.length} />
+          <VoiceLinesTable 
+            key={tableKey}
+            scenario={scenario}
+            onRefetchScenario={refetchScenario}
+            onOpenPlayer={onOpenPlayer}
+          />
+        </>
+      )}
+
 
       {scenario && (
         <AudioPlayerModal
@@ -267,13 +196,7 @@ export default function ScenarioDetailPage() {
         />
       )}
 
-      <VoicePickerModal
-        isOpen={isVoicePickerOpen}
-        onOpenChange={setIsVoicePickerOpen}
-        voices={voices}
-        selectedVoiceId={scenario?.preferred_voice_id}
-        onSelect={(id) => void persistPreferredVoice(id)}
-      />
+      
 
 
     </motion.section>

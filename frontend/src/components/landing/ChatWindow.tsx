@@ -11,11 +11,11 @@ export default function ChatWindow() {
 
   // Typewriter effect placeholders
   const placeholders = [
-    "Describe your prank scenario... What kind of character should call your friend?",
-    "Create a confused pizza delivery driver calling about a mysterious order...",
-    "Design a tech support agent investigating suspicious WiFi activity...",
-    "Make a celebrity's assistant scheduling a surprise collaboration...",
-    "Build a game show host announcing they've won a ridiculous prize..."
+    "Beschreibe dein Prank-Szenario... Welche Figur soll deinen Freund anrufen?",
+    "Erschaffe einen verwirrten Pizzaboten, der wegen einer mysteriösen Bestellung anruft...",
+    "Gestalte einen IT-Support-Mitarbeiter, der verdächtige WLAN-Aktivitäten untersucht...",
+    "Lass einen Assistenten einer Berühmtheit anrufen, um eine überraschende Zusammenarbeit zu planen...",
+    "Baue einen Gameshow-Moderator ein, der verkündet, dass dein Freund einen absurden Preis gewonnen hat..."
   ];
 
   const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);

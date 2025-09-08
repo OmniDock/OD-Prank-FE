@@ -25,8 +25,8 @@ export default function IndexPage() {
       <section id="voices" className="py-20 md:py-28 bg-transparent dark:bg-default-950/30">
         <div className="container mx-auto px-6 max-w-7xl">
           <VoiceShowcase 
-            title="Meet Some of Our Voices"
-            subtitle="Professional voices from around the world, ready to bring your pranks to life"
+            title="Lerne einige unserer Stimmen kennen"
+            subtitle="Professionelle Stimmen aus aller Welt, bereit, deine Streiche zum Leben zu erwecken"
             maxVoices={6}
           />
         </div>

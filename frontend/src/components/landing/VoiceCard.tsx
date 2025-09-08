@@ -11,6 +11,7 @@ export interface Voice {
   languages: string[];
   gender: string;
   preview_url: string;
+  avatar_url: string;
 }
 
 function getGenderColor(gender: string): "primary" | "secondary" {
@@ -50,8 +51,16 @@ export default function VoiceCard({
       <CardBody className="p-6 flex flex-col h-full">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-full bg-${getGenderColor(voice.gender)}-100 dark:bg-${getGenderColor(voice.gender)}-900/30`}>
-              <UserIcon className={`w-5 h-5 text-${getGenderColor(voice.gender)}`} />
+            <div className={`rounded-full bg-${getGenderColor(voice.gender)}-100 dark:bg-${getGenderColor(voice.gender)}-900/30`}>
+              {voice.avatar_url ? (
+                <img
+                  src={voice.avatar_url}
+                  alt={voice.name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <UserIcon className={`w-5 h-5 text-${getGenderColor(voice.gender)}`} />
+              )}
             </div>
             <div>
               <div className="flex flex-row items-center gap-2 justify-center">

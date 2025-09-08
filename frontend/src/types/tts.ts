@@ -15,6 +15,7 @@ export interface VoiceItem {
   languages: ("ENGLISH" | "GERMAN")[];
   gender: Gender;
   preview_url?: string;
+  avatar_url?: string;
 }
 
 export interface VoiceListResponse {

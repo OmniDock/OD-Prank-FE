@@ -10,7 +10,7 @@ import UserDropdown from "@/pages/components/userDropdown";
 
 export default function DashboardLayout() {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState<boolean>(false);
+  const [collapsed, setCollapsed] = useState<boolean>(true);
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -19,13 +19,6 @@ export default function DashboardLayout() {
     if (saved === "true") setCollapsed(true);
   }, []);
 
-  function toggleSidebar() {
-    setCollapsed((v) => {
-      const next = !v;
-      localStorage.setItem("sidebar-collapsed", String(next));
-      return next;
-    });
-  }
 
   // Function to get dynamic title based on path
   const getPageTitle = () => {
@@ -34,8 +27,8 @@ export default function DashboardLayout() {
     // Static mappings first
     const staticMappings: Record<string, string> = {
       "/dashboard": "",
-      "/dashboard/scenarios": "Scenarios",
-      "/dashboard/phone-call": "Phone Call",
+      "/dashboard/scenarios": "",
+      "/dashboard/phone-call": "",
     };
     
     if (staticMappings[path]) {
@@ -43,7 +36,7 @@ export default function DashboardLayout() {
     }
     
     if (/^\/dashboard\/scenarios\/[^/]+$/.test(path)) {
-      return "Scenario Details";
+      return "";
     }
 
     return "";
@@ -56,19 +49,19 @@ export default function DashboardLayout() {
   const handleBack = () => navigate(parentPath);
 
   return (
-    <div className={`h-screen w-screen grid grid-rows-[auto_1fr] grid-cols-1 lg:grid-rows-1 ${collapsed ? "lg:grid-cols-[4rem_1fr]" : "lg:grid-cols-[10rem_1fr]"}`}>
+    <div className={`h-screen w-screen grid grid-rows-[auto_1fr] grid-cols-1 lg:grid-rows-1 ${collapsed ? "lg:grid-cols-[auto_1fr]" : "lg:grid-cols-[10rem_1fr]"}`}>
       <AnimatedBackground variant="mixed" density={15} />
       {/* Sidebar */}
-      <Sidebar collapsed={true} onToggle={toggleSidebar} />
+      <Sidebar collapsed={collapsed} />
 
       {/* Main */}
-      <div className="flex flex-col min-h-0">
+      <div className="flex  flex-col min-h-0">
         {/* Topbar */}
-        <header className="h-16 bg-transparent rounded-2xl mx-3 my-3 flex items-center justify-between px-4 ">
+        <header className="sticky top-0 z-20 h-12 bg-transparent rounded-2xl mx-3 mt-3 mb-2 flex items-center justify-between px-4 ">
           <div className="flex items-center gap-2">
             {showBack && (
               <Button isIconOnly size="sm" variant="light" onPress={handleBack} aria-label="Go back">
-                <ArrowLeftIcon className="h-4 w-4" />
+                <ArrowLeftIcon className="h-6 w-6 text-default-500" />
               </Button>
             )}
             <div className="font-semibold text-xl">{getPageTitle()}</div>
@@ -77,7 +70,7 @@ export default function DashboardLayout() {
             <UserDropdown />
           </div>
         </header>
-        <main className="flex-1 overflow-auto p-4 lg:p-6"><Outlet /></main>
+        <main className="flex-1 overflow-auto px-4 pb-4 lg:px-6 lg:pb-6"><Outlet /></main>
       </div>
     </div>
   );

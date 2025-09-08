@@ -7,7 +7,6 @@ import ProtectedRoute from "@/components/routing/ProtectedRoute";
 import PublicOnlyRoute from "@/components/routing/PublicOnlyRoute";
 import DashboardMain from "@/pages/dashboard/main";
 import ScenariosPage from "@/pages/dashboard/scenarios";
-import PhoneCallPage from "@/pages/dashboard/phone-call";
 import DashboardLayout from "@/layouts/dashboard";
 import ScenarioDetailPage from "@/pages/dashboard/scenarios-detail";
 import ActiveCallPage from "@/pages/dashboard/active-call";
@@ -39,7 +38,6 @@ function App() {
           <Route index element={<DashboardMain />} />
           <Route path="scenarios" element={<ScenariosPage />} />
           <Route path="scenarios/:id" element={<ScenarioDetailPage />} />
-          <Route path="phone-call" element={<PhoneCallPage />} />
           <Route path="active-call" element={<ActiveCallPage />} />
         </Route>
       </Route>

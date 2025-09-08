@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
-import { LightBulbIcon } from "@heroicons/react/24/outline";
 import ChatWindow from "@/components/chat/ChatWindow";
-import ScenarioLoadingIndicator from "@/components/ScenarioLoadingIndicator";
+import ScenarioLoadingIndicator from "@/components/LoadingScreen";
 
 type Props = {
   onExpand?: () => void;
@@ -30,9 +29,9 @@ export default function ChatWindowWrapper({ onExpand }: Props) {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col h-full items-center justify-center gap-8">
+    <div className="w-full max-w-6xl mx-auto flex flex-col flex-1 h-full min-h-0 overflow-hidden items-center justify-center gap-6 py-6">
       {loading ? (
-        <ScenarioLoadingIndicator />
+        <ScenarioLoadingIndicator message="Dein Szenario wird generiert. Dies kann einige Sekunden dauern." />
       ) : (
         <>
           <div className="flex flex-col items-center text-center">
@@ -59,6 +58,10 @@ export default function ChatWindowWrapper({ onExpand }: Props) {
             loading={loading}
             setLoading={setLoading}
             onScenarioResult={handleScenarioResult}
+            onReset={() => {
+              setHasUserInput(false);
+              setError(null);
+            }}
           />
         </>
       )}

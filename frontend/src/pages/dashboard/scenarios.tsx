@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Card, CardBody, Spinner, addToast } from "@heroui/react";
+import { addToast } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
 import { fetchScenarios, deleteScenario } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
@@ -7,6 +7,7 @@ import ScenarioCreateModal from "@/components/scenario-create-modal";
 import DeleteConfirmationModal from "@/components/delete-confirmation-modal";
 import { motion } from "framer-motion";
 import { ScenarioCard } from "@/components/ui/scenario-card";
+import LoadingScreen from '@/components/LoadingScreen';
 
 export default function ScenariosPage() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
@@ -51,18 +52,10 @@ export default function ScenariosPage() {
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-end">
-
-        <Button color="primary" size="sm" onPress={() => setIsCreateOpen(true)}>
-          New Scenario
-        </Button>
-      </div>
+    <section className="space-y-4 h-full">
 
       {loading ? (
-        <div className="flex justify-center py-8">
-          <Spinner />
-        </div>
+        <LoadingScreen message="Szenarien werden geladen..." />
       ) : (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -71,7 +64,10 @@ export default function ScenariosPage() {
         >
           <div>
             {scenarios.length === 0 ? (
-                <div className="text-default-500 text-sm">No scenarios yet</div>
+                <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
+                  <div className="text-default-500 text-4xl font-semibold text-gradient">No Scenario yet</div>
+                  <div className="text-default-500 text-2xl ">Create a new scenario to get started</div>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   {scenarios.map((s) => (

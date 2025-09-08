@@ -1,6 +1,16 @@
 import { supabase } from "@/lib/supabaseClient";
 
-const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL as string) ?? "";
+function normalizeBaseUrl(url: string) {
+	// remove trailing slash
+	let u = (url || "").replace(/\/+$/, "");
+	// if page is https, don't allow http base URL (mixed content)
+	if (typeof window !== "undefined" && window.location.protocol === "https:" && u.startsWith("http://")) {
+		u = "https://" + u.slice("http://".length);
+	}
+	return u;
+}
+
+const backendBaseUrl = normalizeBaseUrl((import.meta.env.VITE_BACKEND_URL as string) ?? "");
 
 export type ApiRequestOptions = RequestInit & { auth?: boolean };
 

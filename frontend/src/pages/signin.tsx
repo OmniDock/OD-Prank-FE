@@ -22,7 +22,7 @@ export default function SignInPage() {
 	const [password, setPassword] = useState("");
 	const [isVisible, setIsVisible] = useState(false);
 	const [loading, setLoading] = useState(false);
-	const [googleLoading, setGoogleLoading] = useState(false);
+	//const [googleLoading, setGoogleLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const navigate = useNavigate();
 	const location = useLocation() as any;
@@ -54,34 +54,26 @@ export default function SignInPage() {
 		navigate(redirectTo, { replace: true });
 	}
 
-	async function signInWithGoogle() {
-		setGoogleLoading(true);
-		setError(null);
+	// async function signInWithGoogle() {
+	// 	setGoogleLoading(true);
+	// 	setError(null);
 		
-		// Determine redirect URL based on FromPricing flag
-		const redirectUrl = FromPricing 
-			? `${window.location.origin}/checkout`
-			: `${window.location.origin}/dashboard`;
+	// 	const { error } = await supabase.auth.signInWithOAuth({
+	// 		provider: 'google',
+	// 		options: {
+	// 			redirectTo: `${window.location.origin}/dashboard`,
+	// 			queryParams: {
+	// 				access_type: 'offline',
+	// 				prompt: 'consent',
+	// 			}
+	// 		}
+	// 	});
 		
-		const { error } = await supabase.auth.signInWithOAuth({
-			provider: 'google',
-			options: {
-				redirectTo: redirectUrl,
-				queryParams: {
-					access_type: 'offline',
-					prompt: 'consent',
-				}
-			}
-		});
-		
-		if (error) {
-			setError(error.message);
-			setGoogleLoading(false);
-		} else if (FromPricing) {
-			// Clear the flag after successful OAuth redirect setup
-			localStorage.removeItem("FromPricing");
-		}
-	}
+	// 	if (error) {
+	// 		setError(error.message);
+	// 		setGoogleLoading(false);
+	// 	}
+	// }
 
 	return (
 		<AuthLayout>
@@ -117,7 +109,7 @@ export default function SignInPage() {
 							</motion.div>
 
 							{/* Google Sign In with better styling */}
-							<motion.div
+							{/* <motion.div
 								initial={{ opacity: 0, x: -20 }}
 								animate={{ opacity: 1, x: 0 }}
 								transition={{ delay: 0.2 }}
@@ -140,7 +132,7 @@ export default function SignInPage() {
 								>
 									Continue with Google
 								</Button>
-							</motion.div>
+							</motion.div> */}
 
 							{/* Divider with better styling */}
 							<div className="relative my-6">

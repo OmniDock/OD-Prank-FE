@@ -14,8 +14,8 @@ interface VoiceShowcaseProps {
 }
 
 export default function VoiceShowcase({ 
-  title = "Meet Some of Our Voice Actors",
-  subtitle = "Professional voices that bring your pranks to life",
+  title = "Lerne einige unserer Stimmen kennen",
+  subtitle = "Professionelle Stimmen aus aller Welt, bereit, deine Streiche zum Leben zu erwecken",
   maxVoices = 6
 }: VoiceShowcaseProps) {
   const [voices, setVoices] = useState<Voice[]>([]);
@@ -38,9 +38,9 @@ export default function VoiceShowcase({
   const fetchVoices = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const apiUrl = import.meta.env.VITE_BACKEND_URL;
       
-      const response = await fetch(`${apiUrl}/api/v1/tts/voices`, {
+      const response = await fetch(`${apiUrl}/tts/voices`, {
         headers: session ? {
           'Authorization': `Bearer ${session.access_token}`
         } : {}
@@ -132,7 +132,7 @@ export default function VoiceShowcase({
         </p>
         {filteredVoices.length > 0 && (
           <p className="text-sm text-default-400 mt-2">
-            Showing {showAll ? filteredVoices.length : Math.min(maxVoices, filteredVoices.length)} of {filteredVoices.length} voices
+            Anzeigen {showAll ? filteredVoices.length : Math.min(maxVoices, filteredVoices.length)} von {filteredVoices.length} Stimmen
             {selectedGender !== 'all' && ` • ${selectedGender.toLowerCase()}`}
             {selectedLanguage !== 'all' && ` • ${selectedLanguage.toLowerCase()}`}
           </p>
@@ -149,9 +149,9 @@ export default function VoiceShowcase({
           color="primary"
           variant="solid"
         >
-          <Tab key="all" title="All Genders" />
-          <Tab key="MALE" title="Male" />
-          <Tab key="FEMALE" title="Female" />
+          <Tab key="all" title="Alle Geschlechter" />
+          <Tab key="MALE" title="Männlich" />
+          <Tab key="FEMALE" title="Weiblich" />
         </Tabs>
         
         {/* Language Filter */}
@@ -162,7 +162,7 @@ export default function VoiceShowcase({
           color="primary"
           variant="solid"
         >
-          <Tab key="all" title="All Languages" />
+          <Tab key="all" title="Alle Sprachen" />
           {availableLanguages.map(lang => (
             <Tab 
               key={lang}
@@ -183,8 +183,8 @@ export default function VoiceShowcase({
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-default-100 mb-4">
             <FunnelIcon className="w-8 h-8 text-default-400" />
           </div>
-          <p className="text-default-500">No voices match your filters</p>
-          <p className="text-sm text-default-400 mt-2">Try adjusting your selection</p>
+          <p className="text-default-500">Keine Stimmen passen zu deinen Filtern</p>
+          <p className="text-sm text-default-400 mt-2">Versuche, deine Auswahl anzupassen</p>
         </div>
       )}
       
@@ -246,12 +246,12 @@ export default function VoiceShowcase({
           >
             {showAll ? (
               <>
-                Show Less
+                Weniger anzeigen
                 <ChevronUpIcon className="w-4 h-4" />
               </>
             ) : (
               <>
-                Show {filteredVoices.length - maxVoices} More Voices
+                Mehr anzeigen {filteredVoices.length - maxVoices}
                 <ChevronDownIcon className="w-4 h-4" />
               </>
             )}

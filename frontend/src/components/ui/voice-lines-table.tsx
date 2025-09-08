@@ -1,47 +1,42 @@
-import { useState, useMemo, useEffect, type Dispatch, type SetStateAction } from "react";
-import {
-  Button,
-  Card,
-  CardBody,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
-  addToast,
-  Tabs,
-  Tab,
-  Chip,
-  Spinner,
-} from "@heroui/react";
+import { useState, useMemo, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
+import { addToast, Spinner } from "@heroui/react";
 import { generateSingleTTS, fetchVoiceLinesSummary } from "@/lib/api.tts";
-import { PlayIcon, PlusIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import type { Scenario } from "@/types/scenario";
 
 interface VoiceLinesTableProps {
   scenario: Scenario;
   onRefetchScenario: () => Promise<void>;
-  selected: Set<number>;
-  onSelectionChange: Dispatch<SetStateAction<Set<number>>>;
   onOpenPlayer: (voiceLineId: number) => void;
-  onEnhanceSelected: () => void;
+  selected?: Set<number>;
+  onSelectionChange?: Dispatch<SetStateAction<Set<number>>>;
+  onEnhanceSelected?: () => void;
 }
 
 export function VoiceLinesTable({
   scenario,
   onRefetchScenario,
+  onOpenPlayer,
   selected,
   onSelectionChange,
-  onOpenPlayer,
   onEnhanceSelected,
 }: VoiceLinesTableProps) {
   const [generating, setGenerating] = useState<Set<number>>(new Set());
   const [pending, setPending] = useState<Set<number>>(new Set());
-  const [activeTab, setActiveTab] = useState<"ALL" | "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING" | "FILLER">("ALL");
+  const [activeTab] = useState<"ALL" | "OPENING" | "QUESTION" | "RESPONSE" | "CLOSING" | "FILLER">("ALL");
   const [summaryEtag, setSummaryEtag] = useState<string | undefined>(undefined);
   const [pollInterval, setPollInterval] = useState(2000);
   const [, setConsecutiveNoChanges] = useState(0);
+
+  void onOpenPlayer;
+  void onEnhanceSelected;
+
+  // Inline audio playback state
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playingId, setPlayingId] = useState<number | null>(null);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const progressRafRef = useRef<number | null>(null);
 
   // Helper function to check if audio is available for a voice line
   const isAudioAvailable = (voiceLineId: number): boolean => {
@@ -50,16 +45,47 @@ export function VoiceLinesTable({
     return !!(voiceLine?.preferred_audio?.signed_url);
   };
 
-  // Memoize filtered and sorted voice lines to prevent unnecessary re-renders
-  const filteredVoiceLines = useMemo(() => {
-    if (!scenario) return [];
-    const filtered = activeTab === 'ALL' 
-      ? scenario.voice_lines 
+  // Define display order for types
+  const typeOrder: Array<"OPENING" | "FILLER" | "QUESTION" | "RESPONSE" | "CLOSING"> = [
+    "OPENING",
+    "FILLER",
+    "QUESTION",
+    "RESPONSE",
+    "CLOSING",
+  ];
+
+  // Group voice lines by type and sort inside each group by order_index
+  const groupedVoiceLines = useMemo(() => {
+    const result: Record<string, typeof scenario.voice_lines> = {} as any;
+    if (!scenario?.voice_lines) return result;
+
+    const source = activeTab === "ALL"
+      ? scenario.voice_lines
       : scenario.voice_lines.filter(vl => vl.type === activeTab);
-    
-    const sorted = filtered.slice().sort((a, b) => a.order_index - b.order_index);
-    return sorted;
+
+    for (const t of typeOrder) {
+      result[t] = [] as any;
+    }
+
+    for (const vl of source) {
+      if (!result[vl.type]) result[vl.type] = [] as any;
+      result[vl.type].push(vl);
+    }
+
+    for (const t of Object.keys(result)) {
+      result[t] = (result[t] || []).slice().sort((a, b) => a.order_index - b.order_index);
+    }
+
+    return result;
   }, [scenario?.voice_lines, activeTab]);
+
+  const typeDisplayName: Record<string, string> = {
+    OPENING: "Opening",
+    FILLER: "Filler",
+    QUESTION: "Questions",
+    RESPONSE: "Responses",
+    CLOSING: "Closing",
+  };
 
   async function onGenerateSelectedAudio() {
     if (!scenario || !scenario.preferred_voice_id) {
@@ -72,7 +98,7 @@ export function VoiceLinesTable({
       return;
     }
 
-    if (selected.size === 0) {
+    if (!selected || selected.size === 0) {
       addToast({ 
         title: "No selection", 
         description: "Select voice lines to generate audio for.", 
@@ -162,7 +188,7 @@ export function VoiceLinesTable({
     }
 
     // Clear selection after generation
-    onSelectionChange(new Set());
+    onSelectionChange && onSelectionChange(new Set());
   }
 
   async function onCreateAudio(voiceLineId: number) {
@@ -214,6 +240,10 @@ export function VoiceLinesTable({
       });
     }
   }
+
+  // Mark local handlers as used for linter when UI controls are not rendering them directly
+  void onGenerateSelectedAudio;
+  void onCreateAudio;
 
   // Summary polling with ETag (only when there are pending items)
   useEffect(() => {
@@ -314,125 +344,189 @@ export function VoiceLinesTable({
     };
   }, [scenario?.id]);
 
+  // Cleanup audio on unmount or scenario change
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (progressRafRef.current !== null) {
+        cancelAnimationFrame(progressRafRef.current);
+        progressRafRef.current = null;
+      }
+    };
+  }, [scenario?.id]);
+
+  const stopPlayback = () => {
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      } catch {}
+      audioRef.current = null;
+    }
+    if (progressRafRef.current !== null) {
+      cancelAnimationFrame(progressRafRef.current);
+      progressRafRef.current = null;
+    }
+    setPlayingId(null);
+    setLoadingId(null);
+    setProgress(0);
+    setIsPaused(false);
+  };
+
+  const handlePlayCard = (voiceLineId: number, url?: string | null) => {
+    if (!url) {
+      addToast({ title: "No audio", description: "This line has no audio yet.", color: "default", timeout: 1500 });
+      return;
+    }
+
+    // If same card is active: stop playback instead of pausing
+    if (audioRef.current && playingId === voiceLineId) {
+      stopPlayback();
+      return;
+    }
+
+    // New card: stop any existing playback
+    if (playingId !== null && playingId !== voiceLineId) {
+      stopPlayback();
+    }
+
+    setLoadingId(voiceLineId);
+
+    const audio = new Audio(url);
+    audioRef.current = audio;
+
+    audio.addEventListener("loadedmetadata", () => setProgress(0));
+    audio.addEventListener("canplay", () => setLoadingId((id) => (id === voiceLineId ? null : id)));
+    audio.addEventListener("play", () => {
+      setPlayingId(voiceLineId);
+      setIsPaused(false);
+      setLoadingId(null);
+      // Smooth progress loop
+      const loop = () => {
+        if (!audioRef.current) return;
+        const d = audioRef.current.duration || 0;
+        const p = d > 0 ? Math.min(audioRef.current.currentTime / d, 1) : 0;
+        setProgress(p);
+        progressRafRef.current = requestAnimationFrame(loop);
+      };
+      if (progressRafRef.current !== null) cancelAnimationFrame(progressRafRef.current);
+      progressRafRef.current = requestAnimationFrame(loop);
+    });
+    audio.addEventListener("pause", () => setIsPaused(true));
+    audio.addEventListener("ended", () => {
+      setIsPaused(false);
+      setProgress(1);
+      if (progressRafRef.current !== null) {
+        cancelAnimationFrame(progressRafRef.current);
+        progressRafRef.current = null;
+      }
+      stopPlayback();
+    });
+    audio.addEventListener("error", () => {
+      if (progressRafRef.current !== null) {
+        cancelAnimationFrame(progressRafRef.current);
+        progressRafRef.current = null;
+      }
+      stopPlayback();
+      addToast({ title: "Playback failed", description: "Could not play audio.", color: "danger", timeout: 2000 });
+    });
+
+    void audio.play().catch(() => {
+      stopPlayback();
+      addToast({ title: "Playback blocked", description: "User gesture required.", color: "warning", timeout: 2000 });
+    });
+  };
+
   return (
-    <Card>
-      <CardBody>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-medium">Voice Lines</h2>
-          <div className="flex items-center gap-2">
-            {selected.size > 0 && (
-              <>
-                <Button
-                  color="secondary"
-                  variant="flat"
-                  isDisabled={!scenario.preferred_voice_id}
-                  onPress={onGenerateSelectedAudio}
-                  size="sm"
-                  startContent={<SparklesIcon className="w-4 h-4" />}
-                >
-                  Generate Audio ({selected.size})
-                </Button>
-                <Button
-                  color="primary"
-                  onPress={onEnhanceSelected}
-                  size="sm"
-                >
-                  Enhance Selected ({selected.size})
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="mb-3">
-          <Tabs
-            selectedKey={activeTab}
-            onSelectionChange={(key) => setActiveTab(key as any)}
-            variant="underlined"
-            color="primary"
-            size="sm"
-          >
-            <Tab key="ALL" title={`All (${scenario.voice_lines.length})`} />
-            <Tab key="OPENING" title={`Opening (${scenario.voice_lines.filter(v=>v.type==='OPENING').length})`} />
-            <Tab key="QUESTION" title={`Question (${scenario.voice_lines.filter(v=>v.type==='QUESTION').length})`} />
-            <Tab key="RESPONSE" title={`Response (${scenario.voice_lines.filter(v=>v.type==='RESPONSE').length})`} />
-            <Tab key="CLOSING" title={`Closing (${scenario.voice_lines.filter(v=>v.type==='CLOSING').length})`} />
-            <Tab key="FILLER" title={`Filler (${scenario.voice_lines.filter(v=>v.type==='FILLER').length})`} />
-          </Tabs>
-        </div>
-
-        <div className="min-h-[400px]">
-          <Table 
-            aria-label="Voice lines table"
-            className="table-fixed"
-            removeWrapper
-            selectionMode="multiple"
-            selectedKeys={new Set(Array.from(selected).map(String))}
-            onSelectionChange={(keys) => {
-              if (keys === "all") {
-                onSelectionChange(new Set(filteredVoiceLines.map(vl => vl.id)));
-              } else {
-                onSelectionChange(new Set(Array.from(keys as Set<string>).map(Number)));
-              }
-            }}
-          >
-            <TableHeader>
-              <TableColumn className="w-20 min-w-20">Order</TableColumn>
-              <TableColumn className="w-32 min-w-32">Type</TableColumn>
-              <TableColumn className="min-w-0">Text</TableColumn>
-              <TableColumn className="w-36 min-w-36">Action</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="No voice lines">
-              {filteredVoiceLines.map((vl) => (
-                <TableRow 
-                  key={vl.id}
-                  className="hover:bg-default-50 transition-colors duration-150"
-                >
-                  <TableCell>
-                    <span className="text-small font-medium">{vl.order_index}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="capitalize text-small font-medium">{vl.type}</span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="whitespace-pre-wrap text-small break-words max-w-full overflow-hidden">
-                      {vl.text}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 justify-start">
-                      {isAudioAvailable(vl.id) ? (
-                        <Button 
-                          size="sm" 
-                          variant="flat" 
-                          aria-label="Open player" 
-                          onPress={() => onOpenPlayer(vl.id)}
-                          className="hover:bg-primary/10 transition-colors"
-                        >
-                          <PlayIcon className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button 
-                          size="sm" 
-                          color={(generating.has(vl.id) || pending.has(vl.id)) ? "warning" : "primary"}
-                          aria-label="Create audio" 
-                          onPress={() => onCreateAudio(vl.id)}
-                          className={(generating.has(vl.id) || pending.has(vl.id)) ? "cursor-not-allowed" : "hover:bg-primary/80 transition-colors"}
-                          isLoading={generating.has(vl.id) || pending.has(vl.id)}
-                          isDisabled={generating.has(vl.id) || pending.has(vl.id) || !scenario.preferred_voice_id}
-                        >
-                          {!(generating.has(vl.id) || pending.has(vl.id)) && <PlusIcon className="h-4 w-4" />}
-                        </Button>
+      <div className="flex flex-col gap-4">
+        {typeOrder.map((t) => {
+          const items = groupedVoiceLines[t] || [];
+          if (!items.length) return null;
+          return (
+            <div key={t} className="mb-4 ring-1 ring-default-200 glass-card bg-gradient-surface p-3 rounded-lg">
+              <div className="mb-2">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`
+                      w-10 h-10 rounded-full flex items-center justify-center
+                      ${t === 'OPENING' ? 'bg-primary/20 text-primary' :
+                        t === 'QUESTION' ? 'bg-secondary/20 text-secondary' :
+                        t === 'RESPONSE' ? 'bg-success/20 text-success' :
+                        t === 'CLOSING' ? 'bg-warning/20 text-warning' :
+                        t === 'FILLER' ? 'bg-warning/20 text-warning' :
+                        'bg-default-100 text-default-700'}
+                    `}
+                  >
+                    {t === 'OPENING' ? '👋' :
+                     t === 'QUESTION' ? '❓' :
+                     t === 'RESPONSE' ? '💬' :
+                     t === 'CLOSING' ? '👋' :
+                     t === 'FILLER' ? '👋' :
+                     '👋'}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">
+                      {t === 'OPENING' ? 'Opening Lines' :
+                       t === 'QUESTION' ? 'Questions' :
+                       t === 'RESPONSE' ? 'Responses' :
+                       t === 'CLOSING' ? 'Closing Lines' :
+                       t === 'FILLER' ? 'Fillers' :
+                       (typeDisplayName[t] || t)}
+                    </h3>
+                    <p className="text-xs text-default-500">{items.length} available</p>
+                  </div>
+                </div>
+              </div>
+              <hr className="my-2 text-default-100" />
+              <div className="flex flex-wrap gap-3">
+                {items.map((vl) => {
+                  const isLoading = loadingId === vl.id;
+                  const isActive = playingId === vl.id;
+                  const url = scenario.voice_lines.find(x => x.id === vl.id)?.preferred_audio?.signed_url || null;
+                  return (
+                    <div
+                      key={vl.id}
+                      className={` ${url ? "" : "bg-red-200 animate-pulse"} relative shadow-md inline-flex  ${isActive ? "ring-1 ring-success bg-success-400 hover:bg-success-400" : "ring-1 ring-default-100"}  bg-gradient-surface glass-card rounded-medium p-3 cursor-pointer transition-colors `}
+                      onClick={() => handlePlayCard(vl.id, url)}
+                    >
+                      {isActive && (
+                        <div className="absolute inset-0 z-0 overflow-hidden rounded-medium pointer-events-none">
+                          <div
+                            className={`h-full bg-emerald-500/30 ${isPaused ? "opacity-60" : "opacity-90"}`}
+                            style={{ width: `${Math.min(progress * 100, 100)}%` }}
+                          />
+                        </div>
                       )}
+
+                      <div className="relative z-10">
+                        <div className="flex items-start justify-end gap-2">
+                          {/* We intentionally display type section above; no ID shown here */}
+                        </div>
+                        <div className="mt-1  whitespace-pre-wrap break-words">
+                          {(vl.text || "")
+                            .replace(/\[\[.*?\]\]/gi, "")
+                            .replace(/\[(?!\*)([^[\]]*?)\]/g, "")
+                          }
+                          {/* {vl.text || ""} */}
+                        </div>
+
+                        {isLoading && (
+                          <div className="absolute inset-0 grid place-items-center bg-black/5 rounded-medium">
+                            <Spinner size="sm" />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardBody>
-    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
   );
 }
 

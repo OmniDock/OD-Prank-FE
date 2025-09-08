@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Button, Card, CardBody, CardHeader, Chip, Divider, Spinner } from "@heroui/react";
+import { Button, Card, CardBody, CardHeader, Spinner } from "@heroui/react";
 import type { Scenario, VoiceLine, VoiceLineType } from "@/types/scenario";
 import { fetchScenario } from "@/lib/api.scenarios";
 import { TelnyxRTCProvider, Audio } from "@telnyx/react-client";
 import { useTelnyxConference } from "@/hooks/useTelnyxConference";
 import { apiFetch } from "@/lib/api";
 import { getAudioUrl } from "@/lib/api.tts";
-import { PlayIcon, StopIcon } from "@heroicons/react/24/solid";
+import { StopIcon } from "@heroicons/react/24/solid";
 import { motion } from "framer-motion";
 
 type StartCallResponse = {
@@ -24,7 +24,7 @@ type LocationState = {
 };
 
 function groupByType(voiceLines: VoiceLine[]) {
-  const order: VoiceLineType[] = ["OPENING", "QUESTION", "RESPONSE", "CLOSING", "FILLER"];
+  const order: VoiceLineType[] = ["OPENING", "FILLER", "QUESTION", "RESPONSE", "CLOSING"];
   const map: Record<VoiceLineType, VoiceLine[]> = {
     OPENING: [],
     QUESTION: [],
@@ -54,6 +54,13 @@ function ActiveCallContent() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playingLineId, setPlayingLineId] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const progressRafRef = useRef<number | null>(null);
+  const confStartAtRef = useRef<number | null>(null);
+  const confTargetMsRef = useRef<number | null>(null);
+  const confCurrentLineIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!scenarioId) return;
@@ -74,22 +81,24 @@ function ActiveCallContent() {
   const grouped = useMemo(() => groupByType(scenario?.voice_lines ?? []), [scenario]);
 
   const playVoiceLine = async (voiceLineId: number) => {
-    // Stop current playback if playing
-    if (audioRef.current && !audioRef.current.paused) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-
-    // If clicking the same line that's playing, just stop
+    // If clicking the same line that's playing, toggle stop based on mode
     if (playingLineId === voiceLineId && isPlaying) {
-      setPlayingLineId(null);
-      setIsPlaying(false);
+      if (result?.conference_name) {
+        await stopConferencePlayback();
+      } else {
+        stopPlayback();
+      }
       return;
     }
 
-    // Play to conference if available
+    // Conference mode: publish to Telnyx and mark active tile
     if (result?.conference_name) {
       try {
+        // cancel any prior simulated progress
+        if (progressRafRef.current !== null) {
+          cancelAnimationFrame(progressRafRef.current);
+          progressRafRef.current = null;
+        }
         const res = await apiFetch("/telnyx/call/play-voiceline", {
           method: "POST",
           body: JSON.stringify({
@@ -97,39 +106,114 @@ function ActiveCallContent() {
             voice_line_id: voiceLineId,
           }),
         });
-        if (!res.ok) {
-          throw new Error(await res.text());
+        if (!res.ok) throw new Error(await res.text());
+        setPlayingLineId(voiceLineId);
+        setIsPlaying(true);
+        setIsPaused(false);
+        setProgress(0);
+
+        // Simulate progress using known duration when available
+        const vl = scenario?.voice_lines.find(v => v.id === voiceLineId);
+        let durationMs = vl?.preferred_audio?.duration_ms ?? null;
+        // Defensive: if backend sent seconds, convert to ms
+        if (durationMs && durationMs > 0 && durationMs < 1000) {
+          durationMs = durationMs * 1000;
+        }
+        confCurrentLineIdRef.current = voiceLineId;
+        if (durationMs && durationMs > 0) {
+          confTargetMsRef.current = durationMs;
+          confStartAtRef.current = performance.now();
+
+          const loop = () => {
+            if (confStartAtRef.current == null || confTargetMsRef.current == null) return;
+            const elapsed = performance.now() - confStartAtRef.current;
+            const p = Math.min(elapsed / confTargetMsRef.current, 1);
+            setProgress(p);
+            if (p < 1 && confCurrentLineIdRef.current === voiceLineId) {
+              progressRafRef.current = requestAnimationFrame(loop);
+            } else {
+              // Auto-clear after finish
+              setIsPaused(false);
+              setIsPlaying(false);
+              setPlayingLineId((id) => (id === voiceLineId ? null : id));
+              progressRafRef.current = null;
+              confStartAtRef.current = null;
+              confTargetMsRef.current = null;
+              confCurrentLineIdRef.current = null;
+            }
+          };
+          progressRafRef.current = requestAnimationFrame(loop);
+        } else {
+          // No duration known: animate linear curtain with a default duration
+          const DEFAULT_MS = 3000;
+          confTargetMsRef.current = DEFAULT_MS;
+          confStartAtRef.current = performance.now();
+          const loop = () => {
+            if (confStartAtRef.current == null || confTargetMsRef.current == null) return;
+            const elapsed = performance.now() - confStartAtRef.current;
+            const p = Math.min(elapsed / confTargetMsRef.current, 1);
+            setProgress(p);
+            if (p < 1 && confCurrentLineIdRef.current === voiceLineId) {
+              progressRafRef.current = requestAnimationFrame(loop);
+            } else {
+              progressRafRef.current = null;
+              confStartAtRef.current = null;
+              confTargetMsRef.current = null;
+              confCurrentLineIdRef.current = null;
+              setIsPaused(false);
+              setIsPlaying(false);
+              setPlayingLineId((id) => (id === voiceLineId ? null : id));
+            }
+          };
+          progressRafRef.current = requestAnimationFrame(loop);
         }
       } catch (error) {
         console.error("Failed to play voice line to conference:", error);
       }
+      return;
     }
 
-    // Play locally for visualization only when NOT in a conference
-    if (!result?.conference_name) {
-      const voiceLine = scenario?.voice_lines.find(vl => vl.id === voiceLineId);
-      if (voiceLine && audioRef.current) {
-        try {
-          // Get audio URL for the voice line
-          const audioUrlResponse = await getAudioUrl(voiceLine.id, scenario?.preferred_voice_id || undefined);
-          
-          if (audioUrlResponse.status === "PENDING") {
-            console.log("Audio is still being generated");
-            return;
-          }
-          
-          if (audioUrlResponse.signed_url) {
-            audioRef.current.src = audioUrlResponse.signed_url;
-            setPlayingLineId(voiceLineId);
-            setIsPlaying(true);
-            
-            await audioRef.current.play();
-          }
-        } catch (error) {
-          console.error("Failed to play audio locally:", error);
-          setIsPlaying(false);
-          setPlayingLineId(null);
+    // Local preview mode: play with progress animation
+    const voiceLine = scenario?.voice_lines.find(vl => vl.id === voiceLineId);
+    if (voiceLine && audioRef.current) {
+      try {
+        setLoadingId(voiceLineId);
+        const audioUrlResponse = await getAudioUrl(voiceLine.id, scenario?.preferred_voice_id || undefined);
+        if (audioUrlResponse.status === "PENDING") {
+          setLoadingId(null);
+          return;
         }
+        if (audioUrlResponse.signed_url) {
+          audioRef.current.src = audioUrlResponse.signed_url;
+          setPlayingLineId(voiceLineId);
+          setIsPlaying(true);
+          setIsPaused(false);
+          setProgress(0);
+
+          const startLoop = () => {
+            if (!audioRef.current) return;
+            const loop = () => {
+              if (!audioRef.current) return;
+              const d = audioRef.current.duration || 0;
+              const p = d > 0 ? Math.min(audioRef.current.currentTime / d, 1) : 0;
+              setProgress(p);
+              progressRafRef.current = requestAnimationFrame(loop);
+            };
+            if (progressRafRef.current !== null) cancelAnimationFrame(progressRafRef.current);
+            progressRafRef.current = requestAnimationFrame(loop);
+          };
+          audioRef.current.addEventListener("play", startLoop, { once: true });
+
+          await audioRef.current.play();
+          setLoadingId(null);
+        } else {
+          setLoadingId(null);
+        }
+      } catch (error) {
+        console.error("Failed to play audio locally:", error);
+        setLoadingId(null);
+        setIsPlaying(false);
+        setPlayingLineId(null);
       }
     }
   };
@@ -139,8 +223,18 @@ function ActiveCallContent() {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
+    if (progressRafRef.current !== null) {
+      cancelAnimationFrame(progressRafRef.current);
+      progressRafRef.current = null;
+    }
+    confStartAtRef.current = null;
+    confTargetMsRef.current = null;
+    confCurrentLineIdRef.current = null;
+    setProgress(0);
+    setIsPaused(false);
     setPlayingLineId(null);
     setIsPlaying(false);
+    setLoadingId(null);
   };
 
   // Add a stop conference playback function after line 73:
@@ -163,6 +257,14 @@ function ActiveCallContent() {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       }
+      if (progressRafRef.current !== null) {
+        cancelAnimationFrame(progressRafRef.current);
+        progressRafRef.current = null;
+      }
+      confStartAtRef.current = null;
+      confTargetMsRef.current = null;
+      confCurrentLineIdRef.current = null;
+      setProgress(0);
       setPlayingLineId(null);
       setIsPlaying(false);
     } catch (error) {
@@ -170,13 +272,7 @@ function ActiveCallContent() {
     }
   };
 
-  const interruptPlayback = async () => {
-    if (result?.conference_name) {
-      await stopConferencePlayback();
-    } else {
-      stopPlayback();
-    }
-  };
+  // interruptPlayback no longer used in simplified UI
 
   if (!scenarioId) {
     return (
@@ -200,12 +296,14 @@ function ActiveCallContent() {
     if (!audio) return;
 
     const handleEnded = () => {
-      setIsPlaying(false);
-      setPlayingLineId(null);
+      stopPlayback();
     };
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const handlePlay = () => {
+      setIsPlaying(true);
+      setIsPaused(false);
+    };
+    const handlePause = () => setIsPaused(true);
 
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('play', handlePlay);
@@ -218,74 +316,22 @@ function ActiveCallContent() {
     };
   }, []);
 
-  const handleHangup = async () => {
-    if (!result?.conference_name) return;
-    
-    try {
-      const response = await apiFetch("/telnyx/call/hangup", {
-        method: "POST",
-        body: JSON.stringify({ conference_name: result.conference_name }),
-      });
+  // handleHangup moved to WebRTCMonitor
 
-      if (!response.ok) {
-        throw new Error('Failed to hang up call');
-      }
-
-      // Navigate back after successful hangup
-      navigate("/dashboard/phone-call");
-    } catch (err) {
-      console.error('Error hanging up call:', err);
-    }
-  };
+  // Listen for global interrupt events from the Call Monitoring card
+  useEffect(() => {
+    const onInterrupt = () => {
+      stopPlayback();
+    };
+    window.addEventListener('call-interrupt', onInterrupt as EventListener);
+    return () => window.removeEventListener('call-interrupt', onInterrupt as EventListener);
+  }, []);
 
   return (
     <section className="space-y-6">
-      {/* Hidden audio element for visualizer */}
-      <audio ref={audioRef} className="hidden" />
 
-      {/* Header with scenario title */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold">Active Call</h1>
-          {scenario && (
-            <>
-              <Divider orientation="vertical" className="h-8" />
-              <div className="flex items-center gap-3">
-                <span className="text-xl font-medium text-default-700">{scenario.title}</span>
-                <Chip 
-                  size="sm" 
-                  color={scenario.is_safe ? "success" : "danger"} 
-                  variant="flat"
-                >
-                  {scenario.is_safe ? "Safe" : "Unsafe"}
-                </Chip>
-              </div>
-            </>
-          )}
-        </div>
-        {/* Header actions */}
-        <div className="flex items-center gap-3">
-          <Button
-            size="sm"
-            color="danger"
-            variant="solid"
-            onPress={interruptPlayback}
-            startContent={<StopIcon className="w-4 h-4" />}
-          >
-            Interrupt
-          </Button>
-          {result?.conference_name && (
-            <Button
-              size="sm"
-              color="danger"
-              variant="flat"
-              onPress={handleHangup}
-            >
-              End Call
-            </Button>
-          )}
-        </div>
-      </div>
+        {/* Hidden audio element for visualizer */}
+        <audio ref={audioRef} className="hidden" />
 
       {loading ? (
         <div className="flex items-center gap-2 text-default-500">
@@ -303,9 +349,9 @@ function ActiveCallContent() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6"
+          className="gap-6"
         >
-          {/* Main content - Voice Lines */}
+          {/* Main content - Voice Lines (tile style) */}
           <div className="space-y-6">
             {grouped.map(({ type, items }) => (
               <Card key={type} className="shadow-medium">
@@ -318,7 +364,7 @@ function ActiveCallContent() {
                         type === 'RESPONSE' ? 'bg-success/20 text-success' :
                         type === 'CLOSING' ? 'bg-warning/20 text-warning' :
                         type === 'FILLER' ? 'bg-warning/20 text-warning' :
-                        'bg-warning/20 text-warning'}
+                        'bg-default-100 text-default-700'}
                     `}>
                       {type === 'OPENING' ? '👋' : 
                        type === 'QUESTION' ? '❓' :
@@ -334,7 +380,7 @@ function ActiveCallContent() {
                          type === 'RESPONSE' ? 'Responses' :
                          type === 'CLOSING' ? 'Closing Lines' :
                          type === 'FILLER' ? 'Fillers' :
-                         'Closing Lines'}
+                         'Voice Lines'}
                       </h3>
                       <p className="text-xs text-default-500">{items.length} available</p>
                     </div>
@@ -346,41 +392,44 @@ function ActiveCallContent() {
                       No {type.toLowerCase()} lines available
                     </div>
                   ) : (
-                    <div className="grid gap-3">
-                      {items.map((vl) => (
-                        <Button
-                          key={vl.id}
-                          variant={playingLineId === vl.id ? "solid" : "flat"}
-                          color={playingLineId === vl.id ? "primary" : "default"}
-                          className={`
-                            justify-start text-left h-auto py-4 px-5
-                            ${playingLineId === vl.id ? 'ring-2 ring-primary ring-offset-2' : ''}
-                          `}
-                          onPress={() => playVoiceLine(vl.id)}
-                          size="sm"
-                        >
-                          <div className="flex items-center gap-4 w-full">
-                            <div className={`
-                              w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
-                              ${playingLineId === vl.id ? 'bg-white/20' : 'bg-default-100'}
-                            `}>
-                              {playingLineId === vl.id ? (
-                                <StopIcon className="w-5 h-5" />
-                              ) : (
-                                <PlayIcon className="w-5 h-5" />
+                    <div className="flex flex-wrap gap-3">
+                      {items.map((vl) => {
+                        const isActive = playingLineId === vl.id;
+                        const isLoading = loadingId === vl.id;
+                        const url = scenario?.voice_lines.find(x => x.id === vl.id)?.preferred_audio?.signed_url || null;
+
+                        return (
+                          <div
+                            key={vl.id}
+                            className={`relative shadow-md inline-flex ${isActive ? "ring-1 ring-success bg-success-400 hover:bg-success-400" : "ring-1 ring-default-100"} bg-gradient-surface glass-card rounded-medium p-3 cursor-pointer transition-colors ${
+                              isLoading ? "bg-default-200 animate-pulse" : "bg-content1 hover:bg-default-100"
+                            }`}
+                            onClick={() => playVoiceLine(vl.id)}
+                          >
+                            {/* Progress overlay (curtain) */}
+                            {isActive && (
+                              <div className="absolute inset-0 z-0 overflow-hidden rounded-medium pointer-events-none">
+                                <div
+                                  className={`h-full bg-emerald-500/30 ${isPaused ? "opacity-60" : "opacity-90"}`}
+                                  style={{ width: `${Math.min(progress * 100, 100)}%` }}
+                                />
+                              </div>
+                            )}
+
+                            <div className="relative z-10">
+                              <div className="mt-1  whitespace-pre-wrap break-words">
+                                {(vl.text || "")
+                                  .replace(/\[\[.*?\]\]/gi, "")
+                                  .replace(/\[(?!\*)([^[[\]]*?)\]/g, "")
+                                }
+                              </div>
+                              {!result?.conference_name && !url && (
+                                <div className="text-xs text-default-400 mt-1">No audio yet</div>
                               )}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`
-                                text-base leading-relaxed
-                                ${playingLineId === vl.id ? 'text-white' : 'text-foreground'}
-                              `}>
-                                {vl.text}
-                              </p>
-                            </div>
                           </div>
-                        </Button>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardBody>
@@ -388,28 +437,7 @@ function ActiveCallContent() {
             ))}
           </div>
 
-          {/* Sidebar - Audio Visualizer */}
-          <div className="space-y-4">
-            {result?.conference_name && (
-              <Card>
-                <CardHeader>
-                  <h3 className="text-sm font-semibold">Call details</h3>
-                </CardHeader>
-                <CardBody className="space-y-2 text-xs">
-                  <div>
-                    <span className="text-default-500">Conference:</span>
-                    <p className="font-mono text-default-700">{result.conference_name}</p>
-                  </div>
-                  {result.call_control_id && (
-                    <div>
-                      <span className="text-default-500">Call ID:</span>
-                      <p className="font-mono text-default-700 truncate">{result.call_control_id}</p>
-                    </div>
-                  )}
-                </CardBody>
-              </Card>
-            )}
-          </div>
+
         </motion.div>
       ) : null}
     </section>
@@ -440,11 +468,29 @@ export default function ActiveCallPage() {
 
 function WebRTCMonitor({ token, conference }: { token: string; conference: string }) {
   const navigate = useNavigate();
-  const { remoteStream, connectionState, error, hangupReason } = useTelnyxConference({ 
+  const { remoteStream, connectionState } = useTelnyxConference({ 
     token, 
     conference,
     autoJoin: true 
   });
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const [pstnJoined, setPstnJoined] = useState(false);
+
+  const handleInterrupt = async () => {
+    try {
+      await apiFetch("/telnyx/call/stop-voiceline", {
+        method: "POST",
+        body: JSON.stringify({ conference_name: conference, voice_line_id: 0 }),
+      });
+      // notify tiles to reset playing state
+      window.dispatchEvent(new CustomEvent('call-interrupt'));
+    } catch (err) {
+      // no-op
+    }
+  };
 
   const handleHangup = async () => {
     try {
@@ -466,71 +512,180 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
     if (connectionState === "hangup") {
       // Auto-navigate back after 3 seconds
       const timer = setTimeout(() => {
-        navigate("/dashboard/phone-call");
+        navigate("/dashboard");
       }, 3000);
       return () => clearTimeout(timer);
     }
   }, [connectionState, navigate]);
 
+  // Waveform animation using analyser; draw baseline when not connected
+  useEffect(() => {
+    const stream = remoteStream as MediaStream | null;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx2d = canvas.getContext("2d");
+    if (!ctx2d) return;
+
+    const drawBaseline = () => {
+      const { width, height } = canvas;
+      ctx2d.clearRect(0, 0, width, height);
+      ctx2d.strokeStyle = "rgba(200,200,200,0.5)";
+      ctx2d.lineWidth = 1;
+      ctx2d.beginPath();
+      ctx2d.moveTo(0, height / 2);
+      ctx2d.lineTo(width, height / 2);
+      ctx2d.stroke();
+    };
+
+    const teardown = () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      if (analyserRef.current) analyserRef.current.disconnect();
+      if (audioCtxRef.current) {
+        void audioCtxRef.current.suspend().catch(() => {});
+      }
+      drawBaseline();
+    };
+
+    if (connectionState !== "connected" || !stream) {
+      teardown();
+      return () => teardown();
+    }
+
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioCtxRef.current = audioCtx;
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.85;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      // helper to draw rounded rectangles
+      const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
+        const rr = Math.max(0, Math.min(r, w / 2, h / 2));
+        ctx.beginPath();
+        ctx.moveTo(x + rr, y);
+        ctx.arcTo(x + w, y, x + w, y + rr, rr);
+        ctx.arcTo(x + w, y + h, x + w - rr, y + h, rr);
+        ctx.arcTo(x, y + h, x, y + h - rr, rr);
+        ctx.arcTo(x, y, x + rr, y, rr);
+        ctx.closePath();
+      };
+
+      const draw = () => {
+        if (!canvas || !ctx2d || !analyserRef.current) return;
+        const { width, height } = canvas;
+        ctx2d.clearRect(0, 0, width, height);
+
+        // Baseline
+        ctx2d.strokeStyle = "rgba(200,200,200,0.5)";
+        ctx2d.lineWidth = 1;
+        ctx2d.beginPath();
+        ctx2d.moveTo(0, height / 2);
+        ctx2d.lineTo(width, height / 2);
+        ctx2d.stroke();
+
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const bars = 40;
+        const barWidth = width / bars;
+        for (let i = 0; i < bars; i++) {
+          const idx = Math.floor((i / bars) * bufferLength);
+          const v = dataArray[idx] / 255;
+          const maxBarHeight = (height / 2) * 0.9;
+          const barHeight = Math.max(1, v * maxBarHeight);
+          const x = i * barWidth + barWidth * 0.1;
+          const yTop = height / 2 - barHeight;
+
+          ctx2d.fillStyle = "rgba(34,197,94,0.85)";
+          const rw = barWidth * 0.8;
+          const radius = Math.min(rw / 2, 6);
+          drawRoundedRect(ctx2d, x, yTop, rw, barHeight, radius);
+          ctx2d.fill();
+          drawRoundedRect(ctx2d, x, height / 2, rw, barHeight, radius);
+          ctx2d.fill();
+        }
+
+        rafRef.current = requestAnimationFrame(draw);
+      };
+
+      draw();
+    } catch {
+      drawBaseline();
+    }
+
+    return () => teardown();
+  }, [remoteStream, connectionState]);
+
+  // Poll backend for PSTN presence status
+  useEffect(() => {
+    if (!conference) return;
+    let stopped = false;
+    const poll = async () => {
+      try {
+        const res = await apiFetch(`/telnyx/call/status?conference_name=${encodeURIComponent(conference)}`);
+        if (!stopped) {
+          const data = await res.json();
+          setPstnJoined(Boolean(data?.pstn_joined));
+        }
+      } catch {
+        // ignore transient
+      }
+    };
+    const id = window.setInterval(poll, 1500);
+    void poll();
+    return () => { stopped = true; window.clearInterval(id); };
+  }, [conference]);
+
   return (
     <Card className="mb-4">
       <CardHeader>
         <div className="flex items-center justify-between w-full">
-          <h3 className="text-lg font-semibold">Call Monitor</h3>
-          <div className="flex items-center gap-2">
-            {connectionState === "connected" && (
-              <Button
-                size="sm"
-                color="danger"
-                variant="flat"
-                onPress={handleHangup}
-              >
-                End Call
-              </Button>
-            )}
-            <Chip 
-              size="sm" 
-              variant="flat" 
-              color={
-                connectionState === "connected" ? "success" : 
-                connectionState === "hangup" ? "default" :
-                connectionState === "error" ? "danger" : "warning"
-              }
-            >
-              {connectionState === "hangup" ? "Call Ended" : connectionState}
-            </Chip>
-          </div>
+          <h3 className="text-lg font-semibold">Call Monitoring</h3>
         </div>
       </CardHeader>
       <CardBody>
-        <Audio stream={remoteStream} autoPlay playsInline />
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-default-500">Conference:</span>
-            <span className="font-mono">{conference}</span>
+        <div className="flex flex-col items-center gap-4">
+          <div className="text-sm">
+            {connectionState !== "connected" ? (
+              <span className="text-warning font-medium">● Connecting…</span>
+            ) : !pstnJoined ? (
+              <span className="text-default-500">● Waiting for called to join…</span>
+            ) : (
+              <span className="text-success font-medium">● Live</span>
+            )}
           </div>
-          {connectionState === "connected" && (
-            <div className="text-success">🔇 Receive-only mode (no microphone access)</div>
-          )}
-          {connectionState === "connecting" && (
-            <div className="text-warning">Connecting to conference...</div>
-          )}
-          {connectionState === "hangup" && (
-            <div className="space-y-2">
-              <div className="text-default-500">
-                📞 {hangupReason || "Call ended"}
-              </div>
-              <div className="text-xs text-default-400">
-                Redirecting back in 3 seconds...
-              </div>
-              <Button size="sm" variant="flat" onPress={() => navigate("/dashboard/phone-call")}>
-                Back to Phone Call
-              </Button>
-            </div>
-          )}
-          {error && (
-            <div className="text-danger text-xs">{error}</div>
-          )}
+          <div className="w-full flex justify-center">
+            <canvas ref={canvasRef} width={600} height={80} className="w-full max-w-2xl h-20" />
+          </div>
+          <Audio stream={remoteStream} autoPlay playsInline />
+          <div className="flex items-center justify-center gap-3">
+            <Button
+              size="md"
+              color="danger"
+              variant="solid"
+              onPress={handleInterrupt}
+              startContent={<StopIcon className="w-4 h-4" />}
+              isDisabled={connectionState !== "connected" || !pstnJoined}
+            >
+              Interrupt
+            </Button>
+            <Button
+              size="md"
+              color="danger"
+              variant="flat"
+              onPress={handleHangup}
+            >
+              End Call
+            </Button>
+          </div>
         </div>
       </CardBody>
     </Card>
