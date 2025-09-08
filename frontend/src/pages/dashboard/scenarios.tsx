@@ -7,6 +7,7 @@ import ScenarioCreateModal from "@/components/scenario-create-modal";
 import DeleteConfirmationModal from "@/components/delete-confirmation-modal";
 import { motion } from "framer-motion";
 import { ScenarioCard } from "@/components/ui/scenario-card";
+import LoadingScreen from '@/components/LoadingScreen';
 
 export default function ScenariosPage() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
@@ -51,12 +52,10 @@ export default function ScenariosPage() {
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 h-full">
 
       {loading ? (
-        <div className="flex justify-center py-8">
-          <Spinner />
-        </div>
+        <LoadingScreen message="Szenarien werden geladen..." />
       ) : (
         <motion.div
           initial={{ opacity: 0, y: 10 }}

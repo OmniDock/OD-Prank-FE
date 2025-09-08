@@ -17,6 +17,7 @@ import { VoiceGenerationStatus } from "@/components/ui/voice-generation-status";
 import type { VoiceItem } from "@/types/tts";
 import { motion } from "framer-motion";
 import { CallStartBox } from "@/components/ui/call-start-box";
+import LoadingScreen from '@/components/LoadingScreen';
 
 export default function ScenarioDetailPage() {
   const { id } = useParams();
@@ -125,9 +126,7 @@ export default function ScenarioDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-10">
-        <Spinner />
-      </div>
+      <LoadingScreen message="Szenario wird geladen..." />
     );
   }
   if (!scenario) return null;
