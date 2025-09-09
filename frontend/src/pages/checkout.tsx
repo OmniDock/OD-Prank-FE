@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {loadStripe} from '@stripe/stripe-js';
 import {
   EmbeddedCheckoutProvider,
@@ -11,14 +11,12 @@ import DefaultLayout from "@/layouts/default";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthProvider";
-import { Subscription } from "@/types/enums";
+import { Plan } from "@/types/products";
 
 // Make sure to call `loadStripe` outside of a component’s render to avoid
 // recreating the `Stripe` object on every render.
 // test publishable API key.
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_SB_PUBLIC_KEY);
-
-
 
 export default function CheckoutPage() {
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
@@ -26,16 +24,21 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isLoggedIn = !!user;
+  
+  // Get plan ID from URL parameter or localStorage
+  const planId = searchParams.get('id') || localStorage.getItem('selectedPlanId') || 'weekly';
 
   // Check if user should be redirected to checkout after login
   useEffect(() => {
     const shouldShowCheckout = searchParams.get('checkout') === 'true';
     if (shouldShowCheckout && isLoggedIn) {
       // Set a default plan (starter plan)
-      const defaultPlan = {
+      const defaultPlan: Plan = {
         id: "starter",
         name: "Starter",
         tagline: "For solo creators",
+        price: 12,
+        interval: "month",
         priceMonthly: 12,
         priceAnnual: 120,
         features: [
@@ -63,6 +66,13 @@ export default function CheckoutPage() {
     // Create a Checkout Session
     return apiFetch("/payment/checkout/create-session", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        subscription_type: planId,
+        quantity: 1
+      }),
     })
       .then((res) => {
         console.log("Checkout session response:", res);

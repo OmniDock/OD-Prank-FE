@@ -45,9 +45,11 @@ export default function SignInPage() {
 			return;
 		}
 		if (FromPricing) {
-			// Clear the flag and redirect to checkout page
+			// Clear the flag and redirect to checkout page with saved plan ID
 			localStorage.removeItem("FromPricing");
-			navigate("/checkout", { replace: true });
+			const savedPlanId = localStorage.getItem("selectedPlanId");
+			const checkoutUrl = savedPlanId ? `/checkout?id=${savedPlanId}` : "/checkout";
+			navigate(checkoutUrl, { replace: true });
 			return;
 		}
 		const redirectTo = location.state?.from?.pathname ?? "/dashboard";

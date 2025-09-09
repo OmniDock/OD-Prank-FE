@@ -16,6 +16,7 @@ import TermsPage from "@/pages/terms";
 import PrivacyPage from "@/pages/privacy";
 import PricingPage from "@/pages/pricing";
 import CheckoutPage from "@/pages/checkout";
+import SubscriptionSuccessPage from "@/pages/subscription-success";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
       <Route element={<PrivacyPage />} path="/privacy" />
       <Route element={<BlacklistPage />} path="/blacklist" />
       <Route element={<PricingPage />} path="/pricing" />
+      <Route element={<SubscriptionSuccessPage />} path="/subscription-success/:sessionId" />
       <Route element={<PublicOnlyRoute />}>
         <Route element={<SignInPage />} path="/signin" />
         <Route element={<SignUpPage />} path="/signup" />

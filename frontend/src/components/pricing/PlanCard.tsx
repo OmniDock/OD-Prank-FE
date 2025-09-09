@@ -1,18 +1,7 @@
 import { Card, CardBody, CardFooter, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Link } from "@heroui/link";
+import { Plan } from "@/types/products";
 
-export type Plan = {
-  id: string;
-  name: string;
-  tagline: string;
-  priceMonthly: number | null;
-  priceAnnual: number | null;
-  features: string[];
-  ctaLabel: string;
-  ctaHref: string;
-  popular?: boolean;
-};
 
 export default function PlanCard({
   plan,
@@ -23,13 +12,16 @@ export default function PlanCard({
   billing: "monthly" | "annual";
   onPlanSelect?: (plan: Plan) => void;
 }) {
-  const price =
-    billing === "annual" ? plan.priceAnnual : plan.priceMonthly;
+  // Use the plan's price and interval if available, otherwise fall back to billing toggle
+  const price = (plan as any).price !== undefined ? (plan as any).price : 
+    (billing === "annual" ? plan.priceAnnual : plan.priceMonthly);
+  
+  const interval = (plan as any).interval || (billing === "annual" ? "year" : "month");
 
   const priceLabel =
     price === null
       ? "Custom"
-      : `$${price}${billing === "annual" ? "/yr" : "/mo"}`;
+      : `$${price}/${interval === "week" ? "wk" : interval === "year" ? "yr" : "mo"}`;
 
   return (
     <Card className={["relative h-full border border-default-200/40",
@@ -47,9 +39,6 @@ export default function PlanCard({
       <CardBody className="flex flex-col gap-4">
         <div className="flex items-baseline gap-2">
           <span className="text-4xl font-extrabold tracking-tight">{priceLabel}</span>
-          {plan.priceMonthly !== null && billing === "annual" && (
-            <span className="text-xs text-default-500">billed annually</span>
-          )}
         </div>
 
         <ul className="space-y-2">
