@@ -43,7 +43,6 @@ export default function VoiceCard({
   voice,
   isPlaying,
   onTogglePlay,
-  showPlayingIndicator = true,
   className = "",
 }: VoiceCardProps) {
   return (
