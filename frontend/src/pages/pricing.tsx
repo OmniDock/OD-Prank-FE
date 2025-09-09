@@ -19,6 +19,12 @@ export default function PricingPage() {
   const { user } = useAuth();
   const isLoggedIn = !!user;
 
+  // Memoized plan construction to prevent recreation on every render
+  const constructedPlans = useMemo(() => {
+    if (plans.length === 0) return defaultPlans;
+    return plans;
+  }, [plans]);
+
   // Fetch product information on mount
   useEffect(() => {
     const fetchProducts = async () => {
@@ -32,7 +38,7 @@ export default function PricingPage() {
           const interval = price.recurring.interval;
           
           return {
-            id: key.toLowerCase(), // Convert to lowercase for plan ID
+            id: key.toLowerCase(), // to match with plan ID
             name: product.name,
             tagline: product.description,
             price: unitAmount,
@@ -217,7 +223,7 @@ export default function PricingPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mx-auto max-w-5xl">
-            {plans.map((p) => (
+            {constructedPlans.map((p) => (
               <PlanCard 
                 key={p.id} 
                 plan={p} 
