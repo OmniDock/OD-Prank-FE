@@ -25,7 +25,7 @@ export async function createCheckoutSession(
 
 export async function getProductInfo(
 ): Promise<{ [key: string]: any }> {
-  const response = await apiFetch('/api/stripe/product-info', {
+  const response = await apiFetch('/payment/product-info', {
     method: 'GET',
   });
   return response.json();

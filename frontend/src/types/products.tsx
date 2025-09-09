@@ -14,8 +14,6 @@ export type Plan = {
     tagline: string;
     price: number;
     interval: string;
-    priceMonthly: number | null;
-    priceAnnual: number | null;
     features: string[];
     ctaLabel: string;
     ctaHref: string;

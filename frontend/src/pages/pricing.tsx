@@ -3,13 +3,11 @@ import DefaultLayout from "@/layouts/default";
 import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
-// import BillingToggle from "@/components/pricing/BillingToggle";
 import PlanCard from "@/components/pricing/PlanCard";
 import { Plan } from "@/types/products";
 import FAQ from "@/components/pricing/FAQ";
 import { useAuth } from "@/context/AuthProvider";
 import { getProductInfo } from "@/lib/api.stripe";
-import { SubscriptionTypes } from "@/types/products";
 
 export default function PricingPage() {
   // const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
@@ -21,8 +19,18 @@ export default function PricingPage() {
 
   // Memoized plan construction to prevent recreation on every render
   const constructedPlans = useMemo(() => {
-    if (plans.length === 0) return defaultPlans;
-    return plans;
+    return plans.map((product: any) => ({
+      id: product.id,
+      name: product.id.charAt(0).toUpperCase() + product.id.slice(1), // Capitalize first letter
+      tagline: product.tagline,
+      price: product.price,
+      interval: product.interval,
+      priceMonthly: null,
+      priceAnnual: null,
+      features: product.features,
+      ctaLabel: product.ctaLabel,
+      ctaHref: product.ctaHref,
+    }));
   }, [plans]);
 
   // Fetch product information on mount
@@ -31,35 +39,10 @@ export default function PricingPage() {
       try {
         const productData = await getProductInfo();
         const products = productData.products;
-        
-        const fetchedPlans: Plan[] = Object.entries(products).map(([key, product]: [string, any]) => {
-          const price = product.prices[0];
-          const unitAmount = price.unit_amount / 100; // Convert from cents
-          const interval = price.recurring.interval;
-          
-          return {
-            id: key.toLowerCase(), // to match with plan ID
-            name: product.name,
-            tagline: product.description,
-            price: unitAmount,
-            interval: interval,
-            priceMonthly: null,
-            priceAnnual: null,
-            features: [
-              "3 active scenarios",
-              "15 calls per week",
-              "basic voices"
-            ],
-            ctaLabel: "Get Started",
-            ctaHref: "mailto:sales@example.com",
-          };
-        });
-        
-        setPlans(fetchedPlans);
+        setPlans(products);
       } catch (error) {
         console.error("Failed to fetch products:", error);
-        // Fallback to default plans if API fails
-        setPlans(defaultPlans);
+        setPlans([]);
       } finally {
         setLoading(false);
       }
@@ -82,119 +65,6 @@ export default function PricingPage() {
     }
   };
 
-  // Default plans fallback
-  const defaultPlans: Plan[] = [
-    // {
-    //   id: "free",
-    //   name: "Free",
-    //   tagline: "Get started and try it out",
-    //   price: 0,
-    //   interval: "week",
-    //   priceMonthly: 0,
-    //   priceAnnual: 0,
-    //   features: [
-    //     "1 active scenario",
-    //     "10 calls / month",
-    //     "Basic voices",
-    //   ],
-    //   ctaLabel: "Get Started",
-    //   ctaHref: "/signup",
-    // },
-    {
-      id: SubscriptionTypes.WEEKLY,
-      name: "Weekly",
-      tagline: "For weekly users",
-      price: 4.99,
-      interval: "week",
-      priceMonthly: null,
-      priceAnnual: null,
-      features: [
-        "3 active scenarios",
-        "15 calls per week",
-        "basic voices"
-      ],
-      ctaLabel: "Get Started",
-      ctaHref: "mailto:sales@example.com",
-    },
-    {
-      id: SubscriptionTypes.MONTHLY,
-      name: "Monthly",
-      tagline: "For prankster",
-      price: 17.99,
-      interval: "month",
-      priceMonthly: null,
-      priceAnnual: null,
-      features: [
-        "5 active scenarios",
-        "100 calls per week",
-        "access to all voices"
-      ],
-      ctaLabel: "Get Started",
-      ctaHref: "mailto:sales@example.com",
-    },
-    {
-      id: SubscriptionTypes.YEARLY,
-      name: "Yearly",
-      tagline: "For true pranksters",
-      price: 179.99,
-      interval: "year",
-      priceMonthly: null,
-      priceAnnual: null,
-      features: [
-        "unlimitedactive scenarios",
-        "unlimited calls ",
-        "access to all voices"
-      ],
-      ctaLabel: "Get Started",
-      ctaHref: "mailto:sales@example.com",
-    },
-    // {
-    //   id: "starter",
-    //   name: "Starter",
-    //   tagline: "For solo creators",
-    //   priceMonthly: 12,
-    //   priceAnnual: 120,
-    //   features: [
-    //     "5 active scenarios",
-    //     "250 calls / month",
-    //     "HD voices + effects",
-    //     "Email support",
-    //   ],
-    //   popular: true,
-    //   ctaLabel: "Start Free Trial",
-    //   ctaHref: "/signup",
-    // },
-    // {
-    //   id: "pro",
-    //   name: "Pro",
-    //   tagline: "For growing teams",
-    //   priceMonthly: 29,
-    //   priceAnnual: 290,
-    //   features: [
-    //     "Unlimited scenarios",
-    //     "2,500 calls / month",
-    //     "Priority TTS rendering",
-    //     "Priority support",
-    //   ],
-    //   ctaLabel: "Upgrade to Pro",
-    //   ctaHref: "/signup",
-    // },
-    // {
-    //   id: "enterprise",
-    //   name: "Enterprise",
-    //   tagline: "Custom volume & SLAs",
-    //   priceMonthly: null,
-    //   priceAnnual: null,
-    //   features: [
-    //     "Unlimited everything",
-    //     "Dedicated infra & SLAs",
-    //     "SAML/SSO, audit logs",
-    //     "Dedicated CSM",
-    //   ],
-    //   ctaLabel: "Contact Sales",
-    //   ctaHref: "mailto:sales@example.com",
-    // },
-  ];
 
   return (
     <DefaultLayout>
