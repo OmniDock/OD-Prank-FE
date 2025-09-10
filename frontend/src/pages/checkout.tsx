@@ -39,8 +39,6 @@ export default function CheckoutPage() {
         tagline: "For solo creators",
         price: 12,
         interval: "month",
-        priceMonthly: 12,
-        priceAnnual: 120,
         features: [
           "5 active scenarios",
           "250 calls / month",
