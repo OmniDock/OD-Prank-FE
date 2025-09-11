@@ -47,8 +47,6 @@ export default function VoiceCard({
 }: VoiceCardProps) {
   return (
     <Card className={`group relative overflow-visible shadow-lg hover:scale-105 transition-transform duration-300 transform-gpu border-default-100 h-full rounded-3xl bg-gradient-to-br from-pink-50 via-white to-sky-50 dark:from-default-50/10 dark:via-default-50/5 dark:to-default-50/10 glass-card ${className}`}>
-      <span className="pointer-events-none absolute -left-3 -top-3 h-10 w-10 rounded-full bg-pink-200/60 blur" />
-      <span className="pointer-events-none absolute -right-3 -bottom-3 h-12 w-12 rounded-full bg-sky-200/60 blur" />
 
       <CardBody className="p-6">
         <div className="flex items-start gap-5">
@@ -57,11 +55,11 @@ export default function VoiceCard({
             animate={!isPlaying ? { y: [0, -3, 0] } : {}}
             transition={!isPlaying ? { duration: 3, repeat: Infinity } : {}}
           >
-            {isPlaying && (
-              <span className="absolute -inset-2 rounded-full bg-success/30 animate-ping" />
-            )}
-            <span className="absolute -left-2 -top-2 w-10 h-10 rounded-full bg-yellow-200/70 blur-[2px]" />
-            <span className="absolute -right-2 -bottom-1 w-12 h-12 rounded-full bg-purple-200/60 blur-[2px]" />
+            <span
+              className={`absolute -inset-2 rounded-full bg-success/30 transition-opacity ${isPlaying ? "opacity-100 animate-ping" : "opacity-0"}`}
+              aria-hidden
+            />
+            
 
             <div className="absolute -right-2 top-1 z-20 bg-white/90 text-default-700 text-xs font-bold px-2 py-1 rounded-full shadow-sm border border-default-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               Hi! 👋
@@ -122,7 +120,7 @@ export default function VoiceCard({
               </div>
             </div>
 
-            <p className="mt-3 text-xs sm:text-sm md:text-base leading-snug text-default-700 bg-white/70 dark:bg-default-50/10 rounded-2xl px-3 py-2 border border-default-200/60 line-clamp-2 sm:line-clamp-3 md:line-clamp-4">
+            <p className="mt-3 text-xs sm:text-sm md:text-base leading-snug text-default-700 bg-white/70 dark:bg-default-50/10 rounded-2xl px-3 py-2 border border-default-200/60 line-clamp-3 sm:line-clamp-4 md:line-clamp-5">
               {voice.description || "Professional voice actor"}
             </p>
 

@@ -24,8 +24,8 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
     const res = await deleteScenario(scenario.id);
     if (res.success) {
     addToast({
-      title: "Scenario deleted",
-      description: `Successfully deleted "${scenario.title}"`,
+      title: "Szenario gelöscht",
+      description: `Erfolgreich gelöscht "${scenario.title}"`,
       color: "success",
       timeout: 3000,
     });
@@ -42,8 +42,8 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
               <span className="text-primary" aria-hidden>📋</span>
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-foreground">Scenario Details</h2>
-              <p className="text-sm text-default-500">Overview and configuration</p>
+              <h2 className="text-xl font-semibold text-foreground">Szenario Details</h2>
+              <p className="text-sm text-default-500">Übersicht und Konfiguration</p>
             </div>
           </div>
           <div className="flex flex-row gap-2 items-center">
@@ -75,7 +75,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
             <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-primary/5 to-primary/10">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-primary" aria-hidden>🎯</span>
-                <span className="text-xs font-medium text-primary">Target Name</span>
+                <span className="text-xs font-medium text-primary">Angesprochener</span>
               </div>
               <div className="text-base font-semibold text-foreground">{scenario.target_name}</div>
             </div>
@@ -83,7 +83,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
             <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-secondary/5 to-secondary/10">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-secondary" aria-hidden>🗣️</span>
-                <span className="text-xs font-medium text-secondary">Language</span>
+                <span className="text-xs font-medium text-secondary">Sprache</span>
               </div>
               <div className="text-base font-semibold text-foreground">{scenario.language}</div>
             </div>
@@ -93,7 +93,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
             <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-secondary/5 to-secondary/10">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-primary" aria-hidden>🎭</span>
-                <span className="text-xs font-medium text-secondary">Calling Persona</span>
+                <span className="text-xs font-medium text-secondary">Anrufer</span>
               </div>
               <div className="text-base font-semibold text-foreground">{scenario.scenario_analysis?.analysis?.persona_name}</div>
             </div>
@@ -101,7 +101,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
             <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-secondary/5 to-secondary/10">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-secondary" aria-hidden>🚻</span>
-                <span className="text-xs font-medium text-secondary">Calling Gender</span>
+                <span className="text-xs font-medium text-secondary">Anrufer Geschlecht</span>
               </div>
               <div className="text-base font-semibold text-foreground">{scenario.scenario_analysis?.analysis?.persona_gender}</div>
             </div>
@@ -112,7 +112,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
             <div className="p-5 rounded-xl border border-default-200 bg-gradient-to-br from-default-50 to-default-100/50">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-default-600" aria-hidden>📝</span>
-                <span className="text-sm font-semibold text-default-700">Description</span>
+                <span className="text-sm font-semibold text-default-700">Beschreibung</span>
               </div>
               <p className="text-default-900 whitespace-pre-wrap leading-relaxed">{scenario.description}</p>
             </div>
@@ -125,7 +125,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
                 startContent={<TrashIcon className="w-4 h-4" />}
                 onPress={() => setIsDeleteOpen(true)}
               >
-              Delete
+              Löschen
             </Button> 
           </div>
         </div>
