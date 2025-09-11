@@ -77,7 +77,7 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
           ) : (
             <Button
               as={Link}
-              href="/signin"
+              href="/signup"
               color="primary"
               variant="shadow"
               size={scrolled ? "md" : "md"}

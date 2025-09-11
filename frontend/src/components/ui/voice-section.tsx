@@ -316,7 +316,10 @@ function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: In
                     </div>
                   </div>
                 </div>
-                <div className={`mt-3 transition-opacity ${isActive ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+                <div className={`mt-3 flex flex-row justify-between items-center transition-opacity ${isActive ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+                  <Button size="sm" color="primary" className="w-full bg-gradient-primary" onClick={(e) => { e.stopPropagation(); handleCardClick(v); }}>
+                    Preview
+                  </Button>
                   <Button size="sm" color="primary" className="w-full bg-gradient-primary" onClick={(e) => { e.stopPropagation(); void onSelect(v.id); }}>
                     Select
                   </Button>

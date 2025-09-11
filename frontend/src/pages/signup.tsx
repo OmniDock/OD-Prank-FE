@@ -140,7 +140,7 @@ export default function SignUpPage() {
 						<CardBody className="p-8">
 							{/* Header with animation */}
 							<motion.div 
-								className="text-center mb-8"
+								className="text-center mb-4"
 								initial={{ opacity: 0, y: -20 }}
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ delay: 0.1 }}
@@ -183,6 +183,22 @@ export default function SignUpPage() {
 									Sign up with Google
 								</Button>
 							</motion.div> */}
+
+
+							<motion.p 
+								className="text-center text-sm text-default-500 mb-4"
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								transition={{ delay: 0.4 }}
+							>
+								Already have an account?{" "}
+								<Link 
+									href="/signin" 
+									className="text-primary font-semibold hover:underline"
+								>
+									Sign in
+								</Link>
+							</motion.p>
 
 							{/* Divider with better styling */}
 							<div className="relative my-6">
@@ -303,20 +319,7 @@ export default function SignUpPage() {
 							</motion.form>
 
 							{/* Sign In Link with animation */}
-							<motion.p 
-								className="text-center mt-6 text-sm text-default-500"
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								transition={{ delay: 0.4 }}
-							>
-								Already have an account?{" "}
-								<Link 
-									href="/signin" 
-									className="text-primary font-semibold hover:underline"
-								>
-									Sign in
-								</Link>
-							</motion.p>
+						
 						</CardBody>
 					</Card>
 				</motion.div>

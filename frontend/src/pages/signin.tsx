@@ -68,7 +68,7 @@ export default function SignInPage() {
 
 	return (
 		<AuthLayout>
-			<AnimatedBackground variant="phones" density={12} />
+			<AnimatedBackground variant="mixed" density={12} />
 			
 			<div className="relative flex items-center justify-center min-h-[calc(100vh-120px)] px-4 py-12">
 				<motion.div
@@ -81,7 +81,7 @@ export default function SignInPage() {
 						<CardBody className="p-8">
 							{/* Header with animation */}
 							<motion.div 
-								className="text-center mb-8"
+								className="text-center mb-4"
 								initial={{ opacity: 0, y: -20 }}
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ delay: 0.1 }}
@@ -124,6 +124,22 @@ export default function SignInPage() {
 									Continue with Google
 								</Button>
 							</motion.div> */}
+
+								{/* Sign Up Link with animation */}
+							<motion.p 
+								className="text-center text-sm text-default-500 mb-4"
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								transition={{ delay: 0.4 }}
+							>
+								Don't have an account?{" "}
+								<Link 
+									href="/signup" 
+									className="text-primary font-semibold hover:underline"
+								>
+									Create one
+								</Link>
+							</motion.p>
 
 							{/* Divider with better styling */}
 							<div className="relative my-6">
@@ -225,21 +241,7 @@ export default function SignInPage() {
 								</Button>
 							</motion.form>
 
-							{/* Sign Up Link with animation */}
-							<motion.p 
-								className="text-center mt-6 text-sm text-default-500"
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								transition={{ delay: 0.4 }}
-							>
-								Don't have an account?{" "}
-								<Link 
-									href="/signup" 
-									className="text-primary font-semibold hover:underline"
-								>
-									Create one
-								</Link>
-							</motion.p>
+						
 						</CardBody>
 					</Card>
 				</motion.div>
