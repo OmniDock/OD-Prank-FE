@@ -13,15 +13,18 @@ export default function PlanCard({
   onPlanSelect?: (plan: Plan) => void;
 }) {
   // Use the plan's price and interval if available, otherwise fall back to billing toggle
-  const price = (plan as any).price !== undefined ? (plan as any).price : 
-    (billing === "annual" ? plan.priceAnnual : plan.priceMonthly);
+  const price = plan.price !== undefined ? plan.price : null;
+  // const price = (plan as any).price !== undefined ? (plan as any).price : 
+  //   (billing === "annual" ? plan.priceAnnual : plan.priceMonthly);
   
-  const interval = (plan as any).interval || (billing === "annual" ? "year" : "month");
+  const interval = plan.interval;
 
   const priceLabel =
     price === null
       ? "Custom"
-      : `$${price}/${interval === "week" ? "wk" : interval === "year" ? "yr" : "mo"}`;
+      : interval === "week" || interval === "month"
+      ? `$${price}/${interval === "week" ? "Week" : "Month"}`
+      : `$${price}`;
 
   return (
     <Card className={["relative h-full border border-default-200/40",
