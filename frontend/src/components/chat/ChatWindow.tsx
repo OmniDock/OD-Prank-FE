@@ -379,6 +379,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
                   ? "Schreibe deine Antwort..." 
                   : "Beschreibe deine Prank-Idee..."
               }
+              onResetPress={(hasStarted || !!streamingMessage) ? () => setIsConfirmOpen(true) : undefined}
             />
           </div>
           
@@ -416,36 +417,22 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
           )}
         </div>
       </div>
-      {(hasStarted || streamingMessage) && (
-        <div className="fixed bottom-6 right-6 z-30">
-          <Button
-            variant="shadow"
-            onPress={() => setIsConfirmOpen(true)}
-            aria-label="Reset Chat"
-            color="primary"
-            startContent={<ArrowPathIcon className="w-5 h-5" />}
-          >
-            Reset Chat
-          </Button>
-
-          <Modal isOpen={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-            <ModalContent>
-              <ModalHeader>Reset Chat</ModalHeader>
-              <ModalBody>
-                Are you sure you want to reset the chat? This will clear the conversation and draft.
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="light" onPress={() => setIsConfirmOpen(false)}>
-                  Cancel
-                </Button>
-                <Button color="primary" onPress={handleResetChat} startContent={<ArrowPathIcon className="w-4 h-4" />}>
-                  Reset Chat
-                </Button>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
-        </div>
-      )}
+      <Modal isOpen={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <ModalContent>
+          <ModalHeader>Reset Chat</ModalHeader>
+          <ModalBody>
+            Are you sure you want to reset the chat? This will clear the conversation and draft.
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onPress={() => setIsConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button color="primary" onPress={handleResetChat} startContent={<ArrowPathIcon className="w-4 h-4" />}>
+              Reset Chat
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

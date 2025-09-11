@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
-import { Badge, Button, cn, Form, Image } from "@heroui/react";
-import { XMarkIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import { Badge, Button, cn, Form, Image, Tooltip } from "@heroui/react";
+import { XMarkIcon, PaperAirplaneIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import PromptInput from "./PromptInput";
 
 type Props = {
@@ -9,9 +9,10 @@ type Props = {
   onSubmit: () => void;
   disabled?: boolean;
   placeholder?: string;
+  onResetPress?: () => void;
 };
 
-export default function PromptInputFullLine({ value, onChange, onSubmit, disabled = false, placeholder }: Props) {
+export default function PromptInputFullLine({ value, onChange, onSubmit, disabled = false, placeholder, onResetPress }: Props) {
   const [assets, setAssets] = useState<string[]>([]);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -94,8 +95,23 @@ export default function PromptInputFullLine({ value, onChange, onSubmit, disable
         isDisabled={disabled}
       />
       <div className="flex w-full flex-row items-center justify-between px-3 py-3">
-        <div></div>
-        <Button isIconOnly color={!value ? "default" : "primary"} isDisabled={!value || disabled} radius="md" size="sm" type="submit" variant="solid">
+        <div>
+          {onResetPress && (
+            <Tooltip content="Reset Chat" placement="top" closeDelay={0}>
+              <Button
+                isIconOnly
+                radius="md"
+                size="sm"
+                variant="light"
+                aria-label="Reset Chat"
+                onPress={onResetPress}
+              >
+                <ArrowPathIcon className="text-default-600 h-5 w-5" />
+              </Button>
+            </Tooltip>
+          )}
+        </div>
+        <Button isIconOnly className={value ? "bg-gradient-primary" : ""} color={!value ? "default" : "primary"} isDisabled={!value || disabled} radius="md" size="sm" type="submit" variant="solid">
           <PaperAirplaneIcon className={!value ? "text-default-600 h-5 w-5" : "text-primary-foreground h-5 w-5"} />
         </Button>
       </div>
