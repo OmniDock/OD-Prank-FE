@@ -2,17 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   PhoneIcon, 
-  BuildingOfficeIcon, 
-  AcademicCapIcon,
-  ShoppingCartIcon,
-  TruckIcon,
-  CakeIcon,
-  HeartIcon,
-  BriefcaseIcon,
-  HomeIcon,
-  UserGroupIcon,
-  TicketIcon,
-  GlobeAltIcon
 } from "@heroicons/react/24/solid";
 import { fetchPublicScenarios } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
