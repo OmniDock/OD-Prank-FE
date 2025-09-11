@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
 import { Badge, Button, cn, Form, Image } from "@heroui/react";
-import { XMarkIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
 import PromptInput from "./PromptInput";
 
 type Props = {
@@ -96,7 +96,7 @@ export default function PromptInputFullLine({ value, onChange, onSubmit, disable
       <div className="flex w-full flex-row items-center justify-between px-3 py-3">
         <div></div>
         <Button isIconOnly color={!value ? "default" : "primary"} isDisabled={!value || disabled} radius="md" size="sm" type="submit" variant="solid">
-          <SparklesIcon className={!value ? "text-default-600 h-5 w-5" : "text-primary-foreground h-5 w-5"} />
+          <PaperAirplaneIcon className={!value ? "text-default-600 h-5 w-5" : "text-primary-foreground h-5 w-5"} />
         </Button>
       </div>
     </Form>
