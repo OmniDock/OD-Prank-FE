@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import TemplateCard from "./TemplateCard";
 import { 
   PhoneIcon, 
@@ -13,6 +14,10 @@ import {
   TicketIcon,
   GlobeAltIcon
 } from "@heroicons/react/24/solid";
+import { fetchPublicScenarios } from "@/lib/api.scenarios";
+
+
+
 
 const templates = [
   {
