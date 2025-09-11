@@ -74,3 +74,8 @@ export async function fetchPublicScenarios(): Promise<Scenario[]> {
   console.log(res);
   return res.json();
 }
+
+export async function fetchPublicScenario(id: string | number): Promise<Scenario> {
+  const res = await apiFetch(`/scenario/public-scenarios/${id}`, { method: "GET" });
+  return res.json();
+}
