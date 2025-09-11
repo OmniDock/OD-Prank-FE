@@ -67,4 +67,10 @@ export async function deleteScenario(id: string | number): Promise<{ success: bo
   return res.json();
 }
 
-
+export async function fetchPublicScenarios(): Promise<Scenario[]> {
+  const res = await apiFetch(`/scenario/public-scenarios`,{
+      method: "GET",
+    });
+  console.log(res);
+  return res.json();
+}
