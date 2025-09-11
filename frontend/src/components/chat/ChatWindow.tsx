@@ -35,7 +35,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   
   // Design chat state
   const [currentDraft, setCurrentDraft] = useState("");
-  const [showDetails, setShowDetails] = useState(false);
+  // const [showDetails, setShowDetails] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   
   const wsRef = useRef<DesignChatWebSocket | null>(null);
@@ -275,7 +275,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
       setIsConnected(false);
       setIsConnecting(false);
       setCurrentDraft("");
-      setShowDetails(false);
+      // setShowDetails(false);
       try { onReset && onReset(); } catch {}
       // Reconnect fresh (will send greeting)
       await connectWebSocket();
