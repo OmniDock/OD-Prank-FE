@@ -5,3 +5,8 @@ export async function getProfile(): Promise<any> {
   console.log("res", res);
   return res.json();
 }
+
+export async function getCredits(): Promise<any> {
+  const res = await apiFetch("/profile/get-credits");
+  return res.json();
+}
