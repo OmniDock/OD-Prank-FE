@@ -55,10 +55,10 @@ export default function VoiceCard({
             animate={!isPlaying ? { y: [0, -3, 0] } : {}}
             transition={!isPlaying ? { duration: 3, repeat: Infinity } : {}}
           >
-            <span
-              className={`absolute -inset-2 rounded-full bg-success/30 transition-opacity ${isPlaying ? "opacity-100 animate-ping" : "opacity-0"}`}
-              aria-hidden
-            />
+            
+            {isPlaying && (
+              <span className="absolute -inset-2 rounded-full bg-success/30 animate-ping" />
+            )}
             
 
             <div className="absolute -right-2 top-1 z-20 bg-white/90 text-default-700 text-xs font-bold px-2 py-1 rounded-full shadow-sm border border-default-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -120,7 +120,7 @@ export default function VoiceCard({
               </div>
             </div>
 
-            <p className="mt-3 text-xs sm:text-sm md:text-base leading-snug text-default-700 bg-white/70 dark:bg-default-50/10 rounded-2xl px-3 py-2 border border-default-200/60 line-clamp-3 sm:line-clamp-4 md:line-clamp-5">
+            <p className="mt-3 text-xs sm:text-sm md:text-base leading-snug text-default-700 bg-white/70 dark:bg-default-50/10 rounded-2xl px-3 py-2 border border-default-200/60 line-clamp-2 sm:line-clamp-3 md:line-clamp-4">
               {voice.description || "Professional voice actor"}
             </p>
 

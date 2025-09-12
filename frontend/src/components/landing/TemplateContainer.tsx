@@ -7,6 +7,8 @@ import { fetchPublicScenarios } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
+import { fetchVoices } from "@/lib/api.tts";
+import type { VoiceItem } from "@/types/tts";
 
 
 
@@ -22,17 +24,50 @@ function getLanguageFlag(language: string) {
   return flags[language] || "🌍";
 }
 
+// Temporary random image per scenario (stable per ID)
+function getScenarioImage(seed: number | string, width = 1200, height = 700) {
+  return `https://picsum.photos/seed/od-template-${encodeURIComponent(String(seed))}/${width}/${height}`;
+}
+
+function resolveScenarioImageUrl(url?: string | null, seed?: number | string, width = 1200, height = 700) {
+  const invalid = !url || typeof url !== "string" || ["null", "none", "undefined", ""].includes(url.trim().toLowerCase());
+  if (invalid) return getScenarioImage(seed ?? Math.random(), width, height);
+  return url;
+}
+
 export default function TemplateContainer() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [voicesMap, setVoicesMap] = useState<Record<string, VoiceItem>>({});
   const navigate = useNavigate();
 
   useEffect(() => {
     let abort = false;
-    fetchPublicScenarios().then((data) => {
-      if (!abort) setScenarios(data || []);
-    }).catch(() => {
-      if (!abort) setScenarios([]);
-    });
+    (async () => {
+      try {
+        const [sc, vr] = await Promise.allSettled([
+          fetchPublicScenarios(),
+          fetchVoices(),
+        ]);
+        if (abort) return;
+
+        if (sc.status === "fulfilled") {
+          setScenarios(sc.value || []);
+        } else {
+          setScenarios([]);
+        }
+
+        if (vr.status === "fulfilled") {
+          const map: Record<string, VoiceItem> = {};
+          (vr.value.voices || []).forEach((v) => { map[v.id] = v; });
+          setVoicesMap(map);
+        } else {
+          setVoicesMap({});
+        }
+      } finally {
+        if (!abort) setLoading(false);
+      }
+    })();
     return () => { abort = true };
   }, []);
 
@@ -48,37 +83,87 @@ export default function TemplateContainer() {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
-          {scenarios.map((s) => (
-            <Card
-              key={s.id}
-              className="group relative overflow-visible shadow-lg hover:scale-105 transition-transform duration-300 transform-gpu border-default-100 h-full rounded-3xl bg-gradient-to-br from-pink-50 via-white to-sky-50 dark:from-default-50/10 dark:via-default-50/5 dark:to-default-50/10 glass-card cursor-pointer"
-            >
-              <CardBody className="p-6" onClick={() => navigate(`/templates/${s.id}`)}>
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-xl bg-gradient-primary text-white">
-                    <PhoneIcon className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-extrabold tracking-tight truncate">{s.title}</h3>
-                      <Chip size="sm" variant="flat" color="primary" className="rounded-full">
-                        {getLanguageFlag(s.language)} {s.language.charAt(0) + s.language.slice(1).toLowerCase()}
-                      </Chip>
-                    </div>
-                    <p className="mt-2 text-sm text-default-600 line-clamp-3">{s.description || ""}</p>
-                  </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-3xl overflow-hidden border border-default-100 glass-card">
+                <div className="w-full aspect-[32/9] bg-default-100 animate-pulse" />
+                <div className="p-6 space-y-3">
+                  <div className="h-5 w-2/3 bg-default-100 rounded animate-pulse" />
+                  <div className="h-4 w-full bg-default-100 rounded animate-pulse" />
+                  <div className="h-4 w-3/4 bg-default-100 rounded animate-pulse" />
+                  <div className="h-7 w-36 bg-default-100 rounded-full animate-pulse" />
                 </div>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
+            {scenarios.map((s) => {
+              const voice = s.preferred_voice_id ? voicesMap[s.preferred_voice_id] : undefined;
+              return (
+                <Card
+                  key={s.id}
+                  className="group relative overflow-hidden shadow-lg border-default-100 h-full rounded-3xl bg-gradient-to-br from-pink-50 via-white to-sky-50 dark:from-default-50/10 dark:via-default-50/5 dark:to-default-50/10 glass-card cursor-pointer"
+                  isPressable
+                  onPress={() => navigate(`/templates/${s.id}`)}
+                >
+                  {/* Hero image */}
+                  <div className="relative">
+                    <div className="aspect-[32/9] overflow-hidden">
+                      <img
+                        src={resolveScenarioImageUrl(s.background_image_url, s.id, 380, 110)}
+                        alt={s.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="absolute top-4 left-4 flex items-center gap-2">
+                      <div className="px-3 py-1 rounded-full bg-black/60 text-white text-xs backdrop-blur">
+                        {getLanguageFlag(s.language)} {s.language.charAt(0) + s.language.slice(1).toLowerCase()}
+                      </div>
+                      {voice && (
+                        <div className="px-3 py-1 rounded-full bg-black/60 text-white text-xs backdrop-blur">
+                          {voice.name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-        <div className="text-center mt-12">
-          <button className="px-8 py-3 rounded-full bg-gradient-primary text-white font-semibold hover:scale-105 transition-transform">
-            Alle Szenarien anzeigen
-          </button>
-        </div>
+                  <CardBody className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 rounded-xl bg-gradient-primary text-white shrink-0">
+                        <PhoneIcon className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-extrabold tracking-tight truncate">
+                            {s.title}
+                          </h3>
+                        </div>
+                        <p className="mt-2 text-sm text-default-600 line-clamp-3">
+                          {s.description || ""}
+                        </p>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <Chip size="sm" variant="flat" color="primary" className="rounded-full">
+                            {getLanguageFlag(s.language)} {s.language.charAt(0) + s.language.slice(1).toLowerCase()}
+                          </Chip>
+                          {s.preferred_voice_id && (
+                            <Chip size="sm" variant="flat" color="secondary" className="rounded-full">
+                              {voice?.name ?? s.preferred_voice_id}
+                            </Chip>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
       </div>
     </section>
   );

@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import DefaultLayout from "@/layouts/default";
 import { fetchPublicScenario } from "@/lib/api.scenarios";
 import type { Scenario, VoiceLine } from "@/types/scenario";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
+import { fetchVoices } from "@/lib/api.tts";
+import type { VoiceItem } from "@/types/tts";
+// import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
 
 function getLanguageFlag(language: string) {
   const flags: Record<string, string> = {
@@ -17,77 +20,231 @@ function getLanguageFlag(language: string) {
   return flags[language] || "🌍";
 }
 
+// Temporary hero image per scenario (stable per ID)
+function getScenarioImage(seed: number | string, width = 1600, height = 700) {
+  return `https://picsum.photos/seed/od-template-${encodeURIComponent(String(seed))}/${width}/${height}`;
+}
+
+function resolveScenarioImageUrl(url?: string | null, seed?: number | string, width = 1600, height = 700) {
+  const invalid = !url || typeof url !== "string" || ["null", "none", "undefined", ""].includes(url.trim().toLowerCase());
+  if (invalid) return getScenarioImage(seed ?? Math.random(), width, height);
+  return url;
+}
+
 export default function TemplateDetailPage() {
   const { id } = useParams();
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [loading, setLoading] = useState(true);
+  const [voicesMap, setVoicesMap] = useState<Record<string, VoiceItem>>({});
+  // Inline audio playback state (similar to dashboard VoiceLinesTable)
+  const [playingId, setPlayingId] = useState<number | null>(null);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const setAudioRef = (audio: HTMLAudioElement | null) => {
+    audioRef.current = audio;
+  };
+  const progressRafRef = useRef<number | null>(null);
 
   useEffect(() => {
     let abort = false;
     if (!id) return;
-    fetchPublicScenario(id).then((data) => {
-      if (!abort) setScenario(data);
-    }).finally(() => {
-      if (!abort) setLoading(false);
-    });
+    (async () => {
+      try {
+        const [sc, vr] = await Promise.allSettled([
+          fetchPublicScenario(id),
+          fetchVoices(),
+        ]);
+        if (abort) return;
+
+        if (sc.status === "fulfilled") setScenario(sc.value);
+        if (vr.status === "fulfilled") {
+          const map: Record<string, VoiceItem> = {};
+          (vr.value.voices || []).forEach((v) => { map[v.id] = v; });
+          setVoicesMap(map);
+        }
+      } finally {
+        if (!abort) setLoading(false);
+      }
+    })();
     return () => { abort = true };
   }, [id]);
 
+  const voice = useMemo(() => {
+    if (!scenario?.preferred_voice_id) return null;
+    return voicesMap[scenario.preferred_voice_id] || null;
+  }, [scenario?.preferred_voice_id, voicesMap]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      try {
+        if (audioRef.current) {
+          audioRef.current.pause?.();
+        }
+      } catch {}
+      if (progressRafRef.current !== null) cancelAnimationFrame(progressRafRef.current);
+      progressRafRef.current = null;
+    };
+  }, []);
+
+  const stopPlayback = () => {
+    try {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    } catch {}
+    setPlayingId(null);
+    setLoadingId(null);
+    setProgress(0);
+    setIsPaused(false);
+    if (progressRafRef.current !== null) {
+      cancelAnimationFrame(progressRafRef.current);
+      progressRafRef.current = null;
+    }
+  };
+
+  const handlePlayCard = (voiceLineId: number, url?: string | null) => {
+    if (!url) return; // no audio available
+
+    // If same card active: stop
+    if (playingId === voiceLineId && audioRef.current) {
+      stopPlayback();
+      return;
+    }
+
+    // Stop any existing
+    if (playingId !== null) stopPlayback();
+
+    setLoadingId(voiceLineId);
+    try {
+      const audio = new Audio(url);
+      setAudioRef(audio);
+
+      audio.addEventListener("loadedmetadata", () => setProgress(0));
+      audio.addEventListener("canplay", () => setLoadingId((id) => (id === voiceLineId ? null : id)));
+      audio.addEventListener("play", () => {
+        setPlayingId(voiceLineId);
+        setIsPaused(false);
+        setLoadingId(null);
+        const loop = () => {
+          if (!audioRef.current) return;
+          const d = audioRef.current.duration || 0;
+          const p = d > 0 ? Math.min((audioRef.current.currentTime / d), 1) : 0;
+          setProgress(p);
+          progressRafRef.current = requestAnimationFrame(loop);
+        };
+        if (progressRafRef.current !== null) cancelAnimationFrame(progressRafRef.current);
+        progressRafRef.current = requestAnimationFrame(loop);
+      });
+      audio.addEventListener("pause", () => setIsPaused(true));
+      audio.addEventListener("ended", () => {
+        setIsPaused(false);
+        setProgress(1);
+        if (progressRafRef.current !== null) {
+          cancelAnimationFrame(progressRafRef.current);
+          progressRafRef.current = null;
+        }
+        stopPlayback();
+      });
+      audio.addEventListener("error", () => {
+        if (progressRafRef.current !== null) {
+          cancelAnimationFrame(progressRafRef.current);
+          progressRafRef.current = null;
+        }
+        stopPlayback();
+      });
+
+      void audio.play().catch(() => {
+        stopPlayback();
+      });
+    } catch {
+      stopPlayback();
+    }
+  };
+
   return (
     <DefaultLayout>
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-5xl">
+      <section className="py-0">
+        {/* Full-width hero image (with top padding below navbar) */}
+        {loading ? (
+          <div className="w-full pt-8 md:pt-12">
+            <div className="w-full h-[44vh] bg-default-100 animate-pulse" />
+          </div>
+        ) : scenario ? (
+          <div className="w-full pt-8 md:pt-12">
+            <div className="w-full h-[44vh] overflow-hidden">
+              <img
+                src={resolveScenarioImageUrl(scenario.background_image_url, scenario.id, 1800, 900)}
+                alt={scenario.title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        <div className="container mx-auto px-4 max-w-5xl py-10">
           {loading && (
-            <div className="text-center text-default-500">Lade Template...</div>
+            <div className="space-y-6">
+              <div className="h-10 w-2/3 bg-default-100 rounded animate-pulse" />
+              <div className="h-5 w-1/3 bg-default-100 rounded animate-pulse" />
+              <div className="grid grid-cols-1 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-24 bg-default-100 rounded-xl animate-pulse" />
+                ))}
+              </div>
+            </div>
           )}
+
           {!loading && scenario && (
             <div className="flex flex-col gap-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                {/* Dummy image */}
-                <div className="md:col-span-1">
-                  <div className="aspect-[4/3] rounded-2xl overflow-hidden border border-default-200/60 bg-gradient-to-br from-default-100 via-white to-default-100 dark:from-default-50/10 dark:via-default-50/5 dark:to-default-50/10">
-                    <img
-                      src="https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1200&auto=format&fit=crop"
-                      alt={scenario.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-                <div className="md:col-span-2">
-                  <h1 className="text-3xl md:text-4xl font-extrabold mb-2">{scenario.title}</h1>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Chip size="sm" variant="flat" color="primary" className="rounded-full">
-                      {getLanguageFlag(scenario.language)} {scenario.language.charAt(0) + scenario.language.slice(1).toLowerCase()}
+              {/* Title + chips */}
+              <div>
+                <h1 className="text-3xl md:text-4xl font-extrabold mb-3">{scenario.title}</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Chip size="sm" variant="flat" color="primary" className="rounded-full">
+                    {getLanguageFlag(scenario.language)} {scenario.language.charAt(0) + scenario.language.slice(1).toLowerCase()}
+                  </Chip>
+                  {scenario.preferred_voice_id && (
+                    <Chip size="sm" variant="flat" color="secondary" className="rounded-full">
+                      {voice?.name ?? scenario.preferred_voice_id}
                     </Chip>
-                    {scenario.preferred_voice_id && (
-                      <Chip size="sm" variant="flat" color="secondary" className="rounded-full">
-                        Voice: {scenario.preferred_voice_id}
-                      </Chip>
-                    )}
-                  </div>
-                  {scenario.description && (
-                    <p className="text-default-600 leading-relaxed">{scenario.description}</p>
                   )}
                 </div>
+                {scenario.description && (
+                  <p className="text-default-600 leading-relaxed mt-4">{scenario.description}</p>
+                )}
               </div>
 
-              {/* Voice lines with playable audio */}
+              {/* Voice lines list with inline playback and progress, similar to dashboard */}
               <div>
                 <h2 className="text-2xl font-bold mb-4">Voice Lines</h2>
                 <div className="space-y-4">
                   {scenario.voice_lines.map((vl: VoiceLine) => (
-                    <Card key={vl.id} className="border-default-200/60">
-                      <CardBody className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <div>
-                          <div className="text-sm text-default-400">#{vl.order_index + 1} • {vl.type}</div>
-                          <div className="font-medium">{vl.text}</div>
-                        </div>
-                        <div className="min-w-[260px]">
-                          {vl.preferred_audio?.signed_url ? (
-                            <audio controls src={vl.preferred_audio.signed_url} className="w-full" />
-                          ) : (
-                            <div className="text-default-500 text-sm">Audio nicht verfügbar</div>
-                          )}
+                    <Card key={vl.id} className="border-default-200/60 hover:shadow-lg transition-shadow">
+                      <CardBody className="relative">
+                        {/* Progress overlay */}
+                        {playingId === vl.id && (
+                          <div className="absolute inset-0 z-0 overflow-hidden rounded-medium pointer-events-none">
+                            <div
+                              className={`h-full bg-emerald-500/30 ${isPaused ? "opacity-60" : "opacity-90"}`}
+                              style={{ width: `${Math.min(progress * 100, 100)}%` }}
+                            />
+                          </div>
+                        )}
+
+                        <div className="relative z-10 flex flex-col gap-2 md:flex-row md:items-center md:justify-between cursor-pointer"
+                             onClick={() => handlePlayCard(vl.id, vl.preferred_audio?.signed_url)}>
+                          <div>
+                            <div className="text-sm text-default-400">#{vl.order_index + 1} • {vl.type}</div>
+                            <div className="font-medium">{vl.text}</div>
+                          </div>
+                          <div className="text-xs text-default-500">
+                            {vl.preferred_audio?.signed_url ? (playingId === vl.id ? (isPaused ? "Paused" : "Playing…") : "Tap to play") : "Audio nicht verfügbar"}
+                          </div>
                         </div>
                       </CardBody>
                     </Card>

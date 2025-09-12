@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardBody, Chip, Spinner } from "@heroui/react";
 import { motion } from "framer-motion";
 import { fetchScenarios } from "@/lib/api.scenarios";
+import { fetchVoices } from "@/lib/api.tts";
+import type { VoiceItem } from "@/types/tts";
 import type { Scenario } from "@/types/scenario";
 
 type ScenarioGridSelectProps = {
@@ -14,14 +16,23 @@ export default function ScenarioGridSelect({ selectedId, onSelect, disabled }: S
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [voicesMap, setVoicesMap] = useState<Record<string, VoiceItem>>({});
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchScenarios(100, 0, true);
-        setScenarios(data);
+        const [sc, vr] = await Promise.allSettled([
+          fetchScenarios(100, 0, true),
+          fetchVoices(),
+        ]);
+        if (sc.status === "fulfilled") setScenarios(sc.value);
+        if (vr.status === "fulfilled") {
+          const map: Record<string, VoiceItem> = {};
+          (vr.value.voices || []).forEach((v) => { map[v.id] = v; });
+          setVoicesMap(map);
+        }
       } catch (e: any) {
         setError(e?.message || "Failed to load scenarios");
       } finally {
@@ -58,6 +69,7 @@ export default function ScenarioGridSelect({ selectedId, onSelect, disabled }: S
       {sorted.map((s) => {
         const isSelected = s.id === selectedId;
         const count = s.voice_lines?.length ?? 0;
+        const voice = s.preferred_voice_id ? voicesMap[s.preferred_voice_id] : undefined;
         return (
           <button
             key={s.id}
@@ -83,6 +95,14 @@ export default function ScenarioGridSelect({ selectedId, onSelect, disabled }: S
                     <div className="text-base font-semibold text-foreground line-clamp-2">{s.title}</div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {voice?.avatar_url && (
+                      <img
+                        src={voice.avatar_url}
+                        alt={voice.name}
+                        className="w-7 h-7 rounded-full border border-default-200 object-cover"
+                        loading="lazy"
+                      />
+                    )}
                     <Chip size="sm" variant="flat" color="default">
                       {s.target_name}
                     </Chip>
