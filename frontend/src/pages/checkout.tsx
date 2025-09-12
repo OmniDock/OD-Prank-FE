@@ -25,8 +25,9 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const isLoggedIn = !!user;
   
+  //TODO: Cleanup state management.
   // Get plan ID from URL parameter or localStorage
-  const planId = searchParams.get('id') || localStorage.getItem('selectedPlanId') || 'weekly';
+  const planId = searchParams.get('id') || localStorage.getItem('selectedPlanId');
 
   // Check if user should be redirected to checkout after login
   useEffect(() => {
@@ -68,7 +69,7 @@ export default function CheckoutPage() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        subscription_type: planId,
+        product_type: planId,
         quantity: 1
       }),
     })

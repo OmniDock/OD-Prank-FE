@@ -1,5 +1,5 @@
-export enum Subscription {
+export enum Products {
+  SINGLE = "single",
   WEEKLY = "weekly",
   MONTHLY = "monthly",
-  YEARLY = "yearly"
 }

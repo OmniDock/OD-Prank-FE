@@ -23,7 +23,7 @@ export default function PlanCard({
     price === null
       ? "Custom"
       : interval === "week" || interval === "month"
-      ? `$${price}/${interval === "week" ? "Week" : "Month"}`
+      ? `$${price}/${interval === "week" ? "Woche" : "Monat"}`
       : `$${price}`;
 
   return (
