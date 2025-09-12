@@ -6,7 +6,7 @@ import { Button } from "@heroui/react";
 import { ArrowLeftIcon, ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/context/AuthProvider";
 import { useLocation } from "react-router-dom";
-import UserDropdown from "@/pages/components/userDropdown";
+import UserDropdown from "@/components/ui/userDropdown";
 
 export default function DashboardLayout() {
   const location = useLocation();
