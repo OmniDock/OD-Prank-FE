@@ -38,7 +38,7 @@ export default function TemplateDetailPage() {
   const [voicesMap, setVoicesMap] = useState<Record<string, VoiceItem>>({});
   // Inline audio playback state (similar to dashboard VoiceLinesTable)
   const [playingId, setPlayingId] = useState<number | null>(null);
-  const [loadingId, setLoadingId] = useState<number | null>(null);
+  const [, setLoadingId] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
