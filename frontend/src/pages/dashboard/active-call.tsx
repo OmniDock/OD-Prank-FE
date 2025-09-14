@@ -23,6 +23,8 @@ type LocationState = {
   result?: StartCallResponse;
 };
 
+const RINGTONE_URL = "https://hamazyumbvmhgkuwllvw.supabase.co/storage/v1/object/public/ringtones/ringtone.mp3";
+
 function groupByType(voiceLines: VoiceLine[]) {
   const order: VoiceLineType[] = ["OPENING", "FILLER", "QUESTION", "RESPONSE", "CLOSING"];
   const map: Record<VoiceLineType, VoiceLine[]> = {
@@ -478,6 +480,21 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
   const [pstnJoined, setPstnJoined] = useState(false);
+  const ringtoneRef = useRef<HTMLAudioElement | null>(null);
+
+  // Play ringtone while connecting
+  useEffect(() => {
+    const audio = ringtoneRef.current;
+    if (!audio) return;
+    if (connectionState === "connecting") {
+      audio.loop = true;
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+  }, [connectionState]);
 
   const handleInterrupt = async () => {
     try {
@@ -646,6 +663,8 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
 
   return (
     <Card className="mb-4">
+      {/* Ringtone audio element */}
+      <audio ref={ringtoneRef} src={RINGTONE_URL} preload="auto" className="hidden" />
       <CardHeader>
         <div className="flex items-center justify-between w-full">
           <h3 className="text-lg font-semibold">Call Monitoring</h3>

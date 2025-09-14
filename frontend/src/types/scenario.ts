@@ -56,12 +56,15 @@ export interface Scenario {
   language: Language;
   preferred_voice_id?: string | null;
   target_name?: string | null;
+  tags?: string[] | null;
+  background_image_url?: string | null;
   scenario_analysis?: ScenarioAnalysisPayload | null;
   is_safe: boolean;
   is_not_safe_reason?: string | null;
   is_public: boolean;
   is_active: boolean;
   voice_lines: VoiceLine[];
+
   created_at: string;
   updated_at: string;
 }

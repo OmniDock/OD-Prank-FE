@@ -1,119 +1,76 @@
-import TemplateCard from "./TemplateCard";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   PhoneIcon, 
-  BuildingOfficeIcon, 
-  AcademicCapIcon,
-  ShoppingCartIcon,
-  TruckIcon,
-  CakeIcon,
-  HeartIcon,
-  BriefcaseIcon,
-  HomeIcon,
-  UserGroupIcon,
-  TicketIcon,
-  GlobeAltIcon
 } from "@heroicons/react/24/solid";
+import { fetchPublicScenarios } from "@/lib/api.scenarios";
+import type { Scenario } from "@/types/scenario";
+import { Card, CardBody } from "@heroui/card";
+import { Chip } from "@heroui/chip";
+import { fetchVoices } from "@/lib/api.tts";
+import type { VoiceItem } from "@/types/tts";
 
-const templates = [
-  {
-    title: "Wrong Number Romance",
-    description: "Someone thinks they're texting their crush but got the wrong number. Watch the confusion unfold!",
-    icon: <HeartIcon className="w-5 h-5" />,
-    tags: ["romantic", "confusion", "funny"],
-    difficulty: "Easy" as const,
-    duration: "3-5 min"
-  },
-  {
-    title: "Pizza Order Mix-up",
-    description: "A pizza place calls about a ridiculous order with 50 pizzas and unusual toppings.",
-    icon: <ShoppingCartIcon className="w-5 h-5" />,
-    tags: ["food", "delivery", "absurd"],
-    difficulty: "Easy" as const,
-    duration: "2-3 min"
-  },
-  {
-    title: "Tech Support Nightmare",
-    description: "An overly complicated tech support call where everything that can go wrong does go wrong.",
-    icon: <BuildingOfficeIcon className="w-5 h-5" />,
-    tags: ["tech", "frustrating", "office"],
-    difficulty: "Medium" as const,
-    duration: "5-7 min"
-  },
-  {
-    title: "Surprise Party Planning",
-    description: "Someone accidentally calls about planning a surprise party for the person they're calling.",
-    icon: <CakeIcon className="w-5 h-5" />,
-    tags: ["party", "surprise", "awkward"],
-    difficulty: "Easy" as const,
-    duration: "3-4 min"
-  },
-  {
-    title: "Job Interview Gone Wrong",
-    description: "A bizarre job interview for an increasingly ridiculous position with absurd requirements.",
-    icon: <BriefcaseIcon className="w-5 h-5" />,
-    tags: ["job", "professional", "bizarre"],
-    difficulty: "Hard" as const,
-    duration: "7-10 min"
-  },
-  {
-    title: "Package Delivery Confusion",
-    description: "A delivery driver insists on delivering a package but keeps getting the address hilariously wrong.",
-    icon: <TruckIcon className="w-5 h-5" />,
-    tags: ["delivery", "confusion", "persistent"],
-    difficulty: "Medium" as const,
-    duration: "4-6 min"
-  },
-  {
-    title: "School Principal Call",
-    description: "The 'principal' calls about your child's outrageous behavior at school (you don't have kids).",
-    icon: <AcademicCapIcon className="w-5 h-5" />,
-    tags: ["school", "authority", "mistaken"],
-    difficulty: "Medium" as const,
-    duration: "4-5 min"
-  },
-  {
-    title: "Neighbor Complaints",
-    description: "Your 'neighbor' calls to complain about increasingly absurd things happening in your yard.",
-    icon: <HomeIcon className="w-5 h-5" />,
-    tags: ["neighbor", "complaints", "escalating"],
-    difficulty: "Easy" as const,
-    duration: "3-5 min"
-  },
-  {
-    title: "Celebrity Mix-up",
-    description: "Someone thinks you're a celebrity and won't believe you when you deny it.",
-    icon: <GlobeAltIcon className="w-5 h-5" />,
-    tags: ["celebrity", "mistaken", "persistent"],
-    difficulty: "Hard" as const,
-    duration: "5-8 min"
-  },
-  {
-    title: "Wedding Planner Chaos",
-    description: "A wedding planner calls about your upcoming wedding with increasingly ridiculous requests.",
-    icon: <UserGroupIcon className="w-5 h-5" />,
-    tags: ["wedding", "planning", "chaos"],
-    difficulty: "Medium" as const,
-    duration: "5-7 min"
-  },
-  {
-    title: "Concert Ticket Winner",
-    description: "You've 'won' tickets to see a band that doesn't exist with increasingly weird requirements to claim.",
-    icon: <TicketIcon className="w-5 h-5" />,
-    tags: ["contest", "music", "scam"],
-    difficulty: "Easy" as const,
-    duration: "3-4 min"
-  },
-  {
-    title: "Emergency Babysitter",
-    description: "Someone desperately needs you to babysit their exotic pets thinking you're a pet sitter.",
-    icon: <PhoneIcon className="w-5 h-5" />,
-    tags: ["pets", "emergency", "mistaken"],
-    difficulty: "Medium" as const,
-    duration: "4-6 min"
-  }
-];
+
+
+
+function getLanguageFlag(language: string) {
+  const flags: Record<string, string> = {
+    GERMAN: "🇩🇪",
+    ENGLISH: "🇬🇧",
+    SPANISH: "🇪🇸",
+    FRENCH: "🇫🇷",
+    ITALIAN: "🇮🇹",
+  };
+  return flags[language] || "🌍";
+}
+
+// Temporary random image per scenario (stable per ID)
+function getScenarioImage(seed: number | string, width = 1200, height = 700) {
+  return `https://picsum.photos/seed/od-template-${encodeURIComponent(String(seed))}/${width}/${height}`;
+}
+
+function resolveScenarioImageUrl(url?: string | null, seed?: number | string, width = 1200, height = 700) {
+  const invalid = !url || typeof url !== "string" || ["null", "none", "undefined", ""].includes(url.trim().toLowerCase());
+  if (invalid) return getScenarioImage(seed ?? Math.random(), width, height);
+  return url;
+}
 
 export default function TemplateContainer() {
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [voicesMap, setVoicesMap] = useState<Record<string, VoiceItem>>({});
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let abort = false;
+    (async () => {
+      try {
+        const [sc, vr] = await Promise.allSettled([
+          fetchPublicScenarios(),
+          fetchVoices(),
+        ]);
+        if (abort) return;
+
+        if (sc.status === "fulfilled") {
+          setScenarios(sc.value || []);
+        } else {
+          setScenarios([]);
+        }
+
+        if (vr.status === "fulfilled") {
+          const map: Record<string, VoiceItem> = {};
+          (vr.value.voices || []).forEach((v) => { map[v.id] = v; });
+          setVoicesMap(map);
+        } else {
+          setVoicesMap({});
+        }
+      } finally {
+        if (!abort) setLoading(false);
+      }
+    })();
+    return () => { abort = true };
+  }, []);
+
   return (
     <section className="py-20 md:py-28">
       <div className="container mx-auto px-4">
@@ -126,25 +83,87 @@ export default function TemplateContainer() {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
-          {templates.map((template, index) => (
-            <TemplateCard
-              key={index}
-              title={template.title}
-              description={template.description}
-              icon={template.icon}
-              tags={template.tags}
-              difficulty={template.difficulty}
-              duration={template.duration}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-3xl overflow-hidden border border-default-100 glass-card">
+                <div className="w-full aspect-[32/9] bg-default-100 animate-pulse" />
+                <div className="p-6 space-y-3">
+                  <div className="h-5 w-2/3 bg-default-100 rounded animate-pulse" />
+                  <div className="h-4 w-full bg-default-100 rounded animate-pulse" />
+                  <div className="h-4 w-3/4 bg-default-100 rounded animate-pulse" />
+                  <div className="h-7 w-36 bg-default-100 rounded-full animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
+            {scenarios.map((s) => {
+              const voice = s.preferred_voice_id ? voicesMap[s.preferred_voice_id] : undefined;
+              return (
+                <Card
+                  key={s.id}
+                  className="group relative overflow-hidden shadow-lg border-default-100 h-full rounded-3xl bg-gradient-to-br from-pink-50 via-white to-sky-50 dark:from-default-50/10 dark:via-default-50/5 dark:to-default-50/10 glass-card cursor-pointer"
+                  isPressable
+                  onPress={() => navigate(`/templates/${s.id}`)}
+                >
+                  {/* Hero image */}
+                  <div className="relative">
+                    <div className="aspect-[32/9] overflow-hidden">
+                      <img
+                        src={resolveScenarioImageUrl(s.background_image_url, s.id, 380, 110)}
+                        alt={s.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="absolute top-4 left-4 flex items-center gap-2">
+                      <div className="px-3 py-1 rounded-full bg-black/60 text-white text-xs backdrop-blur">
+                        {getLanguageFlag(s.language)} {s.language.charAt(0) + s.language.slice(1).toLowerCase()}
+                      </div>
+                      {voice && (
+                        <div className="px-3 py-1 rounded-full bg-black/60 text-white text-xs backdrop-blur">
+                          {voice.name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-        <div className="text-center mt-12">
-          <button className="px-8 py-3 rounded-full bg-gradient-primary text-white font-semibold hover:scale-105 transition-transform">
-            Alle Szenarien anzeigen
-          </button>
-        </div>
+                  <CardBody className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 rounded-xl bg-gradient-primary text-white shrink-0">
+                        <PhoneIcon className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-extrabold tracking-tight truncate">
+                            {s.title}
+                          </h3>
+                        </div>
+                        <p className="mt-2 text-sm text-default-600 line-clamp-3">
+                          {s.description || ""}
+                        </p>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <Chip size="sm" variant="flat" color="primary" className="rounded-full">
+                            {getLanguageFlag(s.language)} {s.language.charAt(0) + s.language.slice(1).toLowerCase()}
+                          </Chip>
+                          {s.preferred_voice_id && (
+                            <Chip size="sm" variant="flat" color="secondary" className="rounded-full">
+                              {voice?.name ?? s.preferred_voice_id}
+                            </Chip>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
       </div>
     </section>
   );

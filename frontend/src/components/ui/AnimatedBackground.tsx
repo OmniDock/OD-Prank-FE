@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { PhoneIcon, ChatBubbleLeftRightIcon, SpeakerWaveIcon } from "@heroicons/react/24/solid";
+import { CustomPhoneIcon } from "../icons";
 
 interface AnimatedBackgroundProps {
   variant?: "phones" | "speakers" | "mixed";
@@ -12,6 +13,7 @@ export default function AnimatedBackground({
   density = 15,
   className = ""
 }: AnimatedBackgroundProps) {
+
   const floatingPhones = useMemo(
     () =>
       Array.from({ length: variant === "speakers" ? 0 : density }, (_, i) => ({
@@ -47,6 +49,19 @@ export default function AnimatedBackground({
       })),
     [density, variant]
   );
+
+  const customPhones = useMemo(
+    () =>
+      Array.from({ length: variant === "mixed" ? Math.max(0, Math.floor(density / 2)) : 0 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        delay: Math.random() * 15,
+        duration: 12 + Math.random() * 10,
+      })),
+    [density, variant]
+  );
+
 
   return (
     <div className={`fixed inset-0 -z-10 overflow-hidden ${className}`}>
@@ -103,6 +118,23 @@ export default function AnimatedBackground({
           <ChatBubbleLeftRightIcon className="w-14 h-14 text-purple-600 dark:text-purple-400" />
         </div>
       ))}
+
+      {customPhones.map((phone) => (
+        <div
+          key={`phone-${phone.id}`}
+          className="absolute opacity-[0.05] dark:opacity-[0.09] animate-float"
+          style={{
+            left: `${phone.left}%`,
+            top: `${phone.top}%`,
+            animationDelay: `${phone.delay}s`,
+            animationDuration: `${phone.duration}s`,
+          }}
+        >
+          <CustomPhoneIcon className="w-14 h-14 text-purple-600 dark:text-purple-400" />
+        </div>
+      ))}
+
+      
     </div>
   );
 }

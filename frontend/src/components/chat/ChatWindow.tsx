@@ -1,13 +1,13 @@
 
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Spinner, Switch, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { Button, Spinner, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
 import MessageCard from "@/components/ai/MessageCard";
 import PromptInputFullLine from "@/components/ai/PromptInputFullLine";
 import { useAuth } from "@/context/AuthProvider";
 import { DesignChatWebSocket } from "@/lib/api.design-chat";
 import type { DesignChatMessage } from "@/types/design-chat";
-import { SparklesIcon, EyeIcon, EyeSlashIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import { SparklesIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import { Logo } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
 
@@ -35,7 +35,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   
   // Design chat state
   const [currentDraft, setCurrentDraft] = useState("");
-  const [showDetails, setShowDetails] = useState(false);
+  // const [showDetails, setShowDetails] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   
   const wsRef = useRef<DesignChatWebSocket | null>(null);
@@ -275,7 +275,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
       setIsConnected(false);
       setIsConnecting(false);
       setCurrentDraft("");
-      setShowDetails(false);
+      // setShowDetails(false);
       try { onReset && onReset(); } catch {}
       // Reconnect fresh (will send greeting)
       await connectWebSocket();
@@ -333,8 +333,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
             </div>
           )}
 
-          {/* Toggle Details Button */}
-          {hasStarted && currentDraft && (
+          {/* {hasStarted && currentDraft && (
             <div className="px-6 py-2 -mx-6 border-t border-divider">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-default-500">Szenario-Entwurf anzeigen</span>
@@ -349,7 +348,6 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
             </div>
           )}
           
-          {/* Current Draft Preview - Only show when toggled */}
           {showDetails && currentDraft && hasStarted && (
             <div className="px-6 py-3 -mx-6 bg-primary-50/50 border-divider ">
               <div className="flex items-center justify-between">
@@ -357,13 +355,13 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
               </div>
               <p className="text-sm whitespace-pre-wrap">{currentDraft}</p>
             </div>
-          )}
+          )} */}
           
           <div ref={messagesEndRef} />
         </div>
         
         {/* Input Area (always visible) */}
-        <div className="px-4 py-3 border-t border-divider shrink-0">
+        <div className="px-4 py-3  border-divider shrink-0">
           <div className="flex gap-2">
             <PromptInputFullLine
               value={input}
@@ -381,6 +379,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
                   ? "Schreibe deine Antwort..." 
                   : "Beschreibe deine Prank-Idee..."
               }
+              onResetPress={(hasStarted || !!streamingMessage) ? () => setIsConfirmOpen(true) : undefined}
             />
           </div>
           
@@ -418,36 +417,22 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
           )}
         </div>
       </div>
-      {(hasStarted || streamingMessage) && (
-        <div className="fixed bottom-6 right-6 z-30">
-          <Button
-            variant="shadow"
-            onPress={() => setIsConfirmOpen(true)}
-            aria-label="Reset Chat"
-            color="primary"
-            startContent={<ArrowPathIcon className="w-5 h-5" />}
-          >
-            Reset Chat
-          </Button>
-
-          <Modal isOpen={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-            <ModalContent>
-              <ModalHeader>Reset Chat</ModalHeader>
-              <ModalBody>
-                Are you sure you want to reset the chat? This will clear the conversation and draft.
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="light" onPress={() => setIsConfirmOpen(false)}>
-                  Cancel
-                </Button>
-                <Button color="primary" onPress={handleResetChat} startContent={<ArrowPathIcon className="w-4 h-4" />}>
-                  Reset Chat
-                </Button>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
-        </div>
-      )}
+      <Modal isOpen={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <ModalContent>
+          <ModalHeader>Reset Chat</ModalHeader>
+          <ModalBody>
+            Are you sure you want to reset the chat? This will clear the conversation and draft.
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onPress={() => setIsConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button color="primary" onPress={handleResetChat} startContent={<ArrowPathIcon className="w-4 h-4" />}>
+              Reset Chat
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

@@ -218,8 +218,8 @@ function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: In
             <span className="text-2xl">🔊</span>
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-foreground">Select Voice</h3>
-            <p className="text-sm text-default-500">Choose a voice to enable audio generation. This cannot be changed later.</p>
+            <h3 className="text-lg font-semibold text-foreground">Sprache auswählen</h3>
+            <p className="text-sm text-default-500">Wähle eine Sprache, um Audio-Generierung zu starten. Dies kann später nicht mehr geändert werden.</p>
           </div>
         </div>
 
@@ -253,7 +253,7 @@ function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: In
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {filtered.map((v) => {
             const isActive = previewingId === v.id && isPlaying;
             return (
@@ -270,41 +270,56 @@ function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: In
                     />
                   </div>
                 )}
-                <div className="absolute top-2 right-2 z-20 pointer-events-none opacity-90">
-                  {isActive ? (
-                    <StopIcon className="w-5 h-5 text-foreground" />
-                  ) : (
-                    <PlayIcon className="w-5 h-5 text-foreground" />
-                  )}
-                </div>
                 <div className="relative z-10">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold overflow-hidden">
-                          {v.avatar_url ? (
-                            <img
-                              src={v.avatar_url}
-                              alt={v.name}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                          ) : v.name?.[0] ? (
-                            v.name[0].toUpperCase()
-                          ) : (
-                            <UserIcon className="w-4 h-4" />
-                          )}
-                        </div>
-                        <span className="font-medium">{v.name}</span>
+                  <div className="flex items-start gap-4">
+                    <div className="relative w-20 h-20 md:w-24 md:h-24 shrink-0">
+                      <div className="relative z-10 w-full h-full rounded-full overflow-hidden ring-2 ring-white/80 shadow-lg bg-white flex items-center justify-center">
+                        {v.avatar_url ? (
+                          <img
+                            src={v.avatar_url}
+                            alt={v.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : v.name?.[0] ? (
+                          <span className="text-lg md:text-xl font-semibold text-primary">
+                            {v.name[0].toUpperCase()}
+                          </span>
+                        ) : (
+                          <UserIcon className="w-8 h-8 text-primary" />
+                        )}
+                      </div>
+                      <Button
+                        isIconOnly
+                        size="sm"
+                        color={isActive ? "default" : "primary"}
+                        variant={isActive ? "flat" : "light"}
+                        onClick={(e) => { e.stopPropagation(); handleCardClick(v); }}
+                        className="absolute -bottom-2 -right-2 z-20 rounded-full bg-white/80 backdrop-blur border border-default-200 shadow"
+                        aria-label={isActive ? "Stop" : "Play"}
+                      >
+                        {isActive ? (
+                          <StopIcon className="w-4 h-4" />
+                        ) : (
+                          <PlayIcon className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center flex-wrap gap-2">
+                        <span className="font-semibold text-base">{v.name}</span>
                         <Chip size="sm" variant="flat">{v.gender}</Chip>
                         {v.languages.map(l => (
                           <Chip key={`${v.id}-${l}`} size="sm" variant="flat">{l}</Chip>
                         ))}
                       </div>
-                      {v.description && <div className="text-xs text-default-500 mt-1">{v.description}</div>}
+                      {v.description && <div className="text-md text-default-500 mt-1 line-clamp-2">{v.description}</div>}
                     </div>
                   </div>
                 </div>
-                <div className={`mt-3 transition-opacity ${isActive ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+                <div className={`mt-3 flex flex-row justify-between items-center gap-3 transition-opacity ${isActive ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+                  <Button size="sm" color="primary" className="w-full bg-gradient-primary" onClick={(e) => { e.stopPropagation(); handleCardClick(v); }}>
+                    Preview
+                  </Button>
                   <Button size="sm" color="primary" className="w-full bg-gradient-primary" onClick={(e) => { e.stopPropagation(); void onSelect(v.id); }}>
                     Select
                   </Button>
