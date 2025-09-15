@@ -53,4 +53,14 @@ export async function createCustomer(
 }
 
 
-
+export async function cancelSubscription(
+  subscriptionId: string
+) {
+  const response = await apiFetch('/payment/cancel', {
+    method: 'POST',
+    body: JSON.stringify({
+      subscription_id: subscriptionId
+    })
+  });
+  return response.json();
+}

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Card, CardBody, CardHeader, Spinner, Button } from "@heroui/react";
 import { getProfile } from "@/lib/api.profile";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
+import { cancelSubscription } from "@/lib/api.stripe";
 
 // Helper function to get German subscription display names
 const getSubscriptionDisplayName = (subscriptionType: string | null): string => {
@@ -26,6 +27,7 @@ interface ProfileData {
   updated_at: string;
   user_email: string;
   user_id: string;
+  cancel_at: number | null;
 }
 
 export default function ProfilePage() {
@@ -33,6 +35,29 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
+  const cancelSubscriptionFn = async () => {
+    if (!profile?.subscription_id) return;
+    
+    try {
+      setCancelling(true);
+      const response = await cancelSubscription(profile.subscription_id as string);
+      
+      const result = await response;
+      
+      // Update profile with the cancellation info
+      setProfile(prev => prev ? {
+        ...prev,
+        cancel_at: result.cancel_at
+      } : null);
+      
+    } catch (err: any) {
+      setError(err?.message || "Fehler beim Beenden des Abonnements");
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -194,10 +219,33 @@ export default function ProfilePage() {
                 </Link>
               </div>
             ) : (
-              <div className="text-center py-4">
+              <div className="relative text-center py-4">
                 <div className="text-lg font-semibold text-success mb-2">
                   Aktiver Plan: {getSubscriptionDisplayName(profile.subscription_type)}
                 </div>
+                {profile.cancel_at && (
+                  <div className="text-sm text-default-500">
+                    Abo endet am {new Date(profile.cancel_at * 1000).toLocaleDateString('de-DE', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </div>
+                )}
+                {profile.subscription_id && profile.subscription_type && !profile.cancel_at && (
+                  <div className="absolute bottom-0 left-0">
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      color="danger"
+                      onPress={cancelSubscriptionFn}
+                      isLoading={cancelling}
+                      className="text-xs"
+                    >
+                      Abo Beenden
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </CardBody>
