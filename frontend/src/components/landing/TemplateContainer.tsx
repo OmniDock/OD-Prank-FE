@@ -84,8 +84,8 @@ export default function TemplateContainer() {
         </div>
         
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-8">
+            {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="rounded-3xl overflow-hidden border border-default-100 glass-card">
                 <div className="w-full aspect-[32/9] bg-default-100 animate-pulse" />
                 <div className="p-6 space-y-3">
@@ -98,7 +98,7 @@ export default function TemplateContainer() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-8">
             {scenarios.map((s) => {
               const voice = s.preferred_voice_id ? voicesMap[s.preferred_voice_id] : undefined;
               return (
@@ -110,7 +110,7 @@ export default function TemplateContainer() {
                 >
                   {/* Hero image */}
                   <div className="relative">
-                    <div className="aspect-[32/9] overflow-hidden bg-default-100">
+                    <div className="aspect-[16/9] overflow-hidden bg-default-100">
                       <img
                         src={resolveScenarioImageUrl(s.background_image_url, s.id, 380, 110)}
                         alt={s.title}

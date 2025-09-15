@@ -31,6 +31,13 @@ function resolveScenarioImageUrl(url?: string | null, seed?: number | string, wi
   return url;
 }
 
+function stripTtsDirectives(text?: string | null) {
+  if (!text) return "";
+  // Remove bracketed directives like [whispers], [laughs], etc., and collapse whitespace
+  const withoutDirectives = text.replace(/\s*\[[^\]]+\]\s*/g, " ");
+  return withoutDirectives.replace(/\s+/g, " ").trim();
+}
+
 export default function TemplateDetailPage() {
   const { id } = useParams();
   const [scenario, setScenario] = useState<Scenario | null>(null);
@@ -174,8 +181,8 @@ export default function TemplateDetailPage() {
             <div className="w-full h-[44vh] bg-default-100 animate-pulse" />
           </div>
         ) : scenario ? (
-          <div className="w-full pt-8 md:pt-12">
-            <div className="w-full h-[44vh] overflow-hidden bg-default-100">
+          <div className="w-full pt-8 md:pt-12 relative rounded-3xl">
+            <div className="w-full h-[44vh] overflow-hidden bg-default-100 relative rounded-3xl">
               <img
                 src={resolveScenarioImageUrl(scenario.background_image_url, scenario.id, 1800, 900)}
                 alt={scenario.title}
@@ -183,6 +190,16 @@ export default function TemplateDetailPage() {
                 loading="lazy"
               />
             </div>
+            {voice?.avatar_url && (
+              <div className="absolute -bottom-6 -right-6 md:-bottom-8 md:-right-8 z-20">
+                <img
+                  src={voice.avatar_url}
+                  alt={voice.name}
+                  className="w-30 h-30 md:w-40 md:h-40 rounded-full ring-2 ring-background/70 shadow-xl object-cover bg-white"
+                  loading="lazy"
+                />
+              </div>
+            )}
           </div>
         ) : null}
 
@@ -208,9 +225,9 @@ export default function TemplateDetailPage() {
                   <Chip size="sm" variant="flat" color="primary" className="rounded-full">
                     {getLanguageFlag(scenario.language)} {scenario.language.charAt(0) + scenario.language.slice(1).toLowerCase()}
                   </Chip>
-                  {scenario.preferred_voice_id && (
+                  {voice?.name && (
                     <Chip size="sm" variant="flat" color="secondary" className="rounded-full">
-                      {voice?.name ?? scenario.preferred_voice_id}
+                      {voice.name}
                     </Chip>
                   )}
                 </div>
@@ -223,32 +240,42 @@ export default function TemplateDetailPage() {
               <div>
                 <h2 className="text-2xl font-bold mb-4">Voice Lines</h2>
                 <div className="space-y-4">
-                  {scenario.voice_lines.map((vl: VoiceLine) => (
-                    <Card key={vl.id} className="border-default-200/60 hover:shadow-lg transition-shadow">
-                      <CardBody className="relative">
-                        {/* Progress overlay */}
-                        {playingId === vl.id && (
-                          <div className="absolute inset-0 z-0 overflow-hidden rounded-medium pointer-events-none">
-                            <div
-                              className={`h-full bg-emerald-500/30 ${isPaused ? "opacity-60" : "opacity-90"}`}
-                              style={{ width: `${Math.min(progress * 100, 100)}%` }}
-                            />
-                          </div>
+                  {scenario.voice_lines.map((vl: VoiceLine, idx: number) => {
+                    const showSeparator = idx > 0 && scenario.voice_lines[idx - 1]?.type !== vl.type;
+                    return (
+                      <div key={vl.id}>
+                        {showSeparator && (
+                          <div className="h-1 w-full bg-primary rounded-full my-2 opacity-80" />
                         )}
+                        <Card className="border-default-200/60 hover:shadow-lg transition-shadow">
+                          <CardBody className="relative">
+                            {/* Progress overlay */}
+                            {playingId === vl.id && (
+                              <div className="absolute inset-0 z-0 overflow-hidden rounded-medium pointer-events-none">
+                                <div
+                                  className={`h-full bg-emerald-500/30 ${isPaused ? "opacity-60" : "opacity-90"}`}
+                                  style={{ width: `${Math.min(progress * 100, 100)}%` }}
+                                />
+                              </div>
+                            )}
 
-                        <div className="relative z-10 flex flex-col gap-2 md:flex-row md:items-center md:justify-between cursor-pointer"
-                             onClick={() => handlePlayCard(vl.id, vl.preferred_audio?.signed_url)}>
-                          <div>
-                            <div className="text-sm text-default-400">#{vl.order_index + 1} • {vl.type}</div>
-                            <div className="font-medium">{vl.text}</div>
-                          </div>
-                          <div className="text-xs text-default-500">
-                            {vl.preferred_audio?.signed_url ? (playingId === vl.id ? (isPaused ? "Paused" : "Playing…") : "Tap to play") : "Audio nicht verfügbar"}
-                          </div>
-                        </div>
-                      </CardBody>
-                    </Card>
-                  ))}
+                            <div
+                              className="relative z-10 flex flex-col gap-2 md:flex-row md:items-center md:justify-between cursor-pointer"
+                              onClick={() => handlePlayCard(vl.id, vl.preferred_audio?.signed_url)}
+                            >
+                              <div>
+                                <div className="text-sm text-default-400">#{vl.order_index + 1} • {vl.type}</div>
+                                <div className="font-medium">{stripTtsDirectives(vl.text)}</div>
+                              </div>
+                              {/* <div className="text-xs text-default-500">
+                                {vl.preferred_audio?.signed_url ? (playingId === vl.id ? (isPaused ? "Paused" : "Playing…") : "Tap to play") : "Audio nicht verfügbar"}
+                              </div> */}
+                            </div>
+                          </CardBody>
+                        </Card>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

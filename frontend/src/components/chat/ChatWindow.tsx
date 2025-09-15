@@ -7,7 +7,7 @@ import PromptInputFullLine from "@/components/ai/PromptInputFullLine";
 import { useAuth } from "@/context/AuthProvider";
 import { DesignChatWebSocket } from "@/lib/api.design-chat";
 import type { DesignChatMessage } from "@/types/design-chat";
-import { SparklesIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import { SparklesIcon, ArrowPathIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { Logo } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
 
@@ -43,6 +43,18 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   const hasInjectedInitialPromptRef = useRef<boolean>(false);
   const hasStarted = messages.length > 0;
   const hasUserMessage = messages.some((m) => m.role === 'user');
+  const canCreate = hasUserMessage && !loading;
+  const lastRole = messages.length ? messages[messages.length - 1].role : undefined;
+  const isUserTurn = !lastRole || lastRole === 'assistant';
+
+  const [ctaVisible, setCtaVisible] = useState(false);
+  useEffect(() => {
+    if (canCreate) {
+      const t = setTimeout(() => setCtaVisible(true), 150);
+      return () => clearTimeout(t);
+    }
+    setCtaVisible(false);
+  }, [canCreate]);
   
   // Auto-connect when user starts typing or on mount
   useEffect(() => {
@@ -201,6 +213,10 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
     const messageContent = (content || input).trim();
     if (!messageContent) return;
     
+    // Enforce one-by-one turns: block if AI is responding/streaming or last was user
+    const last = messages.length ? messages[messages.length - 1] : undefined;
+    if (isAiTyping || !!streamingMessage || (last && last.role === 'user')) return;
+    
     // Expand on first message
     if (!hasStarted) {
       try { onExpand && onExpand(); } catch {}
@@ -285,7 +301,29 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   };
   
   return (
-    <div className="w-full max-w-4xl mx-auto max-h-full ">
+    <div className="w-full max-w-4xl mx-auto max-h-full relative">
+      {canCreate && (
+        <div
+          className={`hidden md:flex absolute -top-6 left-1/2 -translate-x-1/2 z-40 transform-gpu transition-all duration-500 ${
+            ctaVisible ? 'opacity-100' : 'opacity-0 '
+          }`}
+        >
+          <div className="inline-flex items-center gap-3 rounded-full border border-divider/60 bg-background/90 backdrop-blur-md shadow-lg px-2 py-2 ring-1 ring-primary/10">
+            <Button
+              className="bg-gradient-primary rounded-full"
+              color="primary"
+              size="lg"
+              onPress={handleFinalize}
+              isLoading={loading}
+              startContent={!loading && <SparklesIcon className="w-4 h-4" />}
+              endContent={!loading && <ArrowRightIcon className="w-4 h-4" />}
+              disabled={loading}
+            >
+              Bereit, das Szenario zu erstellen?
+            </Button>
+          </div>
+        </div>
+      )}
       {/* Chat Container with Border */}
       <div className="bg-background/60 backdrop-blur-md border border-divider rounded-2xl shadow-lg flex flex-col h-full min-h-0 overflow-hidden">
         {/* Scrollable Content (messages + optional details) */}
@@ -373,7 +411,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
                 }
               }}
               onSubmit={() => handleSendMessage()}
-              disabled={loading}
+              disabled={!!loading || isAiTyping || !isUserTurn}
               placeholder={
                 hasStarted 
                   ? "Schreibe deine Antwort..." 
@@ -383,20 +421,20 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
             />
           </div>
           
-          {/* Generate Button - Show only after first user message */}
+          {/* Generate Button - Mobile only; desktop shows floating CTA */}
           {hasUserMessage && (
-            <div className="mt-3">
+            <div className="mt-3 md:hidden">
               <Button
                 color="primary"
-                size="md"
+                size="sm"
                 fullWidth
                 onClick={handleFinalize}
                 isLoading={loading}
-                startContent={!loading && <SparklesIcon className="w-5 h-5" />}
-                className="bg-gradient-primary"
+                startContent={!loading && <SparklesIcon className="w-4 h-4" />}
+                className="bg-gradient-primary text-sm py-2"
                 disabled={loading}
               >
-                {loading ? 'Szenario wird generiert...' : 'Szenario jetzt erstellen'}
+                {loading ? 'Szenario wird generiert...' : 'Jetzt Szenario erstellen'}
               </Button>
             </div>
           )}
@@ -417,6 +455,8 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
           )}
         </div>
       </div>
+
+      
       <Modal isOpen={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <ModalContent>
           <ModalHeader>Reset Chat</ModalHeader>

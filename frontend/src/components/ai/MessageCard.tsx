@@ -18,7 +18,7 @@ export default function MessageCard({ avatar, avatarName, avatarNode, message, s
       <div {...props} className={["flex gap-3 justify-end mb-3", className].join(" ")}> 
         <div className={[
           "relative px-4 py-3 rounded-medium max-w-[80%]",
-          failed ? "bg-danger-100/50 border border-danger-100 text-foreground" : "bg-content2 text-default-600",
+          failed ? "bg-danger-100/50 border border-danger-100 text-foreground" : "bg-default-100 text-default-700 border border-default-200",
         ].join(" ")}>
           <div className="text-small whitespace-pre-wrap">{message}</div>
         </div>
@@ -48,7 +48,7 @@ export default function MessageCard({ avatar, avatarName, avatarNode, message, s
       </div>
       <div className={[
         "relative px-4 py-3 rounded-medium max-w-[80%]",
-        failed ? "bg-danger-100/50 border border-danger-100 text-foreground" : "bg-content2 text-default-600",
+        failed ? "bg-danger-100/50 border border-danger-100 text-foreground" : "bg-violet-50 text-violet-700 border border-violet-200",
       ].join(" ")}> 
         <div className="text-small whitespace-pre-wrap">{message}</div>
       </div>
