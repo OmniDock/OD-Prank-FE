@@ -42,7 +42,7 @@ export default function LandingNavbar({ hideAuthButtons = false }: LandingNavbar
               scrolled ? "text-2xl" : "text-2xl",
             ].join(" ")}
           >
-            Call It AI
+            PrankGPT
           </span>
         </Link>
 
