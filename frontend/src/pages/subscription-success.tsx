@@ -1,11 +1,11 @@
-import { useParams } from "react-router-dom";
+// import { useParams } from "react-router-dom";
 import DefaultLayout from "@/layouts/default";
 import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 
 export default function SubscriptionSuccessPage() {
-  const { sessionId } = useParams<{ sessionId: string }>();
+  // const { sessionId } = useParams<{ sessionId: string }>();
   return (
     <DefaultLayout>
       <AnimatedBackground variant="mixed" density={12} />

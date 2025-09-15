@@ -3,15 +3,13 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/components/navigation/sidebar";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import { Button } from "@heroui/react";
-import { ArrowLeftIcon, ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
-import { useAuth } from "@/context/AuthProvider";
+import { ArrowLeftIcon} from "@heroicons/react/24/outline";
 import { useLocation } from "react-router-dom";
 import UserDropdown from "@/components/ui/userDropdown";
 
 export default function DashboardLayout() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState<boolean>(true);
-  const { signOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

@@ -16,7 +16,6 @@ import {
 } from "@heroicons/react/24/outline";
 import AuthLayout from "@/layouts/auth";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
-import { getProfile } from "@/lib/api.profile";
 
 export default function SignInPage() {
 	const [email, setEmail] = useState("");

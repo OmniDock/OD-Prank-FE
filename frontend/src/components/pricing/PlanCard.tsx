@@ -5,7 +5,6 @@ import { Plan } from "@/types/products";
 
 export default function PlanCard({
   plan,
-  billing,
   onPlanSelect,
 }: {
   plan: Plan;
