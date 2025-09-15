@@ -110,11 +110,11 @@ export default function TemplateContainer() {
                 >
                   {/* Hero image */}
                   <div className="relative">
-                    <div className="aspect-[32/9] overflow-hidden">
+                    <div className="aspect-[32/9] overflow-hidden bg-default-100">
                       <img
                         src={resolveScenarioImageUrl(s.background_image_url, s.id, 380, 110)}
                         alt={s.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                        className="w-full h-full object-fill"
                         loading="lazy"
                       />
                     </div>

@@ -175,11 +175,11 @@ export default function TemplateDetailPage() {
           </div>
         ) : scenario ? (
           <div className="w-full pt-8 md:pt-12">
-            <div className="w-full h-[44vh] overflow-hidden">
+            <div className="w-full h-[44vh] overflow-hidden bg-default-100">
               <img
                 src={resolveScenarioImageUrl(scenario.background_image_url, scenario.id, 1800, 900)}
                 alt={scenario.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-fill"
                 loading="lazy"
               />
             </div>
