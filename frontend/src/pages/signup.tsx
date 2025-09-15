@@ -191,7 +191,7 @@ export default function SignUpPage() {
 								animate={{ opacity: 1 }}
 								transition={{ delay: 0.4 }}
 							>
-								Already have an account?{" "}
+								Hast du bereits ein Konto?{" "}
 								<Link 
 									href="/signin" 
 									className="text-primary font-semibold hover:underline"
@@ -218,7 +218,7 @@ export default function SignUpPage() {
 							>
 								<Input
 									type="email"
-									label="Email"
+									label="E-Mail"
 									placeholder="you@example.com"
 									value={email}
 									onChange={(e) => setEmail(e.target.value)}
@@ -235,8 +235,8 @@ export default function SignUpPage() {
 								/>
 								
 								<Input
-									label="Password"
-									placeholder="Create a strong password"
+									label="Passwort"
+									placeholder="Erstelle ein starkes Passwort"
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
 									startContent={
