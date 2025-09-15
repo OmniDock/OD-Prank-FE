@@ -19,7 +19,7 @@ export default function Stats() {
         className="px-4 py-5"
       >
         <div className="flex flex-row justify-center items-center gap-2">
-          <span className="text-gradient font-semibold text-lg">25+</span> <span className="font-semibold">Stimmen</span>
+          <span className="text-gradient font-semibold text-lg">10+</span> <span className="font-semibold">Stimmen</span>
         </div>
       </Chip>
       
