@@ -17,6 +17,19 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
   const [isActiveModalOpen, setIsActiveModalOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
+  
+  const visibleCount =
+    (scenario.target_name ? 1 : 0) +
+    (scenario.language ? 1 : 0) +
+    (scenario.scenario_analysis?.analysis?.persona_name ? 1 : 0) +
+    (scenario.scenario_analysis?.analysis?.persona_gender ? 1 : 0);
+
+  const gridColsClass = {
+    1: "grid-cols-1",
+    2: "grid-cols-2",
+    3: "grid-cols-3",
+    4: "grid-cols-4",
+  }[Math.min(visibleCount || 1, 4) as 1 | 2 | 3 | 4];
 
   async function handleDeleteConfirm() {
     if (!scenario) return;
@@ -71,7 +84,9 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
         {expanded && (
         <div className="space-y-4">
           {/* Target and Language Row (on top) */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid ${gridColsClass} gap-4`}>
+
+            {scenario.target_name && (
             <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-primary/5 to-primary/10">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-primary" aria-hidden>🎯</span>
@@ -79,7 +94,9 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
               </div>
               <div className="text-base font-semibold text-foreground">{scenario.target_name}</div>
             </div>
-            
+            )}
+
+            {scenario.language && (
             <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-secondary/5 to-secondary/10">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-secondary" aria-hidden>🗣️</span>
@@ -87,9 +104,9 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
               </div>
               <div className="text-base font-semibold text-foreground">{scenario.language}</div>
             </div>
+            )}
 
-
-            
+            {scenario.scenario_analysis?.analysis?.persona_name && (
             <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-secondary/5 to-secondary/10">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-primary" aria-hidden>🎭</span>
@@ -97,7 +114,10 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
               </div>
               <div className="text-base font-semibold text-foreground">{scenario.scenario_analysis?.analysis?.persona_name}</div>
             </div>
-            
+            )}
+
+            {scenario.scenario_analysis?.analysis?.persona_gender && (
+
             <div className="p-4 rounded-xl border border-default-200 bg-gradient-to-br from-secondary/5 to-secondary/10">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-secondary" aria-hidden>🚻</span>
@@ -105,6 +125,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
               </div>
               <div className="text-base font-semibold text-foreground">{scenario.scenario_analysis?.analysis?.persona_gender}</div>
             </div>
+            )}
           </div>
 
           {/* Description (below) */}
