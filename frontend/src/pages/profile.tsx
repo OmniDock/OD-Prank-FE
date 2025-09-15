@@ -95,11 +95,11 @@ export default function ProfilePage() {
             </div>
           </CardHeader>
           <CardBody className="space-y-4">
-            <div>
+            <div className="p-3 bg-default-50 rounded-lg">
               <label className="text-sm font-medium text-default-600">E-Mail-Adresse</label>
-              <div className="text-lg font-medium text-foreground">{profile.user_email}</div>
+              <div className="text-lg font-medium text-foreground break-all">{profile.user_email}</div>
             </div>
-            <div>
+            <div className="p-3 bg-default-50 rounded-lg">
               <label className="text-sm font-medium text-default-600">Mitglied seit</label>
               <div className="text-lg font-medium text-foreground">
                 {new Date(profile.created_at).toLocaleDateString('de-DE', {
@@ -142,7 +142,7 @@ export default function ProfilePage() {
                 <div className="text-xs text-default-500">Für Streich-Szenarien</div>
               </div>
               <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
-                <div className="text-2xl font-semibold text-success">{profile.prank_credits}</div>
+                <div className="text-2xl font-bold text-success">{profile.prank_credits}</div>
               </div>
             </div>
           </CardBody>
@@ -164,7 +164,7 @@ export default function ProfilePage() {
             {!profile.subscription_type ? (
               <div className="text-center py-6">
                 <div className="mb-4">
-                  <div className="text-md font-semibold text-default-700 mb-2">
+                  <div className="text-lg font-semibold text-default-700 mb-2">
                     Derzeit noch kein Abonnement
                   </div>
                 </div>
