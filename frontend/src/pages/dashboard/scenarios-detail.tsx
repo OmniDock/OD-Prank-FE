@@ -35,7 +35,7 @@ export default function ScenarioDetailPage() {
       const data = await fetchScenario(id);
       setScenario(data);
     } catch (error) {
-      console.error('Failed to refetch scenario:', error);
+      console.error('Fehler beim Aktualisieren des Szenarios:', error);
     }
   };
 
@@ -44,7 +44,7 @@ export default function ScenarioDetailPage() {
       if (!id) return;
       try {
         const data = await fetchScenario(id);
-        console.log('Scenario loaded:', data);
+        console.log('Szenario geladen:', data);
         setScenario(data);
       } finally {
         setLoading(false);
@@ -65,7 +65,7 @@ export default function ScenarioDetailPage() {
 
   function onOpenPlayer(voiceLineId: number) {
     if (!scenario || !scenario.preferred_voice_id) {
-      addToast({ title: "No voice selected", description: "Select a voice first to play audio.", color: "warning", timeout: 3000 });
+      addToast({ title: "Keine Stimme ausgewählt", description: "Wähle eine Stimme, um Audio abzuspielen.", color: "warning", timeout: 3000 });
         return;
       }
 
@@ -86,7 +86,7 @@ export default function ScenarioDetailPage() {
       // Refetch scenario to get updated audio availability
       await refetchScenario();
       addToast({
-        title: "Preferred voice updated",
+        title: "Bevorzugte Stimme aktualisiert",
         description: `${voices.find(v=>v.id===voiceId)?.name ?? voiceId} will be used for this scenario`,
         color: "success",
         timeout: 3000,
@@ -95,7 +95,7 @@ export default function ScenarioDetailPage() {
       void generateScenarioTTS({ scenario_id: scenario.id, voice_id: voiceId })
         .then((res) => {
           addToast({
-            title: "Generation started",
+            title: "Generation gestartet",
             description: `Starting audio generation for ${res.total_processed ?? "all"} lines`,
             color: "primary",
             timeout: 2500,
@@ -105,7 +105,7 @@ export default function ScenarioDetailPage() {
         })
         .catch(() => {
           addToast({
-            title: "Generation failed",
+            title: "Generation fehlgeschlagen",
             description: "Could not start scenario TTS generation.",
             color: "danger",
             timeout: 4000,
@@ -113,7 +113,7 @@ export default function ScenarioDetailPage() {
         });
     } catch (e) {
       addToast({
-        title: "Update failed",
+        title: "Update fehlgeschlagen",
         description: "Failed to set preferred voice",
         color: "danger",
         timeout: 5000,
@@ -125,7 +125,7 @@ export default function ScenarioDetailPage() {
 
   if (loading) {
     return (
-      <LoadingScreen message="Szenario wird geladen..." />
+      <LoadingScreen message="Szenario wird geladen…" />
     );
   }
   if (!scenario) return null;
@@ -151,7 +151,7 @@ export default function ScenarioDetailPage() {
       {!scenario.is_safe && scenario.is_not_safe_reason && (
         <Card>
           <CardBody>
-            <div className="text-sm">Not safe because: {scenario.is_not_safe_reason}</div>
+            <div className="text-sm">Nicht sicher, weil: {scenario.is_not_safe_reason}</div>
           </CardBody>
         </Card>
       )}

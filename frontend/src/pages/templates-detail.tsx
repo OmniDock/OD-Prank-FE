@@ -5,6 +5,7 @@ import { fetchPublicScenario } from "@/lib/api.scenarios";
 import type { Scenario, VoiceLine } from "@/types/scenario";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
+import { labelLanguage, labelVoiceLineType } from "@/lib/i18n";
 import { fetchVoices } from "@/lib/api.tts";
 import type { VoiceItem } from "@/types/tts";
 // import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
@@ -223,7 +224,7 @@ export default function TemplateDetailPage() {
                 <h1 className="text-3xl md:text-4xl font-extrabold mb-3">{scenario.title}</h1>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Chip size="sm" variant="flat" color="primary" className="rounded-full">
-                    {getLanguageFlag(scenario.language)} {scenario.language.charAt(0) + scenario.language.slice(1).toLowerCase()}
+                    {getLanguageFlag(scenario.language)} {labelLanguage(scenario.language as any)}
                   </Chip>
                   {voice?.name && (
                     <Chip size="sm" variant="flat" color="secondary" className="rounded-full">
@@ -238,14 +239,17 @@ export default function TemplateDetailPage() {
 
               {/* Voice lines list with inline playback and progress, similar to dashboard */}
               <div>
-                <h2 className="text-2xl font-bold mb-4">Voice Lines</h2>
+                <h2 className="text-2xl font-bold mb-2">Sprachzeilen</h2>
+                <h3 className="text-md text-default-500 font-medium mb-4">Zum Abspielen auf die Sprachzeile klicken</h3>
                 <div className="space-y-4">
                   {scenario.voice_lines.map((vl: VoiceLine, idx: number) => {
                     const showSeparator = idx > 0 && scenario.voice_lines[idx - 1]?.type !== vl.type;
                     return (
                       <div key={vl.id}>
                         {showSeparator && (
-                          <div className="h-1 w-full bg-primary rounded-full my-2 opacity-80" />
+                          <div className="w-full bg-primary/30 border border-primary rounded-lg my-2 mt-8 px-2 py-1 text-sm text-primary font-medium opacity-80">
+                            {labelVoiceLineType(vl.type as any)}
+                          </div>
                         )}
                         <Card className="border-default-200/60 hover:shadow-lg transition-shadow">
                           <CardBody className="relative">
@@ -264,7 +268,7 @@ export default function TemplateDetailPage() {
                               onClick={() => handlePlayCard(vl.id, vl.preferred_audio?.signed_url)}
                             >
                               <div>
-                                <div className="text-sm text-default-400">#{vl.order_index + 1} • {vl.type}</div>
+                                <div className="text-sm text-default-400">#{vl.order_index + 1} • {labelVoiceLineType(vl.type as any)}</div>
                                 <div className="font-medium">{stripTtsDirectives(vl.text)}</div>
                               </div>
                               {/* <div className="text-xs text-default-500">

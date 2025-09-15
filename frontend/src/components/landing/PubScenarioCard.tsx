@@ -1,4 +1,5 @@
 import { Card, CardBody, CardHeader } from "@heroui/react";
+import { labelLanguageAny } from "@/lib/i18n";
 import { PhoneIcon, SparklesIcon } from "@heroicons/react/24/solid";
 
 export interface PubScenarioCardProps {
@@ -28,7 +29,7 @@ export default function PubScenarioCard({
           <p className="text-md font-semibold">{title}</p>
           <div className="flex gap-2 mt-1">
             <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">   
-                {language} 
+                {labelLanguageAny(language)} 
             </span>
           </div>
         </div>

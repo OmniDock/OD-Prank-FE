@@ -1,4 +1,5 @@
 import { Card, CardBody, Chip } from "@heroui/react";
+import { labelLanguage } from "@/lib/i18n";
 import type { Scenario } from "@/types/scenario";
 import { SparklesIcon } from "@heroicons/react/24/outline";
 
@@ -20,7 +21,7 @@ export function ScenarioCard({ scenario, onView }: ScenarioCardProps) {
               <SparklesIcon className="w-5 h-5 text-white font-semibold" />
             </div>
             <div className="min-w-0">
-              <div className="text-xs text-default-500">Scenario</div>
+              <div className="text-xs text-default-500">Szenario</div>
               <div className="text-base font-semibold text-foreground line-clamp-2">
                 {scenario.title}
               </div>
@@ -36,21 +37,21 @@ export function ScenarioCard({ scenario, onView }: ScenarioCardProps) {
             <span className="text-default-500">•</span>
           )}
           {scenario.language && (
-            <span className="uppercase text-default-600">{scenario.language}</span>
+            <span className="uppercase text-default-600">{labelLanguage(scenario.language as any)}</span>
           )}
           {scenario.language && (
             <span className="text-default-500">•</span>
           )}
           {voiceLineCount > 0 && (
-            <span className="text-default-600">{voiceLineCount} lines</span>
+            <span className="text-default-600">{voiceLineCount} Sprachzeilen</span>
           )}
         </div>
 
         <div className="flex items-center justify-between pt-1">
-          <div className="text-xs text-default-500">Updated {new Date(scenario.updated_at).toLocaleString()}</div>
+          <div className="text-xs text-default-500">Letzte Aktualisierung: {new Date(scenario.updated_at).toLocaleString()}</div>
           <div className="flex gap-2">
             <Chip size="sm" variant="flat" color={scenario.is_safe ? "success" : "danger"}>
-              {scenario.is_safe ? "Playable" : "Not Playable"}
+              {scenario.is_safe ? "Abspielbar" : "Nicht abspielbar"}
             </Chip>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Button, Input
 import { PlayIcon, PauseIcon, StopIcon, SpeakerWaveIcon, SpeakerXMarkIcon } from "@heroicons/react/24/outline";
 import type { VoiceItem } from "@/types/tts";
 import { CircularTapeVisualizer } from "@/components/ui/circular-tape-visualizer";
+import { labelGender, labelLanguage, tr } from "@/lib/i18n";
 
 interface VoicePickerModalProps {
   isOpen: boolean;
@@ -123,7 +124,7 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="5xl" scrollBehavior="inside" hideCloseButton={true}>
       <ModalContent>
         <ModalHeader className="flex items-center justify-between">
-          <div className="text-lg font-semibold">Choose a voice</div>
+          <div className="text-lg font-semibold">{tr("chooseVoiceTitle")}</div>
         </ModalHeader>
         <ModalBody>
           <audio ref={audioRef} crossOrigin="anonymous" />
@@ -135,7 +136,7 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
               <div className="mb-3">
                 <Input
                   size="sm"
-                  placeholder="Search by name, id, description, language…"
+                  placeholder={tr("searchPlaceholder")}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
@@ -144,12 +145,12 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
               {/* Filters below search */}
               <div className="flex items-center justify-center gap-12 flex-wrap mb-2">
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant={genderFilter === "MALE" ? "solid" : "flat"} color={genderFilter === "MALE" ? "primary" : "default"} onPress={() => setGenderFilter(genderFilter === "MALE" ? "ALL" : "MALE")}>Male</Button>
-                  <Button size="sm" variant={genderFilter === "FEMALE" ? "solid" : "flat"} color={genderFilter === "FEMALE" ? "primary" : "default"} onPress={() => setGenderFilter(genderFilter === "FEMALE" ? "ALL" : "FEMALE")}>Female</Button>
+                  <Button size="sm" variant={genderFilter === "MALE" ? "solid" : "flat"} color={genderFilter === "MALE" ? "primary" : "default"} onPress={() => setGenderFilter(genderFilter === "MALE" ? "ALL" : "MALE")}>{labelGender("MALE")}</Button>
+                  <Button size="sm" variant={genderFilter === "FEMALE" ? "solid" : "flat"} color={genderFilter === "FEMALE" ? "primary" : "default"} onPress={() => setGenderFilter(genderFilter === "FEMALE" ? "ALL" : "FEMALE")}>{labelGender("FEMALE")}</Button>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Button size="sm" variant={languageFilter === "GERMAN" ? "solid" : "flat"} color={languageFilter === "GERMAN" ? "primary" : "default"}  onPress={() => setLanguageFilter(languageFilter === "GERMAN" ? "ALL" : "GERMAN")}>German</Button>
-                  <Button size="sm" variant={languageFilter === "ENGLISH" ? "solid" : "flat"} color={languageFilter === "ENGLISH" ? "primary" : "default"}  onPress={() => setLanguageFilter(languageFilter === "ENGLISH" ? "ALL" : "ENGLISH")}>English</Button>
+                  <Button size="sm" variant={languageFilter === "GERMAN" ? "solid" : "flat"} color={languageFilter === "GERMAN" ? "primary" : "default"}  onPress={() => setLanguageFilter(languageFilter === "GERMAN" ? "ALL" : "GERMAN")}>{labelLanguage("GERMAN")}</Button>
+                  <Button size="sm" variant={languageFilter === "ENGLISH" ? "solid" : "flat"} color={languageFilter === "ENGLISH" ? "primary" : "default"}  onPress={() => setLanguageFilter(languageFilter === "ENGLISH" ? "ALL" : "ENGLISH")}>{labelLanguage("ENGLISH")}</Button>
                 </div>
               </div>
               
@@ -172,9 +173,9 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <div className="font-medium text-default-900">{v.name}</div>
-                        <Chip size="sm" variant="flat">{v.gender}</Chip>
+                        <Chip size="sm" variant="flat">{labelGender(v.gender as any)}</Chip>
                         {v.languages.map((lng) => (
-                          <Chip key={`${v.id}-${lng}`} size="sm" variant="flat">{lng}</Chip>
+                          <Chip key={`${v.id}-${lng}`} size="sm" variant="flat">{labelLanguage(lng as any)}</Chip>
                         ))}
                       </div>
                       {v.description && (
@@ -182,7 +183,7 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
                       )}
                     </div>
                     {selectedVoiceId === v.id && (
-                      <Chip size="sm" color="primary" variant="flat">Selected</Chip>
+                      <Chip size="sm" color="primary" variant="flat">{tr("selected")}</Chip>
                     )}
                   </div>
                 ))}
@@ -197,7 +198,7 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
               <h3 className="text-md font-medium text-default-700">
                 {previewingId ? 
                   `${voices.find(v => v.id === previewingId)?.name || previewingId}` : 
-                  "Click on a voice from the list"}
+                  tr("clickOnVoice")}
               </h3>
               
               <CircularTapeVisualizer
@@ -276,7 +277,7 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
                     void Promise.resolve(onSelect(previewingId));
                   }}
                 >
-                  {selectedVoiceId === previewingId ? "Selected" : "Select"}
+                  {selectedVoiceId === previewingId ? tr("selected") : tr("select")}
                 </Button>
 
               </div>
@@ -285,7 +286,7 @@ export function VoicePickerModal({ isOpen, onOpenChange, voices, selectedVoiceId
         </ModalBody>
         <ModalFooter>
           <div className="flex flex-start w-full flex-row justify-start">
-            <Button variant="light" size="sm" onPress={() => onOpenChange(false)}>Close</Button>
+            <Button variant="light" size="sm" onPress={() => onOpenChange(false)}>{tr("close")}</Button>
           </div>
         </ModalFooter>
       </ModalContent>

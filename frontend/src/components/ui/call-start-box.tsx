@@ -3,6 +3,7 @@ import { Button, Card, CardBody, CardHeader, Input } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
 import type { Scenario } from "@/types/scenario";
 import { apiFetch } from "@/lib/api";
+import { tr } from "@/lib/i18n";
 // Using emoji for icons
 
 type StartCallResponse = {
@@ -77,7 +78,7 @@ export function CallStartBox({ scenario }: { scenario: Scenario }) {
         <CardBody className="space-y-3 flex flex-col items-center justify-center mb-4">
           <div className="max-w-sm w-full flex flex-col items-center justify-center gap-4">
             <Input
-              label="German Phone Number"
+              label={tr("germanPhoneNumber")}
               placeholder="+49301234567"
               labelPlacement="outside"
               value={toNumber}

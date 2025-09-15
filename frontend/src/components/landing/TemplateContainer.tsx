@@ -8,6 +8,7 @@ import type { Scenario } from "@/types/scenario";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { fetchVoices } from "@/lib/api.tts";
+import { labelLanguage } from "@/lib/i18n";
 import type { VoiceItem } from "@/types/tts";
 
 
@@ -120,7 +121,7 @@ export default function TemplateContainer() {
                     </div>
                     <div className="absolute top-4 left-4 flex items-center gap-2">
                       <div className="px-3 py-1 rounded-full bg-black/60 text-white text-xs backdrop-blur">
-                        {getLanguageFlag(s.language)} {s.language.charAt(0) + s.language.slice(1).toLowerCase()}
+                        {getLanguageFlag(s.language)} {labelLanguage(s.language as any)}
                       </div>
                       {voice && (
                         <div className="px-3 py-1 rounded-full bg-black/60 text-white text-xs backdrop-blur">
@@ -147,7 +148,7 @@ export default function TemplateContainer() {
 
                         <div className="mt-4 flex flex-wrap gap-2">
                           <Chip size="sm" variant="flat" color="primary" className="rounded-full">
-                            {getLanguageFlag(s.language)} {s.language.charAt(0) + s.language.slice(1).toLowerCase()}
+                            {getLanguageFlag(s.language)} {labelLanguage(s.language as any)}
                           </Chip>
                           {s.preferred_voice_id && (
                             <Chip size="sm" variant="flat" color="secondary" className="rounded-full">

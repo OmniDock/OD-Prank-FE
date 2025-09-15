@@ -17,6 +17,7 @@ import {
 import { processScenario, fetchScenario } from "@/lib/api.scenarios";
 import type { ScenarioCreateRequest, Scenario } from "@/types/scenario";
 import { useNavigate } from "react-router-dom";
+import { labelLanguage } from "@/lib/i18n";
 
 interface ScenarioCreateModalProps {
   isOpen: boolean;
@@ -199,8 +200,8 @@ export default function ScenarioCreateModal({ isOpen, onOpenChange, onSuccess }:
                 }}
                 description="The language for the prank call"
               >
-                <SelectItem key="GERMAN">German</SelectItem>
-                <SelectItem key="ENGLISH">English</SelectItem>
+                <SelectItem key="GERMAN">{labelLanguage("GERMAN")}</SelectItem>
+                <SelectItem key="ENGLISH">{labelLanguage("ENGLISH")}</SelectItem>
               </Select>
               <Textarea
                 label="Description"

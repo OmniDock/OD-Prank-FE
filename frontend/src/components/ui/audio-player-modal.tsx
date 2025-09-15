@@ -4,6 +4,7 @@ import { PlayIcon, PauseIcon, StopIcon, SpeakerWaveIcon, SpeakerXMarkIcon, Chevr
 import { CircularTapeVisualizer } from "@/components/ui/circular-tape-visualizer";
 import { generateSingleTTS, getAudioUrl } from "@/lib/api.tts";
 import type { VoiceLine, Language } from "@/types/scenario";
+import { labelLanguage, labelVoiceLineType } from "@/lib/i18n";
 
 interface AudioPlayerModalProps {
   isOpen: boolean;
@@ -359,7 +360,7 @@ export function AudioPlayerModal({
           <div className="flex flex-col gap-0">
             <div className="text-lg font-semibold tracking-tight">{scenarioTitle ?? "Voice Lines"}</div>
             <div className="text-xs text-default-500 mt-0.5">
-              {currentIndex + 1} of {voiceLines.length} • {language}
+              {currentIndex + 1} of {voiceLines.length} • {language ? labelLanguage(language) : ""}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -398,7 +399,7 @@ export function AudioPlayerModal({
                   color={getVoiceLineTypeColor(currentVoiceLine?.type)}
                   variant="flat"
                 >
-                  {currentVoiceLine?.type}
+                  {currentVoiceLine ? labelVoiceLineType(currentVoiceLine.type as any) : ""}
                 </Chip>
                 <span className="text-sm text-default-500">#{currentVoiceLine?.order_index}</span>
               </div>

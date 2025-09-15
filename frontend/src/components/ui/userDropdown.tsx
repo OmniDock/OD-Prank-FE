@@ -14,7 +14,7 @@ const navigate = useNavigate();
 const items = [
     {
         key: "Profile",
-        label: "Profile",
+        label: "Profil",
         action: async () => {
             navigate("/profile", { replace: true });
         }
@@ -28,14 +28,14 @@ const items = [
     // },
     {
         key: "Pricing",
-        label: "Pricing",
+        label: "Preise",
         action:() => {
             navigate("/pricing", { replace: true });
         }
     },
     {
         key: "Logout",
-        label: "Logout",
+        label: "Abmelden",
         action: async () => {
             await signOut();
             navigate("/signin", { replace: true });
