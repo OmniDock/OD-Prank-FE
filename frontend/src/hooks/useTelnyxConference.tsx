@@ -1,6 +1,5 @@
 import { useContext, useEffect, useState } from "react";
 import { TelnyxRTCContext, useCallbacks, useNotification } from "@telnyx/react-client";
-import { updateCredits } from "@/lib/api.profile";
 
 interface UseTelnyxConferenceProps {
   token: string;
@@ -15,7 +14,6 @@ export function useTelnyxConference({ conference, autoJoin = true }: UseTelnyxCo
   const [connectionState, setConnectionState] = useState<"idle" | "connecting" | "connected" | "hangup" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [hangupReason, setHangupReason] = useState<string | null>(null);
-  const [wasConnected, setWasConnected] = useState<boolean>(false);
 
   // Create a silent MediaStream without microphone access
   const createSilentStream = () => {
@@ -101,7 +99,6 @@ export function useTelnyxConference({ conference, autoJoin = true }: UseTelnyxCo
       
       if (call?.state === "active") {
         setConnectionState("connected");
-        setWasConnected(true);
       } else if (call?.state === "hangup" || call?.state === "destroy") {
         setConnectionState("hangup");
         setHangupReason(call?.cause || "Call ended");
@@ -113,20 +110,9 @@ export function useTelnyxConference({ conference, autoJoin = true }: UseTelnyxCo
   useEffect(() => {
     if (activeCall?.state === "active") {
       setConnectionState("connected");
-      setWasConnected(true);
     } else if (activeCall?.state === "hangup" || activeCall?.state === "destroy") {
       setConnectionState("hangup");
       setHangupReason(activeCall?.cause || "Call ended");
-      updateCredits(0, -1);
-      if (wasConnected) {
-        console.log("Call ended successfully (useEffect backup):", {
-          state: activeCall?.state,
-          cause: activeCall?.cause,
-          causeCode: activeCall?.causeCode,
-          callId: activeCall?.id
-        });
-      }
-      setWasConnected(false);
     }
   }, [activeCall?.state]);
 
