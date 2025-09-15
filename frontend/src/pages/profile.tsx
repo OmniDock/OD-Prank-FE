@@ -1,7 +1,20 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Card, CardBody, CardHeader, Spinner } from "@heroui/react";
+import { Link, useNavigate } from "react-router-dom";
+import { Card, CardBody, CardHeader, Spinner, Button } from "@heroui/react";
 import { getProfile } from "@/lib/api.profile";
+import AnimatedBackground from "@/components/ui/AnimatedBackground";
+
+// Helper function to get German subscription display names
+const getSubscriptionDisplayName = (subscriptionType: string | null): string => {
+  if (!subscriptionType) return "";
+  
+  const displayNames: Record<string, string> = {
+    "weekly": "Wöchentliches Abo",
+    "monthly": "Monatliches Abo",
+  };
+  
+  return displayNames[subscriptionType] || subscriptionType;
+};
 
 interface ProfileData {
   call_credits: number;
@@ -16,6 +29,7 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,9 +84,21 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Mein Profil</h1>
+    <>
+      <AnimatedBackground variant="mixed" density={12} />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold text-foreground">Mein Profil</h1>
+          <Button
+            variant="flat"
+            color="default"
+            onPress={() => navigate("/dashboard")}
+            startContent={<span>←</span>}
+            className="text-default-600 hover:text-foreground"
+          >
+          </Button>
+        </div>
         <p className="text-default-600">Verwalte Kontoinformationen und Credits</p>
       </div>
 
@@ -170,13 +196,14 @@ export default function ProfilePage() {
             ) : (
               <div className="text-center py-4">
                 <div className="text-lg font-semibold text-success mb-2">
-                  Aktiver Plan: {profile.subscription_type}
+                  Aktiver Plan: {getSubscriptionDisplayName(profile.subscription_type)}
                 </div>
               </div>
             )}
           </CardBody>
         </Card>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
