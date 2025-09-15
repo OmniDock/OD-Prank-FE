@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Card, CardBody, CardHeader, Button } from "@heroui/react";
 import { getProfile } from "@/lib/api.profile";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -30,7 +30,6 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
-  const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
