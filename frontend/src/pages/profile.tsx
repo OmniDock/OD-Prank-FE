@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Card, CardBody, CardHeader, Button } from "@heroui/react";
 import { getProfile } from "@/lib/api.profile";
 import LoadingScreen from "@/components/LoadingScreen";
+import {SparklesIcon} from "@heroicons/react/24/outline";
 
 // Helper function to get German subscription display names
 const getSubscriptionDisplayName = (subscriptionType: string | null): string => {
@@ -77,21 +78,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold text-foreground">Mein Profil</h1>
-          <Button
-            variant="flat"
-            color="default"
-            onPress={() => navigate("/dashboard")}
-            startContent={<span>←</span>}
-            className="text-default-600 hover:text-foreground"
-          >
-          </Button>
-        </div>
-        <p className="text-default-600">Verwalte Kontoinformationen und Credits</p>
-      </div>
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Account Information */}
@@ -144,14 +131,19 @@ export default function ProfilePage() {
                 <div className="text-sm font-medium text-default-600">Anruf-Credits</div>
                 <div className="text-xs text-default-500">Für Telefonanrufe</div>
               </div>
-              <div className="text-2xl font-bold text-primary">{profile.call_credits}</div>
+              <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
+
+                <div className="text-2xl font-bold text-success">{profile.call_credits}</div>
+              </div>
             </div>
             <div className="flex justify-between items-center p-3 bg-default-50 rounded-lg">
               <div>
                 <div className="text-sm font-medium text-default-600">Prank-Credits</div>
                 <div className="text-xs text-default-500">Für Streich-Szenarien</div>
               </div>
-              <div className="text-2xl font-bold text-secondary">{profile.prank_credits}</div>
+              <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
+                <div className="text-2xl font-semibold text-success">{profile.prank_credits}</div>
+              </div>
             </div>
           </CardBody>
         </Card>
@@ -172,21 +164,23 @@ export default function ProfilePage() {
             {!profile.subscription_type ? (
               <div className="text-center py-6">
                 <div className="mb-4">
-                  <div className="text-lg font-semibold text-default-700 mb-2">
-                    Derzeit kein Abonnement
+                  <div className="text-md font-semibold text-default-700 mb-2">
+                    Derzeit noch kein Abonnement
                   </div>
                 </div>
-                <Link
+
+                <Button
+                  as={Link}
                   to="/pricing"
-                  className="inline-flex items-center px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary-600 transition-colors"
+                  className="bg-gradient-primary px-8 py-3  text-white"
+                  startContent={<SparklesIcon className="w-5 h-5" />}
                 >
-                  <span className="mr-2"></span>
                   Abonnieren
-                </Link>
+                </Button>
               </div>
             ) : (
               <div className="text-center py-4">
-                <div className="text-lg font-semibold text-success mb-2">
+                <div className="font-semibold text-success mb-2">
                   Aktiver Plan: {getSubscriptionDisplayName(profile.subscription_type)}
                 </div>
               </div>
