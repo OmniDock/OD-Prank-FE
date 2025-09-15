@@ -139,7 +139,7 @@ export default function ScenarioDetailPage() {
     >
 
       <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Title: {scenario.title}</h1>
+          <h1 className="text-2xl font-semibold">Titel: {scenario.title}</h1>
           {/* <Chip color={scenario.is_safe ? "success" : "danger"} variant="flat">
             {scenario.is_safe ? "Safe" : "Unsafe"}
           </Chip> */}

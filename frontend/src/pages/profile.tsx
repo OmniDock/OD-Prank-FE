@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Card, CardBody, CardHeader, Spinner, Button } from "@heroui/react";
+import { Card, CardBody, CardHeader, Button } from "@heroui/react";
 import { getProfile } from "@/lib/api.profile";
-import AnimatedBackground from "@/components/ui/AnimatedBackground";
+import LoadingScreen from "@/components/LoadingScreen";
 
 // Helper function to get German subscription display names
 const getSubscriptionDisplayName = (subscriptionType: string | null): string => {
@@ -52,14 +52,7 @@ export default function ProfilePage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex items-center gap-3">
-          <Spinner size="lg" />
-          <span className="text-lg">Profil wird geladen...</span>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Profil wird geladen..." />;
   }
 
   if (error) {
@@ -84,9 +77,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <>
-      <AnimatedBackground variant="mixed" density={12} />
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-3xl font-bold text-foreground">Mein Profil</h1>
@@ -203,7 +194,6 @@ export default function ProfilePage() {
           </CardBody>
         </Card>
       </div>
-      </div>
-    </>
+    </div>
   );
 }

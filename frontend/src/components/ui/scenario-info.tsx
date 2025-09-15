@@ -158,9 +158,9 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
         <DeleteConfirmationModal
           isOpen={isDeleteOpen}
           onOpenChange={setIsDeleteOpen}
-          title="Delete Scenario"
+          title="Szenario löschen"
           itemName={scenario.title}
-          description={`You are about to permanently delete the scenario "${scenario.title}" and all its associated data including voice lines and audio files.`}
+          description={`Sie sind dabei, das Szenario "${scenario.title}" und alle zugehörigen Daten, einschließlich Voice Lines und Audio-Dateien, dauerhaft zu löschen.`}
           onConfirm={handleDeleteConfirm}
         />
 

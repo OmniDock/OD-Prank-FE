@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 
 import IndexPage from "@/pages/index";
 import SignInPage from "@/pages/signin";
@@ -30,7 +30,7 @@ function App() {
       <Route element={<PrivacyPage />} path="/privacy" />
       <Route element={<BlacklistPage />} path="/blacklist" />
       <Route element={<PricingPage />} path="/pricing" />
-      <Route element={<ProfilePage />} path="/profile" />
+      <Route element={<Navigate to="/dashboard/profile" replace />} path="/profile" />
       <Route element={<SubscriptionSuccessPage />} path="/subscription-success/:sessionId" />
       <Route element={<TemplateDetailPage />} path="/templates/:id" />
       <Route element={<PublicOnlyRoute />}>
@@ -45,6 +45,7 @@ function App() {
           <Route path="scenarios" element={<ScenariosPage />} />
           <Route path="scenarios/:id" element={<ScenarioDetailPage />} />
           <Route path="active-call" element={<ActiveCallPage />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
       </Route>
     </Routes>

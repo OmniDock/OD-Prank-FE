@@ -28,7 +28,7 @@ export default function DeleteConfirmationModal({
   itemName,
   description,
   onConfirm,
-  confirmText = "delete",
+  confirmText = "Löschen",
 }: DeleteConfirmationModalProps) {
   const [inputText, setInputText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -36,7 +36,7 @@ export default function DeleteConfirmationModal({
   const handleDelete = async () => {
     if (inputText.toLowerCase() !== confirmText.toLowerCase()) {
       addToast({
-        title: "Invalid confirmation",
+        title: "Ungültige Bestätigung",
         description: `Please type '${confirmText}' to confirm`,
         color: "warning",
         timeout: 3000,
@@ -52,7 +52,7 @@ export default function DeleteConfirmationModal({
     } catch (error) {
       console.error("Delete operation failed:", error);
       addToast({
-        title: "Delete failed",
+        title: "Löschen fehlgeschlagen",
         description: "Failed to delete. Please try again.",
         color: "danger",
         timeout: 5000,
@@ -79,10 +79,10 @@ export default function DeleteConfirmationModal({
               <ExclamationTriangleIcon className="flex-shrink-0 w-5 h-5 text-danger-600 mt-0.5" />
               <div className="text-sm">
                 <p className="font-medium text-danger-800 mb-1">
-                  Warning: This action cannot be undone
+                  Warnung: Diese Aktion kann nicht rückgängig gemacht werden
                 </p>
                 <p className="text-danger-700">
-                  {description || `You are about to permanently delete "${itemName}".`}
+                  {description || `Sie sind dabei, "${itemName}" dauerhaft zu löschen.`}
                 </p>
               </div>
             </div>
@@ -90,12 +90,12 @@ export default function DeleteConfirmationModal({
           
           <div className="space-y-2">
             <p className="text-sm text-gray-600">
-              To confirm deletion, please type <span className="font-mono font-semibold">{confirmText}</span> below:
+              Um die Löschung zu bestätigen, bitte <span className="font-mono font-semibold">{confirmText}</span> unten eingeben:
             </p>
             <Input
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder={`Type '${confirmText}' to confirm`}
+              placeholder={`'${confirmText}' eingeben, um zu bestätigen`}
               autoFocus
               disabled={isDeleting}
               onKeyDown={(e) => {
@@ -108,7 +108,7 @@ export default function DeleteConfirmationModal({
         </ModalBody>
         <ModalFooter>
           <Button variant="light" size="sm" onPress={handleClose} isDisabled={isDeleting}>
-            Cancel
+            Abbrechen
           </Button>
           <Button
             color="danger"
@@ -116,7 +116,7 @@ export default function DeleteConfirmationModal({
             isLoading={isDeleting}
             isDisabled={inputText.toLowerCase() !== confirmText.toLowerCase()}
           >
-            Delete
+            Löschen
           </Button>
         </ModalFooter>
       </ModalContent>
