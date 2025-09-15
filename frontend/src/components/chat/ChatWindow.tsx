@@ -304,7 +304,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
     <div className="w-full max-w-4xl mx-auto max-h-full relative">
       {canCreate && (
         <div
-          className={`hidden md:flex absolute -top-6 left-1/2 -translate-x-1/2 z-40 transform-gpu transition-all duration-500 ${
+          className={`hidden md:flex absolute -top-9 left-1/2 -translate-x-1/2 z-40 transform-gpu transition-all duration-500 ${
             ctaVisible ? 'opacity-100' : 'opacity-0 '
           }`}
         >
@@ -459,16 +459,16 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
       
       <Modal isOpen={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <ModalContent>
-          <ModalHeader>Reset Chat</ModalHeader>
+          <ModalHeader>Chat zurücksetzen</ModalHeader>
           <ModalBody>
-            Are you sure you want to reset the chat? This will clear the conversation and draft.
+            Sind Sie sicher, dass Sie den Chat zurücksetzen möchten? Dies wird die Konversation und den Entwurf löschen.
           </ModalBody>
           <ModalFooter>
             <Button variant="light" onPress={() => setIsConfirmOpen(false)}>
-              Cancel
+              Abbrechen
             </Button>
             <Button color="primary" onPress={handleResetChat} startContent={<ArrowPathIcon className="w-4 h-4" />}>
-              Reset Chat
+              Chat zurücksetzen
             </Button>
           </ModalFooter>
         </ModalContent>
