@@ -16,6 +16,7 @@ import TermsPage from "@/pages/terms";
 import PrivacyPage from "@/pages/privacy";
 import PricingPage from "@/pages/pricing";
 import CheckoutPage from "@/pages/checkout";
+import ProfilePage from "@/pages/profile";
 import SubscriptionSuccessPage from "@/pages/subscription-success";
 import TemplateDetailPage from "@/pages/templates-detail";
 
@@ -29,6 +30,7 @@ function App() {
       <Route element={<PrivacyPage />} path="/privacy" />
       <Route element={<BlacklistPage />} path="/blacklist" />
       <Route element={<PricingPage />} path="/pricing" />
+      <Route element={<ProfilePage />} path="/profile" />
       <Route element={<SubscriptionSuccessPage />} path="/subscription-success/:sessionId" />
       <Route element={<TemplateDetailPage />} path="/templates/:id" />
       <Route element={<PublicOnlyRoute />}>

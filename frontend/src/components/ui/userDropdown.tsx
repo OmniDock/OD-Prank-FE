@@ -3,7 +3,6 @@ import { Button } from "@heroui/button";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
 import { useAuth } from "@/context/AuthProvider";
 import { useNavigate } from "react-router-dom";
-import { getProfile } from "@/lib/api.profile";
 
 
 
@@ -17,16 +16,21 @@ const items = [
         key: "Profile",
         label: "Profile",
         action: async () => {
-            const test = await getProfile();
-            console.log("test", test);
-            // navigate("/profile", { replace: true });
+            navigate("/profile", { replace: true });
         }
     },
+    // {
+    //     key: "Settings",
+    //     label: "Settings",
+    //     action:() => {
+    //         navigate("/settings", { replace: true });
+    //     }
+    // },
     {
-        key: "Settings",
-        label: "Settings",
+        key: "Pricing",
+        label: "Pricing",
         action:() => {
-            navigate("/settings", { replace: true });
+            navigate("/pricing", { replace: true });
         }
     },
     {
@@ -37,20 +41,13 @@ const items = [
             navigate("/signin", { replace: true });
         }
     },
-    {
-        key: "Pricing",
-        label: "Pricing",
-        action:() => {
-            navigate("/pricing", { replace: true });
-        }
-    },
-    {
-        label: "Subscription",
-        key: "Subscription",
-        action:() => {
-            navigate("/subscription", { replace: true });
-        }
-    }
+    // {
+    //     label: "Subscription",
+    //     key: "Subscription",
+    //     action:() => {
+    //         navigate("/subscription", { replace: true });
+    //     }
+    // }
 ]
 
 return (
