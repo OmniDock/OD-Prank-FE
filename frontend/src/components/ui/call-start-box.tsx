@@ -33,7 +33,7 @@ function normalizeGermanNumber(input: string): string | null {
 }
 
 export function CallStartBox({ scenario }: { scenario: Scenario }) {
-  const [toNumber, setToNumber] = useState<string>("+4915226152501");
+  const [toNumber, setToNumber] = useState<string>("");
   const [loading, setLoading] = useState<"idle" | "dialing">("idle");
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -62,56 +62,47 @@ export function CallStartBox({ scenario }: { scenario: Scenario }) {
   }
 
   return (
-    <div className="flex justify-center">
-      <Card className="ring-1 ring-primary-200 border-primary-200 bg-primary-50/60 max-w-xl w-xl">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary">
-              <span aria-hidden>📞</span>
-            </div>
-            <div>
+    <div className="flex justify-center my-10">
+      <Card className="ring-1 ring-success-200 border-success-200 bg-success-50/60 max-w-2xl w-2xl">
+        <CardHeader className="py-5">
+          <div className="flex items-center gap-4 w-full flex-wrap md:flex-nowrap">
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-success/10 text-success">
+                <span aria-hidden>📞</span>
+              </div>
               <h2 className="text-xl font-semibold text-foreground">Anruf starten</h2>
-              <p className="text-sm text-default-500">Eine Nummer eingeben und in den Anruf springen</p>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <Input
+                placeholder={tr("germanPhoneNumber")}
+                value={toNumber}
+                onChange={(e) => setToNumber(e.target.value)}
+                isInvalid={toNumber.length > 0 && !normalized}
+                isDisabled={loading !== "idle"}
+                size="lg"
+                startContent={<span className="text-default-400" aria-hidden>📞</span>}
+                className="w-68"
+              />
+              <Button
+                size="lg"
+                color="success"
+                className="font-semibold text-white"
+                onPress={startCall}
+                isDisabled={!canAct}
+                isLoading={loading === "dialing"}
+              >
+                {loading === "dialing" ? "Wählt..." : "Starten"}
+              </Button>
             </div>
           </div>
         </CardHeader>
-        <CardBody className="space-y-3 flex flex-col items-center justify-center mb-4">
-          <div className="max-w-sm w-full flex flex-col items-center justify-center gap-4">
-            <Input
-              label={tr("germanPhoneNumber")}
-              placeholder="+49301234567"
-              labelPlacement="outside"
-              value={toNumber}
-              onChange={(e) => setToNumber(e.target.value)}
-              // description={normalized ? `Will dial: ${normalized}` : "Enter a valid German (+49) number"}
-              isInvalid={toNumber.length > 0 && !normalized}
-              isDisabled={loading !== "idle"}
-              size="md"
-              startContent={<span className="text-default-400" aria-hidden>📞</span>}
-              className="max-w-sm"
-            />
-            <Button
-              size="md"
-              color="primary"
-              className="font-semibold text-white w-full"
-              onPress={startCall}
-              isDisabled={!canAct}
-              isLoading={loading === "dialing"}
-            >
-              {loading === "dialing" ? "Nummer wird gewählt..." : (
-                <span className="inline-flex items-center gap-2">
-                  <span aria-hidden>📞</span> Anruf starten
-                </span>
-              )}
-            </Button>
-          </div>
-          
-          {error && (
-            <div className="p-2 rounded-medium bg-danger-50 border border-danger-200 text-danger text-xs">
-              {error}
-            </div>
-          )}
-        </CardBody>
+        {error && (
+          <CardBody className="py-2">
+              <div className="p-2 rounded-medium bg-danger-50 border border-danger-200 text-danger text-xs">
+                {error}
+              </div>
+          </CardBody>
+        )}  
       </Card>
     </div>
   );
