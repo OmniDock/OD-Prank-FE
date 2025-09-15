@@ -51,13 +51,13 @@ export function VoiceGenerationStatus({ scenarioId, totalCount }: VoiceGeneratio
             <Spinner size="sm" color="primary" />
           </div>
           <div>
-            <div className="text-sm font-medium text-foreground">Generating audio files…</div>
-            <div className="text-xs text-default-500">This may take a moment.</div>
+            <div className="text-sm font-medium text-foreground">Audio-Dateien werden generiert…</div>
+            <div className="text-xs text-default-500">Dies kann einige Momente dauern.</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Chip size="sm" variant="flat" color="primary">Ready {readyCount}/{totalCount}</Chip>
-          <Chip size="sm" variant="flat" color="warning">Pending {pendingCount}</Chip>
+          <Chip size="sm" variant="flat" color="primary">Bereit {readyCount}/{totalCount}</Chip>
+          <Chip size="sm" variant="flat" color="warning">Ausstehend {pendingCount}</Chip>
         </div>
       </CardBody>
     </Card>

@@ -70,8 +70,8 @@ export function CallStartBox({ scenario }: { scenario: Scenario }) {
               <span aria-hidden>📞</span>
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-foreground">Start Call</h2>
-              <p className="text-sm text-default-500">Dial a number and jump into the call</p>
+              <h2 className="text-xl font-semibold text-foreground">Anruf starten</h2>
+              <p className="text-sm text-default-500">Eine Nummer eingeben und in den Anruf springen</p>
             </div>
           </div>
         </CardHeader>
@@ -98,9 +98,9 @@ export function CallStartBox({ scenario }: { scenario: Scenario }) {
               isDisabled={!canAct}
               isLoading={loading === "dialing"}
             >
-              {loading === "dialing" ? "Dialing..." : (
+              {loading === "dialing" ? "Nummer wird gewählt..." : (
                 <span className="inline-flex items-center gap-2">
-                  <span aria-hidden>📞</span> Start Call
+                  <span aria-hidden>📞</span> Anruf starten
                 </span>
               )}
             </Button>

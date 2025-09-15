@@ -87,7 +87,7 @@ export default function ScenarioDetailPage() {
       await refetchScenario();
       addToast({
         title: "Bevorzugte Stimme aktualisiert",
-        description: `${voices.find(v=>v.id===voiceId)?.name ?? voiceId} will be used for this scenario`,
+        description: `${voices.find(v=>v.id===voiceId)?.name ?? voiceId} wird für dieses Szenario verwendet`,
         color: "success",
         timeout: 3000,
       });
@@ -96,7 +96,7 @@ export default function ScenarioDetailPage() {
         .then((res) => {
           addToast({
             title: "Generation gestartet",
-            description: `Starting audio generation for ${res.total_processed ?? "all"} lines`,
+            description: `Audio-Generation für ${res.total_processed ?? "alle"} Zeilen gestartet`,
             color: "primary",
             timeout: 2500,
           });
@@ -106,7 +106,7 @@ export default function ScenarioDetailPage() {
         .catch(() => {
           addToast({
             title: "Generation fehlgeschlagen",
-            description: "Could not start scenario TTS generation.",
+            description: "Konnte die Audio-Generation für dieses Szenario nicht starten.",
             color: "danger",
             timeout: 4000,
           });
@@ -114,7 +114,7 @@ export default function ScenarioDetailPage() {
     } catch (e) {
       addToast({
         title: "Update fehlgeschlagen",
-        description: "Failed to set preferred voice",
+        description: "Konnte die bevorzugte Stimme nicht setzen",
         color: "danger",
         timeout: 5000,
       });
@@ -125,7 +125,7 @@ export default function ScenarioDetailPage() {
 
   if (loading) {
     return (
-      <LoadingScreen message="Szenario wird geladen…" />
+      <LoadingScreen message="Szenario wird geladen..." />
     );
   }
   if (!scenario) return null;

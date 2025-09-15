@@ -470,7 +470,7 @@ export function VoiceLinesTable({
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold">{typeDisplayName[t] || t}</h3>
-                    <p className="text-xs text-default-500">{items.length} available</p>
+                    <p className="text-xs text-default-500">{items.length} verfügbar</p>
                   </div>
                 </div>
               </div>
