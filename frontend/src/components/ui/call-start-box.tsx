@@ -31,14 +31,15 @@ function normalizeGermanNumber(input: string): string | null {
   return null;
 }
 
-export function CallStartBox({ scenario }: { scenario: Scenario }) {
+export function CallStartBox({ scenario, callCredits }: { scenario: Scenario; callCredits: number | null }) {
   const [toNumber, setToNumber] = useState<string>("+4915226152501");
   const [loading, setLoading] = useState<"idle" | "dialing">("idle");
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const normalized = useMemo(() => normalizeGermanNumber(toNumber), [toNumber]);
-  const canAct = !!scenario?.id && !!normalized && loading === "idle";
+  const hasNoCallCredits = callCredits !== null && callCredits <= 0;
+  const canAct = !!scenario?.id && !!normalized && loading === "idle" && !hasNoCallCredits;
 
   async function startCall() {
     if (!scenario?.id || !normalized) return;
@@ -58,6 +59,10 @@ export function CallStartBox({ scenario }: { scenario: Scenario }) {
     } finally {
       setLoading("idle");
     }
+  }
+
+  function goToPricing() {
+    navigate("/pricing");
   }
 
   return (
@@ -91,13 +96,13 @@ export function CallStartBox({ scenario }: { scenario: Scenario }) {
             />
             <Button
               size="md"
-              color="primary"
-              className="font-semibold text-white w-full"
-              onPress={startCall}
-              isDisabled={!canAct}
+              color={hasNoCallCredits ? "warning" : "primary"}
+              className={`font-semibold w-full ${hasNoCallCredits ? '' : 'text-white'}`}
+              onPress={hasNoCallCredits ? goToPricing : startCall}
+              isDisabled={loading === "dialing"}
               isLoading={loading === "dialing"}
             >
-              {loading === "dialing" ? "Dialing..." : (
+              {loading === "dialing" ? "Dialing..." : hasNoCallCredits ? "Keine Credits mehr, hol dir Neue!" : (
                 <span className="inline-flex items-center gap-2">
                   <span aria-hidden>📞</span> Start Call
                 </span>

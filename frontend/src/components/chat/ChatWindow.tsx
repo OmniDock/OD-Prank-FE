@@ -18,12 +18,20 @@ interface ChatWindowProps {
   setLoading?: (val: boolean) => void;
   onScenarioResult?: (result: { status: string; scenario_id?: number; error?: string }) => void;
   onReset?: () => void;
+  disableScenarioCreation?: boolean;
 }
 
-export default function ChatWindow({ onExpand, onStartTyping, loading, setLoading, onScenarioResult, onReset }: ChatWindowProps = {}) {
+export default function ChatWindow({ onExpand, onStartTyping, loading, setLoading, onScenarioResult, onReset, disableScenarioCreation }: ChatWindowProps = {}) {
   const { user } = useAuth();
   const userName = (user as any)?.user_metadata?.full_name || (user as any)?.user_metadata?.name || user?.email || "You";
   const userAvatar = (user as any)?.user_metadata?.avatar_url || (user as any)?.user_metadata?.picture || undefined;
+  
+  // Debug logging
+  console.log('ChatWindow Debug:', {
+    disableScenarioCreation,
+    loading,
+    buttonDisabled: loading || disableScenarioCreation
+  });
   
   const [messages, setMessages] = useState<DesignChatMessage[]>([]);
   const [input, setInput] = useState<string>("");
@@ -302,7 +310,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   
   return (
     <div className="w-full max-w-4xl mx-auto max-h-full relative">
-      {canCreate && (
+      {canCreate && !disableScenarioCreation && (
         <div
           className={`hidden md:flex absolute -top-6 left-1/2 -translate-x-1/2 z-40 transform-gpu transition-all duration-500 ${
             ctaVisible ? 'opacity-100' : 'opacity-0 '
@@ -411,7 +419,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
                 }
               }}
               onSubmit={() => handleSendMessage()}
-              disabled={!!loading || isAiTyping || !isUserTurn}
+              disabled={!!loading || isAiTyping || !isUserTurn || disableScenarioCreation}
               placeholder={
                 hasStarted 
                   ? "Schreibe deine Antwort..." 
@@ -422,7 +430,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
           </div>
           
           {/* Generate Button - Mobile only; desktop shows floating CTA */}
-          {hasUserMessage && (
+          {hasUserMessage && !disableScenarioCreation && (
             <div className="mt-3 md:hidden">
               <Button
                 color="primary"

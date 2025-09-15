@@ -8,6 +8,7 @@ import {
 import { fetchScenario, updateScenarioPreferredVoice } from "@/lib/api.scenarios";
 import type { Scenario } from "@/types/scenario";
 import { fetchVoices, generateScenarioTTS } from "@/lib/api.tts";
+import { getCredits } from "@/lib/api.profile";
 import { AudioPlayerModal } from "@/components/ui/audio-player-modal";
 import { ScenarioInfo } from "@/components/ui/scenario-info";
 import { VoiceSection } from "@/components/ui/voice-section";
@@ -26,6 +27,7 @@ export default function ScenarioDetailPage() {
   const [playerCurrentIndex, setPlayerCurrentIndex] = useState(0);
   const [voices, setVoices] = useState<VoiceItem[]>([]);
   const [tableKey, setTableKey] = useState(0);
+  const [callCredits, setCallCredits] = useState<number | null>(null);
   
 
 
@@ -61,6 +63,20 @@ export default function ScenarioDetailPage() {
         // noop
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    const fetchCallCredits = async () => {
+      try {
+        const creditsData = await getCredits();
+        setCallCredits(creditsData.call_credit_amount || 0);
+      } catch (error) {
+        console.error('Failed to fetch call credits:', error);
+        setCallCredits(0);
+      }
+    };
+
+    fetchCallCredits();
   }, []);
 
   function onOpenPlayer(voiceLineId: number) {
@@ -166,7 +182,7 @@ export default function ScenarioDetailPage() {
 
       {/* Green Call Box between details and voice lines */}
       {scenario.is_safe && scenario.preferred_voice_id && (
-        <CallStartBox scenario={scenario} />
+        <CallStartBox scenario={scenario} callCredits={callCredits} />
       )}
 
       {scenario.preferred_voice_id && (
