@@ -135,6 +135,13 @@ function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: In
     return list;
   }, [voices, debouncedQuery, genderFilter, languageFilter]);
 
+  const lgColsClass = {
+    1: "lg:grid-cols-1",
+    2: "lg:grid-cols-2",
+    3: "lg:grid-cols-3",
+    4: "lg:grid-cols-4",
+  }[Math.min((filtered.length || 1), 4) as 1 | 2 | 3 | 4];
+
 
   function stopPlayback() {
     const audio = audioRef.current;
@@ -253,7 +260,7 @@ function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: In
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${lgColsClass} gap-3`}>
           {filtered.map((v) => {
             const isActive = previewingId === v.id && isPlaying;
             return (
