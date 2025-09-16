@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import { addToast, Spinner } from "@heroui/react";
 import { generateSingleTTS, fetchVoiceLinesSummary } from "@/lib/api.tts";
+import { labelVoiceLineType } from "@/lib/i18n";
 import type { Scenario } from "@/types/scenario";
 
 interface VoiceLinesTableProps {
@@ -80,11 +81,11 @@ export function VoiceLinesTable({
   }, [scenario?.voice_lines, activeTab]);
 
   const typeDisplayName: Record<string, string> = {
-    OPENING: "Opening",
-    FILLER: "Filler",
-    QUESTION: "Questions",
-    RESPONSE: "Responses",
-    CLOSING: "Closing",
+    OPENING: labelVoiceLineType("OPENING"),
+    FILLER: labelVoiceLineType("FILLER"),
+    QUESTION: labelVoiceLineType("QUESTION"),
+    RESPONSE: labelVoiceLineType("RESPONSE"),
+    CLOSING: labelVoiceLineType("CLOSING"),
   };
 
   async function onGenerateSelectedAudio() {
@@ -468,15 +469,8 @@ export function VoiceLinesTable({
                      '👋'}
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">
-                      {t === 'OPENING' ? 'Opening Lines' :
-                       t === 'QUESTION' ? 'Questions' :
-                       t === 'RESPONSE' ? 'Responses' :
-                       t === 'CLOSING' ? 'Closing Lines' :
-                       t === 'FILLER' ? 'Fillers' :
-                       (typeDisplayName[t] || t)}
-                    </h3>
-                    <p className="text-xs text-default-500">{items.length} available</p>
+                    <h3 className="text-lg font-semibold">{typeDisplayName[t] || t}</h3>
+                    <p className="text-xs text-default-500">{items.length} verfügbar</p>
                   </div>
                 </div>
               </div>
@@ -506,11 +500,11 @@ export function VoiceLinesTable({
                           {/* We intentionally display type section above; no ID shown here */}
                         </div>
                         <div className="mt-1  whitespace-pre-wrap break-words">
-                          {(vl.text || "")
+                          {/* {(vl.text || "")
                             .replace(/\[\[.*?\]\]/gi, "")
                             .replace(/\[(?!\*)([^[\]]*?)\]/g, "")
-                          }
-                          {/* {vl.text || ""} */}
+                          } */}
+                          {vl.text || ""}
                         </div>
 
                         {isLoading && (

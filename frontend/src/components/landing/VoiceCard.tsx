@@ -2,6 +2,7 @@ import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { motion } from "framer-motion";
+import { labelGender } from "@/lib/i18n";
 import { PauseIcon, PlayIcon, UserIcon } from "@heroicons/react/24/solid";
 
 export interface Voice {
@@ -113,8 +114,8 @@ export default function VoiceCard({
                 </div>
 
                 <div className="mt-1">
-                  <Chip size="sm" color={getGenderColor(voice.gender)} variant="flat" className="rounded-full capitalize">
-                    {voice.gender.toLowerCase()}
+                  <Chip size="sm" color={getGenderColor(voice.gender)} variant="flat" className="rounded-full">
+                    {labelGender(voice.gender as any)}
                   </Chip>
                 </div>
               </div>

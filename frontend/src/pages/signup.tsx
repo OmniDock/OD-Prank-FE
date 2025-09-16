@@ -151,10 +151,10 @@ export default function SignUpPage() {
 									</div>
 								</div>
 								<h1 className="text-3xl font-bold">
-									Create Account
+									Konto erstellen
 								</h1>
 								<p className="text-default-500 mt-2">
-									Join the ultimate pranking platform
+									Werde Teil der ultimativen Prank-Plattform
 								</p>
 							</motion.div>
 
@@ -191,12 +191,12 @@ export default function SignUpPage() {
 								animate={{ opacity: 1 }}
 								transition={{ delay: 0.4 }}
 							>
-								Already have an account?{" "}
+								Hast du bereits ein Konto?{" "}
 								<Link 
 									href="/signin" 
 									className="text-primary font-semibold hover:underline"
 								>
-									Sign in
+									Anmelden
 								</Link>
 							</motion.p>
 
@@ -204,7 +204,7 @@ export default function SignUpPage() {
 							<div className="relative my-6">
 								<Divider className="bg-default-200" />
 								<span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-default-400 uppercase tracking-wider">
-									 sign up with email
+									 E-Mail Registrierung
 								</span>
 							</div>
 
@@ -218,7 +218,7 @@ export default function SignUpPage() {
 							>
 								<Input
 									type="email"
-									label="Email"
+									label="E-Mail"
 									placeholder="you@example.com"
 									value={email}
 									onChange={(e) => setEmail(e.target.value)}
@@ -235,8 +235,8 @@ export default function SignUpPage() {
 								/>
 								
 								<Input
-									label="Password"
-									placeholder="Create a strong password"
+									label="Passwort"
+									placeholder="Erstelle ein starkes Passwort"
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
 									startContent={
@@ -268,7 +268,7 @@ export default function SignUpPage() {
 
 								{/* Password Requirements */}
 								<div className="text-xs text-default-400 -mt-2 pl-1">
-									Use at least 6 characters
+									Verwende mindestens 6 Zeichen
 								</div>
 
 								{/* Success Message with animation */}
@@ -302,19 +302,20 @@ export default function SignUpPage() {
 									fullWidth
 									className="bg-gradient-primary text-white"
 									>
-									Create Account
+									Konto erstellen
 								</Button>
 
 								{/* Terms with better styling */}
 								<p className="text-xs text-default-400 text-center">
-									By signing up, you agree to our{" "}
+									Wenn du dich registrierst, stimmst du unseren{" "}
 									<Link href="/terms" size="sm" className="text-primary hover:underline">
-										Terms
+										AGB
 									</Link>{" "}
 									and{" "}
 									<Link href="/privacy" size="sm" className="text-primary hover:underline">
-										Privacy Policy
+										Datenschutzrichtlinie
 									</Link>
+									{" "}zu.
 								</p>
 							</motion.form>
 

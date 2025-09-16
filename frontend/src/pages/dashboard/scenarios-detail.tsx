@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Card,
@@ -37,7 +37,7 @@ export default function ScenarioDetailPage() {
       const data = await fetchScenario(id);
       setScenario(data);
     } catch (error) {
-      console.error('Failed to refetch scenario:', error);
+      console.error('Fehler beim Aktualisieren des Szenarios:', error);
     }
   };
 
@@ -46,7 +46,7 @@ export default function ScenarioDetailPage() {
       if (!id) return;
       try {
         const data = await fetchScenario(id);
-        console.log('Scenario loaded:', data);
+        console.log('Szenario geladen:', data);
         setScenario(data);
       } finally {
         setLoading(false);
@@ -81,7 +81,7 @@ export default function ScenarioDetailPage() {
 
   function onOpenPlayer(voiceLineId: number) {
     if (!scenario || !scenario.preferred_voice_id) {
-      addToast({ title: "No voice selected", description: "Select a voice first to play audio.", color: "warning", timeout: 3000 });
+      addToast({ title: "Keine Stimme ausgewählt", description: "Wähle eine Stimme, um Audio abzuspielen.", color: "warning", timeout: 3000 });
         return;
       }
 
@@ -102,8 +102,8 @@ export default function ScenarioDetailPage() {
       // Refetch scenario to get updated audio availability
       await refetchScenario();
       addToast({
-        title: "Preferred voice updated",
-        description: `${voices.find(v=>v.id===voiceId)?.name ?? voiceId} will be used for this scenario`,
+        title: "Bevorzugte Stimme aktualisiert",
+        description: `${voices.find(v=>v.id===voiceId)?.name ?? voiceId} wird für dieses Szenario verwendet`,
         color: "success",
         timeout: 3000,
       });
@@ -111,8 +111,8 @@ export default function ScenarioDetailPage() {
       void generateScenarioTTS({ scenario_id: scenario.id, voice_id: voiceId })
         .then((res) => {
           addToast({
-            title: "Generation started",
-            description: `Starting audio generation for ${res.total_processed ?? "all"} lines`,
+            title: "Generation gestartet",
+            description: `Audio-Generation für ${res.total_processed ?? "alle"} Zeilen gestartet`,
             color: "primary",
             timeout: 2500,
           });
@@ -121,16 +121,16 @@ export default function ScenarioDetailPage() {
         })
         .catch(() => {
           addToast({
-            title: "Generation failed",
-            description: "Could not start scenario TTS generation.",
+            title: "Generation fehlgeschlagen",
+            description: "Konnte die Audio-Generation für dieses Szenario nicht starten.",
             color: "danger",
             timeout: 4000,
           });
         });
     } catch (e) {
       addToast({
-        title: "Update failed",
-        description: "Failed to set preferred voice",
+        title: "Update fehlgeschlagen",
+        description: "Konnte die bevorzugte Stimme nicht setzen",
         color: "danger",
         timeout: 5000,
       });
@@ -155,7 +155,7 @@ export default function ScenarioDetailPage() {
     >
 
       <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Title: {scenario.title}</h1>
+          <h1 className="text-2xl font-semibold">Titel: {scenario.title}</h1>
           {/* <Chip color={scenario.is_safe ? "success" : "danger"} variant="flat">
             {scenario.is_safe ? "Safe" : "Unsafe"}
           </Chip> */}
@@ -167,7 +167,7 @@ export default function ScenarioDetailPage() {
       {!scenario.is_safe && scenario.is_not_safe_reason && (
         <Card>
           <CardBody>
-            <div className="text-sm">Not safe because: {scenario.is_not_safe_reason}</div>
+            <div className="text-sm">Nicht sicher, weil: {scenario.is_not_safe_reason}</div>
           </CardBody>
         </Card>
       )}
@@ -181,8 +181,8 @@ export default function ScenarioDetailPage() {
       )}
 
       {/* Green Call Box between details and voice lines */}
-      {scenario.is_safe && scenario.preferred_voice_id && (
-        <CallStartBox scenario={scenario} callCredits={callCredits} />
+      {scenario.is_safe && scenario.preferred_voice_id && allAudiosReady && (
+        <CallStartBox scenario={scenario} callCredits={callCredits} preferredVoice={preferredVoice} />
       )}
 
       {scenario.preferred_voice_id && (
@@ -194,6 +194,7 @@ export default function ScenarioDetailPage() {
             onRefetchScenario={refetchScenario}
             onOpenPlayer={onOpenPlayer}
           />
+          
         </>
       )}
 

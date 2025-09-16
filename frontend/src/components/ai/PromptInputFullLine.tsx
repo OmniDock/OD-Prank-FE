@@ -97,7 +97,7 @@ export default function PromptInputFullLine({ value, onChange, onSubmit, disable
       <div className="flex w-full flex-row items-center justify-between px-3 py-3">
         <div>
           {onResetPress && (
-            <Tooltip content="Reset Chat" placement="top" closeDelay={0}>
+            <Tooltip content="Chat zurücksetzen" placement="top" closeDelay={0}>
               <Button
                 isIconOnly
                 radius="md"

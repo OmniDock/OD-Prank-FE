@@ -3,6 +3,7 @@ import { Card, CardBody, Chip, Spinner } from "@heroui/react";
 import { motion } from "framer-motion";
 import { fetchScenarios } from "@/lib/api.scenarios";
 import { fetchVoices } from "@/lib/api.tts";
+import { labelLanguage } from "@/lib/i18n";
 import type { VoiceItem } from "@/types/tts";
 import type { Scenario } from "@/types/scenario";
 
@@ -115,7 +116,7 @@ export default function ScenarioGridSelect({ selectedId, onSelect, disabled }: S
                 </div>
 
                 <div className="flex items-center gap-3 text-xs text-default-600">
-                  <span className="uppercase">{s.language}</span>
+                  <span className="uppercase">{labelLanguage(s.language as any)}</span>
                   <span>•</span>
                   <span>{count} lines</span>
                 </div>

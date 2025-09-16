@@ -100,10 +100,10 @@ export default function SignInPage() {
 									</div>
 								</div>
 								<h1 className="text-3xl font-bold">
-									Welcome Back
+									Willkommen zurück
 								</h1>
 								<p className="text-default-500 mt-2">
-									Sign in to continue your pranking journey
+									Melde dich an, um deine Reise fortzusetzen
 								</p>
 							</motion.div>
 
@@ -140,12 +140,12 @@ export default function SignInPage() {
 								animate={{ opacity: 1 }}
 								transition={{ delay: 0.4 }}
 							>
-								Don't have an account?{" "}
+								Noch kein Konto?{" "}
 								<Link 
 									href="/signup" 
 									className="text-primary font-semibold hover:underline"
 								>
-									Create one
+									Erstelle eins
 								</Link>
 							</motion.p>
 
@@ -153,7 +153,7 @@ export default function SignInPage() {
 							<div className="relative my-6">
 								<Divider className="bg-default-200" />
 								<span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-default-400 uppercase tracking-wider">
-									Sign in with email
+									E-Mail Anmeldung
 								</span>
 							</div>
 
@@ -222,7 +222,7 @@ export default function SignInPage() {
 										size="sm" 
 										className="text-primary hover:underline"
 									>
-										Forgot password?
+										Passwort vergessen?
 									</Link>
 								</div>
 
@@ -245,7 +245,7 @@ export default function SignInPage() {
 									fullWidth
 									className="bg-gradient-primary text-white" 
 									>
-									Sign In
+									Anmelden
 								</Button>
 							</motion.form>
 

@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { Button, Card, CardBody, CardHeader, Input } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
 import type { Scenario } from "@/types/scenario";
+import type { VoiceItem } from "@/types/tts";
 import { apiFetch } from "@/lib/api";
+import { tr } from "@/lib/i18n";
 // Using emoji for icons
 
 type StartCallResponse = {
@@ -31,8 +33,8 @@ function normalizeGermanNumber(input: string): string | null {
   return null;
 }
 
-export function CallStartBox({ scenario, callCredits }: { scenario: Scenario; callCredits: number | null }) {
-  const [toNumber, setToNumber] = useState<string>("+4915226152501");
+export function CallStartBox({ scenario, callCredits, preferredVoice }: { scenario: Scenario; callCredits: number | null; preferredVoice?: VoiceItem | null }) {
+  const [toNumber, setToNumber] = useState<string>("");
   const [loading, setLoading] = useState<"idle" | "dialing">("idle");
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -66,16 +68,58 @@ export function CallStartBox({ scenario, callCredits }: { scenario: Scenario; ca
   }
 
   return (
-    <div className="flex justify-center">
-      <Card className="ring-1 ring-primary-200 border-primary-200 bg-primary-50/60 max-w-xl w-xl">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary">
-              <span aria-hidden>📞</span>
+    <div className="flex justify-center my-10">
+      <Card className="ring-1 ring-success-200 border-success-200 bg-success-50/60 ">
+        <CardHeader className="py-5">
+          <div className="flex items-center gap-4 w-full flex-wrap md:flex-nowrap">
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-success/10 text-success">
+                <span aria-hidden>📞</span>
+              </div>
+              <h2 className="text-xl font-semibold text-foreground">Anruf starten</h2>
             </div>
-            <div>
-              <h2 className="text-xl font-semibold text-foreground">Start Call</h2>
-              <p className="text-sm text-default-500">Dial a number and jump into the call</p>
+            {preferredVoice && (
+              <div className="flex items-center gap-3">
+                <div className="relative w-16 h-16 md:w-20 md:h-20 shrink-0">
+                  <div className="w-full h-full rounded-full overflow-hidden ring-2 ring-success/40 bg-white flex items-center justify-center">
+                    {preferredVoice.avatar_url ? (
+                      <img src={preferredVoice.avatar_url} alt={preferredVoice.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-lg md:text-xl font-semibold text-success">
+                        {(preferredVoice.name?.[0] || "?").toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs text-default-500">Verwendete Stimme</span>
+                  <span className="text-sm md:text-base font-semibold text-foreground truncate">
+                    {preferredVoice.name}
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="ml-auto flex items-center gap-2">
+              <Input
+                placeholder={tr("germanPhoneNumber")}
+                value={toNumber}
+                onChange={(e) => setToNumber(e.target.value)}
+                isInvalid={toNumber.length > 0 && !normalized}
+                isDisabled={loading !== "idle"}
+                size="lg"
+                startContent={<span className="text-default-400" aria-hidden>📞</span>}
+                className="w-68"
+              />
+              <Button
+                size="lg"
+                color="success"
+                className="font-semibold text-white"
+                onPress={startCall}
+                isDisabled={!canAct}
+                isLoading={loading === "dialing"}
+              >
+                {loading === "dialing" ? "Wählt..." : "Starten"}
+              </Button>
             </div>
           </div>
         </CardHeader>

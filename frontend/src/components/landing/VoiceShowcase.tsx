@@ -3,6 +3,7 @@ import VoiceCard, { type Voice as VoiceType } from "@/components/landing/VoiceCa
 import { motion, AnimatePresence } from "framer-motion";
 import { SpeakerWaveIcon, ChevronDownIcon, ChevronUpIcon, FunnelIcon } from "@heroicons/react/24/solid";
 import { Tabs, Tab } from "@heroui/tabs";
+import { labelGenderAny, labelLanguageAny } from "@/lib/i18n";
 import { supabase } from "@/lib/supabaseClient";
 
 type Voice = VoiceType;
@@ -133,8 +134,8 @@ export default function VoiceShowcase({
         {filteredVoices.length > 0 && (
           <p className="text-sm text-default-400 mt-2">
             Anzeigen {showAll ? filteredVoices.length : Math.min(maxVoices, filteredVoices.length)} von {filteredVoices.length} Stimmen
-            {selectedGender !== 'all' && ` • ${selectedGender.toLowerCase()}`}
-            {selectedLanguage !== 'all' && ` • ${selectedLanguage.toLowerCase()}`}
+            {selectedGender !== 'all' && ` • ${labelGenderAny(selectedGender)}`}
+            {selectedLanguage !== 'all' && ` • ${labelLanguageAny(selectedLanguage)}`}
           </p>
         )}
       </div>
@@ -169,7 +170,7 @@ export default function VoiceShowcase({
               title={
                 <div className="flex items-center gap-1">
                   <span>{getLanguageFlag(lang)}</span>
-                  <span>{lang.charAt(0) + lang.slice(1).toLowerCase()}</span>
+                  <span>{labelLanguageAny(lang)}</span>
                 </div>
               }
             />

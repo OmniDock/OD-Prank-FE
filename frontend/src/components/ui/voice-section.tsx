@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, CardBody, Chip } from "@heroui/react";
 import { PlayIcon, StopIcon } from "@heroicons/react/24/outline";
+import { labelGender, labelLanguage, tr } from "@/lib/i18n";
 import { UserIcon } from "@heroicons/react/24/solid";
 import type { Scenario } from "@/types/scenario";
 import type { VoiceItem } from "@/types/tts";
@@ -51,9 +52,9 @@ export function VoiceSection({ scenario, voices, onSelect }: VoiceSectionProps) 
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span>{v.name}</span>
-                      <Chip size="sm" variant="flat" color="primary">{v.gender}</Chip>
+                      <Chip size="sm" variant="flat" color="primary">{labelGender(v.gender as any)}</Chip>
                       {v.languages.map(l => (
-                        <Chip key={`${v.id}-${l}`} size="sm" variant="flat">{l}</Chip>
+                        <Chip key={`${v.id}-${l}`} size="sm" variant="flat">{labelLanguage(l as any)}</Chip>
                       ))}
                     </div>
                     <div className="flex items-center gap-2">
@@ -245,16 +246,16 @@ function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: In
             </div> */}
             <div className="flex items-center justify-start md:justify-center">
               <div className="inline-flex items-center gap-1 rounded-medium bg-default-100 p-1">
-                <Button size="sm" variant={genderFilter === "ALL" ? "solid" : "light"} color="primary" onClick={() => setGenderFilter("ALL")}>All</Button>
-                <Button size="sm" variant={genderFilter === "MALE" ? "solid" : "light"} color="primary" onClick={() => setGenderFilter("MALE")}>Male</Button>
-                <Button size="sm" variant={genderFilter === "FEMALE" ? "solid" : "light"} color="primary" onClick={() => setGenderFilter("FEMALE")}>Female</Button>
+                <Button size="sm" variant={genderFilter === "ALL" ? "solid" : "light"} color="primary" onPress={() => setGenderFilter("ALL")}>{tr("all")}</Button>
+                <Button size="sm" variant={genderFilter === "MALE" ? "solid" : "light"} color="primary" onPress={() => setGenderFilter("MALE")}>{labelGender("MALE")}</Button>
+                <Button size="sm" variant={genderFilter === "FEMALE" ? "solid" : "light"} color="primary" onPress={() => setGenderFilter("FEMALE")}>{labelGender("FEMALE")}</Button>
               </div>
             </div>
             <div className="flex items-center justify-start md:justify-center">
               <div className="inline-flex items-center gap-1 rounded-medium bg-default-100 p-1">
-                <Button size="sm" variant={languageFilter === "ALL" ? "solid" : "light"} color="primary" onClick={() => setLanguageFilter("ALL")}>All</Button>
-                <Button size="sm" variant={languageFilter === "GERMAN" ? "solid" : "light"} color="primary" onClick={() => setLanguageFilter("GERMAN")}>German</Button>
-                <Button size="sm" variant={languageFilter === "ENGLISH" ? "solid" : "light"} color="primary" onClick={() => setLanguageFilter("ENGLISH")}>English</Button>
+                <Button size="sm" variant={languageFilter === "ALL" ? "solid" : "light"} color="primary" onPress={() => setLanguageFilter("ALL")}>{tr("all")}</Button>
+                <Button size="sm" variant={languageFilter === "GERMAN" ? "solid" : "light"} color="primary" onPress={() => setLanguageFilter("GERMAN")}>{labelLanguage("GERMAN")}</Button>
+                <Button size="sm" variant={languageFilter === "ENGLISH" ? "solid" : "light"} color="primary" onPress={() => setLanguageFilter("ENGLISH")}>{labelLanguage("ENGLISH")}</Button>
               </div>
             </div>
           </div>
@@ -300,7 +301,7 @@ function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: In
                         size="sm"
                         color={isActive ? "default" : "primary"}
                         variant={isActive ? "flat" : "light"}
-                        onClick={(e) => { e.stopPropagation(); handleCardClick(v); }}
+                        onPress={(e) => { (e as any).stopPropagation?.(); handleCardClick(v); }}
                         className="absolute -bottom-2 -right-2 z-20 rounded-full bg-white/80 backdrop-blur border border-default-200 shadow"
                         aria-label={isActive ? "Stop" : "Play"}
                       >
@@ -314,9 +315,9 @@ function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: In
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center flex-wrap gap-2">
                         <span className="font-semibold text-base">{v.name}</span>
-                        <Chip size="sm" variant="flat">{v.gender}</Chip>
+                        <Chip size="sm" variant="flat">{labelGender(v.gender as any)}</Chip>
                         {v.languages.map(l => (
-                          <Chip key={`${v.id}-${l}`} size="sm" variant="flat">{l}</Chip>
+                          <Chip key={`${v.id}-${l}`} size="sm" variant="flat">{labelLanguage(l as any)}</Chip>
                         ))}
                       </div>
                       {v.description && <div className="text-md text-default-500 mt-1 line-clamp-2">{v.description}</div>}
@@ -324,18 +325,18 @@ function InlineSelector({ voices, onSelect, defaultLanguage, defaultGender }: In
                   </div>
                 </div>
                 <div className={`mt-3 flex flex-row justify-between items-center gap-3 transition-opacity ${isActive ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
-                  <Button size="sm" color="primary" className="w-full bg-gradient-primary" onClick={(e) => { e.stopPropagation(); handleCardClick(v); }}>
-                    Preview
+                  <Button size="sm" color="primary" className="w-full bg-gradient-primary" onClick={(e) => { (e as any).stopPropagation?.(); handleCardClick(v); }}>
+                    {tr("preview")}
                   </Button>
-                  <Button size="sm" color="primary" className="w-full bg-gradient-primary" onClick={(e) => { e.stopPropagation(); void onSelect(v.id); }}>
-                    Select
+                  <Button size="sm" color="primary" className="w-full bg-gradient-primary" onClick={(e) => { (e as any).stopPropagation?.(); void onSelect(v.id); }}>
+                    {tr("select")}
                   </Button>
                 </div>
               </div>
             );
           })}
           {filtered.length === 0 && (
-            <div className="col-span-full py-8 text-center text-sm text-default-500">No voices match your filters.</div>
+            <div className="col-span-full py-8 text-center text-sm text-default-500">{tr("noVoices")}</div>
           )}
         </div>
 

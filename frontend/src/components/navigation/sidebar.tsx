@@ -14,10 +14,10 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
 
       <nav className={clsx("flex-1 flex flex-col gap-1", collapsed ? "px-1 py-2" : "px-2.5 py-3")}> 
         <NavItem to="/dashboard" icon={<SparklesIcon className="h-5 w-5" />} collapsed={collapsed} end>
-          Dashboard
+          Übersicht
         </NavItem>
         <NavItem to="/dashboard/scenarios" icon={<ListBulletIcon className="h-5 w-5" />} collapsed={collapsed}>
-          Scenarios
+          Szenarien
         </NavItem>
       </nav>
 

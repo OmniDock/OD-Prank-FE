@@ -14,9 +14,9 @@ const navigate = useNavigate();
 const items = [
     {
         key: "Profile",
-        label: "Profile",
+        label: "Profil",
         action: async () => {
-            navigate("/profile", { replace: true });
+            navigate("/dashboard/profile", { replace: true });
         }
     },
     // {
@@ -28,14 +28,14 @@ const items = [
     // },
     {
         key: "Pricing",
-        label: "Pricing",
+        label: "Preise",
         action:() => {
             navigate("/pricing", { replace: true });
         }
     },
     {
         key: "Logout",
-        label: "Logout",
+        label: "Abmelden",
         action: async () => {
             await signOut();
             navigate("/signin", { replace: true });
@@ -53,7 +53,7 @@ const items = [
 return (
     <Dropdown>
       <DropdownTrigger>
-        <Button variant="bordered">
+        <Button variant="flat" color="primary" isIconOnly className="rounded-full">
             <UserIcon className="w-5 h-5" /> 
         </Button>
       </DropdownTrigger>

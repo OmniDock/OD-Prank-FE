@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { labelGender, labelLanguage } from "@/lib/i18n";
 import { Card, CardBody, addToast, Button } from "@heroui/react";
 import type { Scenario } from "@/types/scenario";
 import DeleteConfirmationModal from "@/components/delete-confirmation-modal";
@@ -102,7 +103,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
                 <span className="text-secondary" aria-hidden>🗣️</span>
                 <span className="text-xs font-medium text-secondary">Sprache</span>
               </div>
-              <div className="text-base font-semibold text-foreground">{scenario.language}</div>
+              <div className="text-base font-semibold text-foreground">{labelLanguage(scenario.language as any)}</div>
             </div>
             )}
 
@@ -123,7 +124,7 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
                 <span className="text-secondary" aria-hidden>🚻</span>
                 <span className="text-xs font-medium text-secondary">Anrufer Geschlecht</span>
               </div>
-              <div className="text-base font-semibold text-foreground">{scenario.scenario_analysis?.analysis?.persona_gender}</div>
+              <div className="text-base font-semibold text-foreground">{labelGender(scenario.scenario_analysis?.analysis?.persona_gender as any)}</div>
             </div>
             )}
           </div>
@@ -157,9 +158,9 @@ export function ScenarioInfo({ scenario, onRefresh }: ScenarioInfoProps) {
         <DeleteConfirmationModal
           isOpen={isDeleteOpen}
           onOpenChange={setIsDeleteOpen}
-          title="Delete Scenario"
+          title="Szenario löschen"
           itemName={scenario.title}
-          description={`You are about to permanently delete the scenario "${scenario.title}" and all its associated data including voice lines and audio files.`}
+          description={`Sie sind dabei, das Szenario "${scenario.title}" und alle zugehörigen Daten, einschließlich Voice Lines und Audio-Dateien, dauerhaft zu löschen.`}
           onConfirm={handleDeleteConfirm}
         />
 

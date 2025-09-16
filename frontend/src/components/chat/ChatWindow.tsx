@@ -50,8 +50,8 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const hasInjectedInitialPromptRef = useRef<boolean>(false);
   const hasStarted = messages.length > 0;
-  const hasUserMessage = messages.some((m) => m.role === 'user');
-  const canCreate = hasUserMessage && !loading;
+  const userMessageCount = messages.filter((m) => m.role === 'user').length;
+  const canCreate = userMessageCount >= 2 && !loading;
   const lastRole = messages.length ? messages[messages.length - 1].role : undefined;
   const isUserTurn = !lastRole || lastRole === 'assistant';
 
@@ -312,7 +312,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
     <div className="w-full max-w-4xl mx-auto max-h-full relative">
       {canCreate && !disableScenarioCreation && (
         <div
-          className={`hidden md:flex absolute -top-6 left-1/2 -translate-x-1/2 z-40 transform-gpu transition-all duration-500 ${
+          className={`hidden md:flex absolute -top-10 left-1/2 -translate-x-1/2 z-40 transform-gpu transition-all duration-500 ${
             ctaVisible ? 'opacity-100' : 'opacity-0 '
           }`}
         >
@@ -430,7 +430,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
           </div>
           
           {/* Generate Button - Mobile only; desktop shows floating CTA */}
-          {hasUserMessage && !disableScenarioCreation && (
+          {userMessageCount >= 2 && !disableScenarioCreation && (
             <div className="mt-3 md:hidden">
               <Button
                 color="primary"
@@ -467,16 +467,16 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
       
       <Modal isOpen={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <ModalContent>
-          <ModalHeader>Reset Chat</ModalHeader>
+          <ModalHeader>Chat zurücksetzen</ModalHeader>
           <ModalBody>
-            Are you sure you want to reset the chat? This will clear the conversation and draft.
+            Sind Sie sicher, dass Sie den Chat zurücksetzen möchten? Dies wird die Konversation und den Entwurf löschen.
           </ModalBody>
           <ModalFooter>
             <Button variant="light" onPress={() => setIsConfirmOpen(false)}>
-              Cancel
+              Abbrechen
             </Button>
             <Button color="primary" onPress={handleResetChat} startContent={<ArrowPathIcon className="w-4 h-4" />}>
-              Reset Chat
+              Chat zurücksetzen
             </Button>
           </ModalFooter>
         </ModalContent>

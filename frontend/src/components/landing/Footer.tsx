@@ -24,7 +24,7 @@ export default function Footer() {
           
           {/* Copyright */}
           <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center">
-            © {new Date().getFullYear()} Callit.ai. All rights reserved.
+            © {new Date().getFullYear()} PrankGPT.de Alle Rechte vorbehalten.
           </p>
         </div>
       </div>
