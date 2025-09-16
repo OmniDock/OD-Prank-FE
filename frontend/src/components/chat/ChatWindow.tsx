@@ -42,8 +42,8 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const hasInjectedInitialPromptRef = useRef<boolean>(false);
   const hasStarted = messages.length > 0;
-  const hasUserMessage = messages.some((m) => m.role === 'user');
-  const canCreate = hasUserMessage && !loading;
+  const userMessageCount = messages.filter((m) => m.role === 'user').length;
+  const canCreate = userMessageCount >= 2 && !loading;
   const lastRole = messages.length ? messages[messages.length - 1].role : undefined;
   const isUserTurn = !lastRole || lastRole === 'assistant';
 
@@ -304,7 +304,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
     <div className="w-full max-w-4xl mx-auto max-h-full relative">
       {canCreate && (
         <div
-          className={`hidden md:flex absolute -top-9 left-1/2 -translate-x-1/2 z-40 transform-gpu transition-all duration-500 ${
+          className={`hidden md:flex absolute top-0 left-1/2 -translate-x-1/2 z-40 transform-gpu transition-all duration-500 ${
             ctaVisible ? 'opacity-100' : 'opacity-0 '
           }`}
         >
@@ -422,7 +422,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
           </div>
           
           {/* Generate Button - Mobile only; desktop shows floating CTA */}
-          {hasUserMessage && (
+          {userMessageCount >= 2 && (
             <div className="mt-3 md:hidden">
               <Button
                 color="primary"
