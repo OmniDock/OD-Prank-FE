@@ -15,7 +15,8 @@ import ImprintPage from "@/pages/imprint";
 import TermsPage from "@/pages/terms";
 import PrivacyPage from "@/pages/privacy";
 import PricingPage from "@/pages/pricing";
-import CheckoutPage from "@/pages/checkout";
+import CheckoutStandalonePage from "@/pages/dashboard/checkout-standalone";
+import PricingStandalonePage from "@/pages/dashboard/pricing-standalone";
 import ProfilePage from "@/pages/profile";
 import SubscriptionSuccessPage from "@/pages/subscription-success";
 import TemplateDetailPage from "@/pages/templates-detail";
@@ -39,7 +40,8 @@ function App() {
       </Route>
 
       <Route element={<ProtectedRoute />}>
-        <Route element={<CheckoutPage />} path="/checkout" />
+        <Route element={<CheckoutStandalonePage />} path="/dashboard/checkout" />
+        <Route element={<PricingStandalonePage />} path="/dashboard/pricing" />
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardMain />} />
           <Route path="scenarios" element={<ScenariosPage />} />

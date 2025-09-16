@@ -30,7 +30,7 @@ const items = [
         key: "Pricing",
         label: "Preise",
         action:() => {
-            navigate("/pricing", { replace: true });
+            navigate("/dashboard/pricing", { replace: true });
         }
     },
     {

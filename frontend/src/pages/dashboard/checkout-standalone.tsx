@@ -7,18 +7,18 @@ import {
 import {Navigate, useNavigate, useSearchParams} from "react-router-dom";
 import { Button } from "@heroui/button";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-import DefaultLayout from "@/layouts/default";
-import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthProvider";
 import { Plan } from "@/types/products";
+import AnimatedBackground from "@/components/ui/AnimatedBackground";
+import UserDropdown from "@/components/ui/userDropdown";
 
-// Make sure to call `loadStripe` outside of a component’s render to avoid
+// Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
 // test publishable API key.
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_SB_PUBLIC_KEY);
 
-export default function CheckoutPage() {
+export default function CheckoutStandalonePage() {
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -52,7 +52,7 @@ export default function CheckoutPage() {
       };
       setSelectedPlan(defaultPlan);
       // Clean up the URL
-      window.history.replaceState({}, '', '/checkout');
+      window.history.replaceState({}, '', '/dashboard/checkout');
     }
   }, [isLoggedIn, searchParams]);
 
@@ -86,14 +86,27 @@ export default function CheckoutPage() {
 
   const options = {fetchClientSecret};
 
-  const handleBackToPricing = () => {
-    navigate("/pricing");
+  const handleBackToDashboard = () => {
+    navigate("/dashboard");
   };
 
   return (
-    <DefaultLayout>
+    <div className="min-h-screen relative">
       <AnimatedBackground variant="mixed" density={12} />
       
+      {/* Top bar with back arrow and profile dropdown */}
+      <div className="relative z-10 flex justify-between items-center p-4">
+        <Button
+          variant="light"
+          size="sm"
+          onClick={handleBackToDashboard}
+          startContent={<ArrowLeftIcon className="w-4 h-4" />}
+        >
+          Dashboard
+        </Button>
+        <UserDropdown />
+      </div>
+
       <section className="relative flex flex-col items-center gap-8 pt-8 pb-4">
         <div className="text-center space-y-4">
           <span className="inline-block text-xs font-semibold uppercase tracking-widest text-purple-500 bg-purple-500/10 px-3 py-1 rounded-full">
@@ -110,17 +123,6 @@ export default function CheckoutPage() {
 
       <section className="py-12">
         <div id="checkout" className="max-w-2xl mx-auto relative">
-          {/* Back Arrow positioned on top of checkout form */}
-          <Button
-            isIconOnly
-            variant="light"
-            size="sm"
-            onClick={handleBackToPricing}
-            className="absolute -top-12 left-0 z-10"
-            aria-label="Back to pricing"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-          </Button>
           {stripePromise ? (
             <EmbeddedCheckoutProvider
               stripe={stripePromise}
@@ -136,7 +138,7 @@ export default function CheckoutPage() {
           )}
         </div>
       </section>
-    </DefaultLayout>
+    </div>
   );
 }
 
@@ -159,7 +161,7 @@ export const Return = () => {
 
   if (status === 'open') {
     return (
-      <Navigate to="/checkout" />
+      <Navigate to="/dashboard/checkout" />
     )
   }
 
@@ -177,4 +179,3 @@ export const Return = () => {
 
   return null;
 }
-

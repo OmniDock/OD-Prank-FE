@@ -1,7 +1,8 @@
 import { useMemo, useState, useEffect } from "react";
-import DefaultLayout from "@/layouts/default";
 import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { useNavigate } from "react-router-dom";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import PlanCard from "@/components/pricing/PlanCard";
 import { Plan } from "@/types/products";
@@ -9,10 +10,11 @@ import FAQ from "@/components/pricing/FAQ";
 import { useAuth } from "@/context/AuthProvider";
 import { getProductInfo } from "@/lib/api.stripe";
 import { getProfile } from "@/lib/api.profile";
+import UserDropdown from "@/components/ui/userDropdown";
 
 const STRIPE_SUBSCRIPTION_PORTAL_URL = import.meta.env.VITE_STRIPE_SUBSCRIPTION_PORTAL_URL;
 
-export default function PricingPage() {
+export default function PricingStandalonePage() {
   // const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +23,7 @@ export default function PricingPage() {
 
   const { user } = useAuth();
   const isLoggedIn = !!user;
+  const navigate = useNavigate();
 
   // Memoized plan construction to prevent recreation on every render
   const constructedPlans = useMemo(() => {
@@ -76,8 +79,8 @@ export default function PricingPage() {
   }, [profile]);
 
   const handlePlanSelect = (plan: Plan) => {
-    // Block selection if user has active subscription
-    if (hasActiveSubscription) {
+    // Block selection if user has active subscription (except for single plan)
+    if (hasActiveSubscription && plan.id !== 'single') {
       return;
     }
     
@@ -94,10 +97,27 @@ export default function PricingPage() {
     }
   };
 
+  const handleBackToDashboard = () => {
+    navigate("/dashboard");
+  };
 
   return (
-    <DefaultLayout>
+    <div className="min-h-screen relative">
       <AnimatedBackground variant="mixed" density={12} />
+      
+      {/* Top bar with back arrow and profile dropdown */}
+      <div className="relative z-10 flex justify-between items-center p-4">
+        <Button
+          variant="light"
+          size="sm"
+          onClick={handleBackToDashboard}
+          startContent={<ArrowLeftIcon className="w-4 h-4" />}
+        >
+          Dashboard
+        </Button>
+        <UserDropdown />
+      </div>
+
       <section className="relative flex flex-col items-center gap-8 pt-8 pb-4">
         <div className="text-center space-y-4">
           <span className="inline-block text-xs font-semibold uppercase tracking-widest text-purple-500 bg-purple-500/10 px-3 py-1 rounded-full">
@@ -160,8 +180,6 @@ export default function PricingPage() {
       <section className="py-16">
         <FAQ />
       </section>
-    </DefaultLayout>
+    </div>
   );
 }
-
-
