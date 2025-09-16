@@ -4,7 +4,8 @@ import { Card, CardBody, CardHeader, Button } from "@heroui/react";
 import { getProfile } from "@/lib/api.profile";
 import LoadingScreen from "@/components/LoadingScreen";
 import {SparklesIcon} from "@heroicons/react/24/outline";
-import { cancelSubscription } from "@/lib/api.stripe";
+
+const STRIPE_SUBSCRIPTION_PORTAL_URL = import.meta.env.VITE_STRIPE_SUBSCRIPTION_PORTAL_URL;
 
 // Helper function to get German subscription display names
 const getSubscriptionDisplayName = (subscriptionType: string | null): string => {
@@ -35,29 +36,6 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cancelling, setCancelling] = useState(false);
-
-  const cancelSubscriptionFn = async () => {
-    if (!profile?.subscription_id) return;
-    
-    try {
-      setCancelling(true);
-      const response = await cancelSubscription(profile.subscription_id as string);
-      
-      const result = await response;
-      
-      // Update profile with the cancellation info
-      setProfile(prev => prev ? {
-        ...prev,
-        cancel_at: result.cancel_at
-      } : null);
-      
-    } catch (err: any) {
-      setError(err?.message || "Fehler beim Beenden des Abonnements");
-    } finally {
-      setCancelling(false);
-    }
-  };
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -218,7 +196,7 @@ export default function ProfilePage() {
                 )}
                 {profile.subscription_id && profile.subscription_type && !profile.cancel_at && (
                   <div className="absolute bottom-0 left-0">
-                    <Button
+                    {/* <Button
                       size="sm"
                       variant="flat"
                       onPress={cancelSubscriptionFn}
@@ -226,7 +204,11 @@ export default function ProfilePage() {
                       className="text-xs"
                     >
                       Abo Beenden
-                    </Button>
+                    </Button> */}
+                    <Button size="sm" 
+                    color="primary" 
+                    onPress={() => window.open(STRIPE_SUBSCRIPTION_PORTAL_URL, '_blank')}>
+                    Manage deine Abos</Button>
                   </div>
                 )}
               </div>

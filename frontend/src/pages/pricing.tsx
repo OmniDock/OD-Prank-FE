@@ -8,11 +8,16 @@ import { Plan } from "@/types/products";
 import FAQ from "@/components/pricing/FAQ";
 import { useAuth } from "@/context/AuthProvider";
 import { getProductInfo } from "@/lib/api.stripe";
+import { getProfile } from "@/lib/api.profile";
+
+const STRIPE_SUBSCRIPTION_PORTAL_URL = import.meta.env.VITE_STRIPE_SUBSCRIPTION_PORTAL_URL;
 
 export default function PricingPage() {
   // const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   const { user } = useAuth();
   const isLoggedIn = !!user;
@@ -33,7 +38,7 @@ export default function PricingPage() {
     }));
   }, [plans]);
 
-  // Fetch product information on mount
+  // Fetch product information and profile on mount
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -47,11 +52,35 @@ export default function PricingPage() {
         setLoading(false);
       }
     };
+
+    const fetchProfile = async () => {
+      if (isLoggedIn) {
+        try {
+          const profileData = await getProfile();
+          setProfile(profileData);
+        } catch (error) {
+          console.error("Failed to fetch profile:", error);
+          setProfile(null);
+        }
+      }
+      setProfileLoading(false);
+    };
     
     fetchProducts();
-  }, []);
+    fetchProfile();
+  }, [isLoggedIn]);
+
+  // Check if user has an active subscription
+  const hasActiveSubscription = useMemo(() => {
+    return profile && profile.subscription_id !== null;
+  }, [profile]);
 
   const handlePlanSelect = (plan: Plan) => {
+    // Block selection if user has active subscription
+    if (hasActiveSubscription) {
+      return;
+    }
+    
     // Save the selected plan ID for checkout
     localStorage.setItem("selectedPlanId", plan.id);
     
@@ -87,7 +116,23 @@ export default function PricingPage() {
       </section>
 
       <section className="py-12">
-        {loading ? (
+        {/* Show subscription message if user has active subscription */}
+        {isLoggedIn && !profileLoading && hasActiveSubscription && (
+          <div className="mb-8 max-w-2xl mx-auto">
+            <div className="bg-success-50 border border-success-200 rounded-lg p-4 text-center">
+              <p className="text-black mb-3">Du hast bereits ein Abonnement.</p>
+              <Button 
+                color="success" 
+                size="sm"
+                onPress={() => window.open(STRIPE_SUBSCRIPTION_PORTAL_URL, '_blank')}
+              >
+                Abonnement verwalten
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {loading || profileLoading ? (
           <div className="flex justify-center items-center py-12">
             <div className="text-default-500">Loading plans...</div>
           </div>
@@ -99,6 +144,7 @@ export default function PricingPage() {
                 plan={p} 
                 billing={"monthly"} 
                 onPlanSelect={handlePlanSelect}
+                disabled={hasActiveSubscription}
               />
             ))}
           </div>

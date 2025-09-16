@@ -6,11 +6,15 @@ import { Plan } from "@/types/products";
 export default function PlanCard({
   plan,
   onPlanSelect,
+  disabled = false,
 }: {
   plan: Plan;
   billing: "monthly" | "annual";
   onPlanSelect?: (plan: Plan) => void;
+  disabled?: boolean;
 }) {
+  // Disable weekly and monthly plans, but allow single plan even with subscription
+  const isDisabled = disabled && (plan.id === 'weekly' || plan.id === 'monthly');
   // Use the plan's price and interval if available, otherwise fall back to billing toggle
   const price = plan.price !== undefined ? plan.price : null;
   // const price = (plan as any).price !== undefined ? (plan as any).price : 
@@ -58,8 +62,9 @@ export default function PlanCard({
           variant={plan.popular ? "solid" : "bordered"}
           className={plan.popular ? "bg-gradient-primary w-full" : "w-full"}
           onClick={() => onPlanSelect?.(plan)}
+          isDisabled={isDisabled}
         >
-          {plan.ctaLabel}
+          {isDisabled ? "Bereits abonniert" : plan.ctaLabel}
         </Button>
       </CardFooter>
     </Card>
