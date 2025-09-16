@@ -175,38 +175,15 @@ export default function TemplateDetailPage() {
 
   return (
     <DefaultLayout>
-      <section className="py-0">
-        {/* Full-width hero image (with top padding below navbar) */}
-        {loading ? (
-          <div className="w-full pt-8 md:pt-12">
-            <div className="w-full h-[44vh] bg-default-100 animate-pulse" />
-          </div>
-        ) : scenario ? (
-          <div className="w-full pt-8 md:pt-12 relative rounded-3xl">
-            <div className="w-full h-[44vh] overflow-hidden bg-default-100 relative rounded-3xl">
-              <img
-                src={resolveScenarioImageUrl(scenario.background_image_url, scenario.id, 1800, 900)}
-                alt={scenario.title}
-                className="w-full h-full object-fill"
-                loading="lazy"
-              />
-            </div>
-            {voice?.avatar_url && (
-              <div className="absolute -bottom-6 -right-6 md:-bottom-8 md:-right-8 z-20">
-                <img
-                  src={voice.avatar_url}
-                  alt={voice.name}
-                  className="w-30 h-30 md:w-40 md:h-40 rounded-full ring-2 ring-background/70 shadow-xl object-cover bg-white"
-                  loading="lazy"
-                />
-              </div>
-            )}
-          </div>
-        ) : null}
+      <section className="py-0 mt-10">
+        
 
-        <div className="container mx-auto px-4 max-w-5xl py-10">
+        <div className="container mx-auto px-4 max-w-7xl py-10">
           {loading && (
             <div className="space-y-6">
+              <div className="h-72 md:h-96 bg-default-100 rounded-2xl animate-pulse" />
+              <div className="h-10 w-2/3 bg-default-100 rounded animate-pulse" />
+              <div className="h-10 w-2/3 bg-default-100 rounded animate-pulse" />
               <div className="h-10 w-2/3 bg-default-100 rounded animate-pulse" />
               <div className="h-5 w-1/3 bg-default-100 rounded animate-pulse" />
               <div className="grid grid-cols-1 gap-4">
@@ -219,22 +196,46 @@ export default function TemplateDetailPage() {
 
           {!loading && scenario && (
             <div className="flex flex-col gap-8">
-              {/* Title + chips */}
-              <div>
-                <h1 className="text-3xl md:text-4xl font-extrabold mb-3">{scenario.title}</h1>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Chip size="sm" variant="flat" color="primary" className="rounded-full">
-                    {getLanguageFlag(scenario.language)} {labelLanguage(scenario.language as any)}
-                  </Chip>
-                  {voice?.name && (
-                    <Chip size="sm" variant="flat" color="secondary" className="rounded-full">
-                      {voice.name}
+              {/* Title/description with responsive image+avatar aside */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-start">
+                <div className="md:col-span-2">
+                  <div className="relative w-full">
+                    <div className="overflow-hidden rounded-2xl bg-default-100">
+                      <img
+                        src={resolveScenarioImageUrl(scenario.background_image_url, scenario.id, 1200, 800)}
+                        alt={scenario.title}
+                        className="w-full h-72 md:h-96 object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    {voice?.avatar_url && (
+                      <div className="absolute -bottom-5 -right-5 md:-bottom-6 md:-right-6 z-20">
+                        <img
+                          src={voice.avatar_url}
+                          alt={voice.name}
+                          className="w-28 h-28 md:w-32 md:h-32 rounded-full ring-2 ring-background/70 shadow-xl object-cover bg-white"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="md:col-span-3">
+                  <h1 className="text-3xl md:text-4xl font-extrabold mb-3">{scenario.title}</h1>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Chip size="sm" variant="flat" color="primary" className="rounded-full">
+                      {getLanguageFlag(scenario.language)} {labelLanguage(scenario.language as any)}
                     </Chip>
+                    {voice?.name && (
+                      <Chip size="sm" variant="flat" color="secondary" className="rounded-full">
+                        {voice.name}
+                      </Chip>
+                    )}
+                  </div>
+                  {scenario.description && (
+                    <p className="text-default-600 leading-relaxed mt-4">{scenario.description}</p>
                   )}
                 </div>
-                {scenario.description && (
-                  <p className="text-default-600 leading-relaxed mt-4">{scenario.description}</p>
-                )}
               </div>
 
               {/* Voice lines list with inline playback and progress, similar to dashboard */}
