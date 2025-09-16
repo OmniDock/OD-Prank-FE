@@ -33,6 +33,12 @@ export default function ScenarioDetailPage() {
     if (!scenario?.preferred_voice_id) return null;
     return voices.find(v => v.id === scenario.preferred_voice_id) || null;
   }, [voices, scenario?.preferred_voice_id]);
+
+  const allAudiosReady = useMemo(() => {
+    if (!scenario?.preferred_voice_id) return false;
+    const lines = scenario?.voice_lines || [];
+    return lines.length > 0 && lines.every(vl => !!vl.preferred_audio);
+  }, [scenario]);
   const refetchScenario = async () => {
     if (!id) return;
     try {
@@ -169,7 +175,7 @@ export default function ScenarioDetailPage() {
       )}
 
       {/* Green Call Box between details and voice lines */}
-      {scenario.is_safe && scenario.preferred_voice_id && (
+      {scenario.is_safe && scenario.preferred_voice_id && allAudiosReady && (
         <CallStartBox scenario={scenario} preferredVoice={preferredVoice} />
       )}
 
