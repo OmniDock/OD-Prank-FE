@@ -24,6 +24,7 @@ type LocationState = {
 };
 
 const RINGTONE_URL = "https://hamazyumbvmhgkuwllvw.supabase.co/storage/v1/object/public/ringtones/ringtone.mp3";
+const PLAYLINE_DEBOUNCE_MS = 500;
 
 function groupByType(voiceLines: VoiceLine[]) {
   const order: VoiceLineType[] = ["OPENING", "FILLER", "QUESTION", "RESPONSE", "CLOSING"];
@@ -63,6 +64,28 @@ function ActiveCallContent() {
   const confStartAtRef = useRef<number | null>(null);
   const confTargetMsRef = useRef<number | null>(null);
   const confCurrentLineIdRef = useRef<number | null>(null);
+  const playGuardRef = useRef(false);
+  const playGuardTimerRef = useRef<number | null>(null);
+
+  const clearPlayGuardTimeout = () => {
+    if (playGuardTimerRef.current !== null) {
+      window.clearTimeout(playGuardTimerRef.current);
+      playGuardTimerRef.current = null;
+    }
+  };
+
+  const releasePlayGuard = () => {
+    clearPlayGuardTimeout();
+    playGuardRef.current = false;
+  };
+
+  const schedulePlayGuardRelease = () => {
+    clearPlayGuardTimeout();
+    playGuardTimerRef.current = window.setTimeout(() => {
+      playGuardRef.current = false;
+      playGuardTimerRef.current = null;
+    }, PLAYLINE_DEBOUNCE_MS);
+  };
 
   useEffect(() => {
     if (!scenarioId) return;
@@ -82,6 +105,12 @@ function ActiveCallContent() {
 
   const grouped = useMemo(() => groupByType(scenario?.voice_lines ?? []), [scenario]);
 
+  useEffect(() => {
+    return () => {
+      releasePlayGuard();
+    };
+  }, []);
+
   const playVoiceLine = async (voiceLineId: number) => {
     // If clicking the same line that's playing, toggle stop based on mode
     if (playingLineId === voiceLineId && isPlaying) {
@@ -93,9 +122,13 @@ function ActiveCallContent() {
       return;
     }
 
-    // Conference mode: publish to Telnyx and mark active tile
-    if (result?.conference_name) {
-      try {
+    if (playGuardRef.current) return;
+
+    playGuardRef.current = true;
+    clearPlayGuardTimeout();
+
+    try {
+      if (result?.conference_name) {
         // cancel any prior simulated progress
         if (progressRafRef.current !== null) {
           cancelAnimationFrame(progressRafRef.current);
@@ -169,16 +202,11 @@ function ActiveCallContent() {
           };
           progressRafRef.current = requestAnimationFrame(loop);
         }
-      } catch (error) {
-        console.error("Failed to play voice line to conference:", error);
-      }
-      return;
-    }
+      } else {
+        // Local preview mode: play with progress animation
+        const voiceLine = scenario?.voice_lines.find(vl => vl.id === voiceLineId);
+        if (!voiceLine || !audioRef.current) return;
 
-    // Local preview mode: play with progress animation
-    const voiceLine = scenario?.voice_lines.find(vl => vl.id === voiceLineId);
-    if (voiceLine && audioRef.current) {
-      try {
         setLoadingId(voiceLineId);
         const audioUrlResponse = await getAudioUrl(voiceLine.id, scenario?.preferred_voice_id || undefined);
         if (audioUrlResponse.status === "PENDING") {
@@ -211,16 +239,23 @@ function ActiveCallContent() {
         } else {
           setLoadingId(null);
         }
-      } catch (error) {
+      }
+    } catch (error) {
+      if (result?.conference_name) {
+        console.error("Failed to play voice line to conference:", error);
+      } else {
         console.error("Failed to play audio locally:", error);
         setLoadingId(null);
         setIsPlaying(false);
         setPlayingLineId(null);
       }
+    } finally {
+      schedulePlayGuardRelease();
     }
   };
 
   const stopPlayback = () => {
+    releasePlayGuard();
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -242,7 +277,7 @@ function ActiveCallContent() {
   // Add a stop conference playback function after line 73:
   const stopConferencePlayback = async () => {
     if (!result?.conference_name) return;
-    
+
     try {
       const res = await apiFetch("/telnyx/call/stop-voiceline", {
         method: "POST",
@@ -269,8 +304,10 @@ function ActiveCallContent() {
       setProgress(0);
       setPlayingLineId(null);
       setIsPlaying(false);
+      releasePlayGuard();
     } catch (error) {
       console.error("Failed to stop conference playback:", error);
+      releasePlayGuard();
     }
   };
 
@@ -710,5 +747,3 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
     </Card>
   );
 }
-
-
