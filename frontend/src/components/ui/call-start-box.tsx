@@ -124,36 +124,6 @@ export function CallStartBox({ scenario, callCredits, preferredVoice }: { scenar
           </div>
         </CardHeader>
         <CardBody className="space-y-3 flex flex-col items-center justify-center mb-4">
-          <div className="max-w-sm w-full flex flex-col items-center justify-center gap-4">
-            <Input
-              label="German Phone Number"
-              placeholder="+49301234567"
-              labelPlacement="outside"
-              value={toNumber}
-              onChange={(e) => setToNumber(e.target.value)}
-              // description={normalized ? `Will dial: ${normalized}` : "Enter a valid German (+49) number"}
-              isInvalid={toNumber.length > 0 && !normalized}
-              isDisabled={loading !== "idle"}
-              size="md"
-              startContent={<span className="text-default-400" aria-hidden>📞</span>}
-              className="max-w-sm"
-            />
-            <Button
-              size="md"
-              color={hasNoCallCredits ? "warning" : "primary"}
-              className={`font-semibold w-full ${hasNoCallCredits ? '' : 'text-white'}`}
-              onPress={hasNoCallCredits ? goToPricing : startCall}
-              isDisabled={loading === "dialing"}
-              isLoading={loading === "dialing"}
-            >
-              {loading === "dialing" ? "Dialing..." : hasNoCallCredits ? "Keine Credits mehr, hol dir Neue!" : (
-                <span className="inline-flex items-center gap-2">
-                  <span aria-hidden>📞</span> Start Call
-                </span>
-              )}
-            </Button>
-          </div>
-          
           {error && (
             <div className="p-2 rounded-medium bg-danger-50 border border-danger-200 text-danger text-xs">
               {error}

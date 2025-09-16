@@ -29,7 +29,15 @@ export default function ScenarioDetailPage() {
   const [tableKey, setTableKey] = useState(0);
   const [callCredits, setCallCredits] = useState<number | null>(null);
   
+  const preferredVoice = useMemo(() => 
+    voices.find(v => v.id === scenario?.preferred_voice_id) || null,
+    [voices, scenario?.preferred_voice_id]
+  );
 
+  const allAudiosReady = useMemo(() => 
+    scenario?.voice_lines.every(vl => vl.preferred_audio?.signed_url) || false,
+    [scenario?.voice_lines]
+  );
 
   const refetchScenario = async () => {
     if (!id) return;
