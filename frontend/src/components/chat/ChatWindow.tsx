@@ -304,7 +304,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
     <div className="w-full max-w-4xl mx-auto max-h-full relative">
       {canCreate && (
         <div
-          className={`hidden md:flex absolute top-0 left-1/2 -translate-x-1/2 z-40 transform-gpu transition-all duration-500 ${
+          className={`hidden md:flex absolute -top-10 left-1/2 -translate-x-1/2 z-40 transform-gpu transition-all duration-500 ${
             ctaVisible ? 'opacity-100' : 'opacity-0 '
           }`}
         >
