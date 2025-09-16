@@ -193,7 +193,7 @@ export default function ScenarioDetailPage() {
         <CallStartBox scenario={scenario} callCredits={callCredits} preferredVoice={preferredVoice} />
       )}
 
-      {scenario.preferred_voice_id && (
+      {/* {scenario.preferred_voice_id && ( */}
         <>
           <VoiceGenerationStatus scenarioId={scenario.id} totalCount={scenario.voice_lines.length} />
           <VoiceLinesTable 
@@ -204,7 +204,7 @@ export default function ScenarioDetailPage() {
           />
           
         </>
-      )}
+      {/* )} */}
 
 
       {scenario && (
