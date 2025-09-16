@@ -63,12 +63,8 @@ export function CallStartBox({ scenario, callCredits, preferredVoice }: { scenar
     }
   }
 
-  function goToPricing() {
-    navigate("/pricing");
-  }
-
   return (
-    <div className="flex justify-center my-10">
+    <div className="flex flex-col items-center my-10">
       <Card className="ring-1 ring-success-200 border-success-200 bg-success-50/60 ">
         <CardHeader className="py-5">
           <div className="flex items-center gap-4 w-full flex-wrap md:flex-nowrap">
@@ -123,14 +119,20 @@ export function CallStartBox({ scenario, callCredits, preferredVoice }: { scenar
             </div>
           </div>
         </CardHeader>
-        <CardBody className="space-y-3 flex flex-col items-center justify-center mb-4">
-          {error && (
+        {error && (
+          <CardBody className="pt-0 pb-4">
             <div className="p-2 rounded-medium bg-danger-50 border border-danger-200 text-danger text-xs">
               {error}
             </div>
-          )}
-        </CardBody>
+          </CardBody>
+        )}
       </Card>
+        {hasNoCallCredits && (
+          <div className="bg-warning-50 text-warning-700 border border-warning-200 p-3 rounded-lg text-sm mt-3 max-w-md text-center">
+            <p>Du hast keine Call-Credits mehr</p>
+            <Button size="sm" color="warning" onPress={() => navigate("/pricing")} className="mt-2">Hol dir Welche!</Button>
+          </div>
+        )}
     </div>
   );
 }

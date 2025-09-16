@@ -1,13 +1,17 @@
 import { useCallback, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import ChatWindow from "@/components/chat/ChatWindow";
 import ScenarioLoadingIndicator from "@/components/LoadingScreen";
 import { getCredits } from "@/lib/api.profile";
+import { Button } from "@heroui/react";
+
 
 type Props = {
   onExpand?: () => void;
 };
 
 export default function ChatWindowWrapper({ onExpand }: Props) {
+  const navigate = useNavigate();
   const [hasUserInput, setHasUserInput] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +94,7 @@ export default function ChatWindowWrapper({ onExpand }: Props) {
             <div className="bg-warning-50 text-warning-700 border border-warning-200 p-4 rounded-lg text-sm mb-4 max-w-md text-center">
               <p className="font-medium">Keine Prank-Credits verfügbar</p>
               <p className="mt-1">Du benötigst Credits, um Szenarien zu erstellen. Schließe ein Abonnement ab um Credits zu erhalten.</p>
+              <Button size="sm" color="warning" onPress={() => navigate("/pricing")}>Zu den Abonnements</Button>  
             </div>
           )}
           {creditsError && (

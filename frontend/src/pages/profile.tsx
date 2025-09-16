@@ -221,7 +221,6 @@ export default function ProfilePage() {
                     <Button
                       size="sm"
                       variant="flat"
-                      color="danger"
                       onPress={cancelSubscriptionFn}
                       isLoading={cancelling}
                       className="text-xs"
