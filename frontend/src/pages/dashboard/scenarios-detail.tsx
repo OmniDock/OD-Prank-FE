@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Card,
@@ -29,6 +29,10 @@ export default function ScenarioDetailPage() {
   
 
 
+  const preferredVoice = useMemo(() => {
+    if (!scenario?.preferred_voice_id) return null;
+    return voices.find(v => v.id === scenario.preferred_voice_id) || null;
+  }, [voices, scenario?.preferred_voice_id]);
   const refetchScenario = async () => {
     if (!id) return;
     try {
@@ -166,7 +170,7 @@ export default function ScenarioDetailPage() {
 
       {/* Green Call Box between details and voice lines */}
       {scenario.is_safe && scenario.preferred_voice_id && (
-        <CallStartBox scenario={scenario} />
+        <CallStartBox scenario={scenario} preferredVoice={preferredVoice} />
       )}
 
       {scenario.preferred_voice_id && (
@@ -178,6 +182,7 @@ export default function ScenarioDetailPage() {
             onRefetchScenario={refetchScenario}
             onOpenPlayer={onOpenPlayer}
           />
+          
         </>
       )}
 

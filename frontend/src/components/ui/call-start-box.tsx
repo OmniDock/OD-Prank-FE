@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Button, Card, CardBody, CardHeader, Input } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
 import type { Scenario } from "@/types/scenario";
+import type { VoiceItem } from "@/types/tts";
 import { apiFetch } from "@/lib/api";
 import { tr } from "@/lib/i18n";
 // Using emoji for icons
@@ -32,7 +33,7 @@ function normalizeGermanNumber(input: string): string | null {
   return null;
 }
 
-export function CallStartBox({ scenario }: { scenario: Scenario }) {
+export function CallStartBox({ scenario, preferredVoice }: { scenario: Scenario; preferredVoice?: VoiceItem | null }) {
   const [toNumber, setToNumber] = useState<string>("");
   const [loading, setLoading] = useState<"idle" | "dialing">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +64,7 @@ export function CallStartBox({ scenario }: { scenario: Scenario }) {
 
   return (
     <div className="flex justify-center my-10">
-      <Card className="ring-1 ring-success-200 border-success-200 bg-success-50/60 max-w-2xl w-2xl">
+      <Card className="ring-1 ring-success-200 border-success-200 bg-success-50/60 ">
         <CardHeader className="py-5">
           <div className="flex items-center gap-4 w-full flex-wrap md:flex-nowrap">
             <div className="flex items-center gap-3 shrink-0">
@@ -72,6 +73,27 @@ export function CallStartBox({ scenario }: { scenario: Scenario }) {
               </div>
               <h2 className="text-xl font-semibold text-foreground">Anruf starten</h2>
             </div>
+            {preferredVoice && (
+              <div className="flex items-center gap-3">
+                <div className="relative w-16 h-16 md:w-20 md:h-20 shrink-0">
+                  <div className="w-full h-full rounded-full overflow-hidden ring-2 ring-success/40 bg-white flex items-center justify-center">
+                    {preferredVoice.avatar_url ? (
+                      <img src={preferredVoice.avatar_url} alt={preferredVoice.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-lg md:text-xl font-semibold text-success">
+                        {(preferredVoice.name?.[0] || "?").toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs text-default-500">Verwendete Stimme</span>
+                  <span className="text-sm md:text-base font-semibold text-foreground truncate">
+                    {preferredVoice.name}
+                  </span>
+                </div>
+              </div>
+            )}
             <div className="ml-auto flex items-center gap-2">
               <Input
                 placeholder={tr("germanPhoneNumber")}
