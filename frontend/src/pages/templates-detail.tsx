@@ -176,8 +176,6 @@ export default function TemplateDetailPage() {
   return (
     <DefaultLayout>
       <section className="py-0 mt-10">
-        
-
         <div className="container mx-auto px-4 max-w-7xl py-10">
           {loading && (
             <div className="space-y-6">
@@ -248,9 +246,7 @@ export default function TemplateDetailPage() {
                     return (
                       <div key={vl.id}>
                         {showSeparator && (
-                          <div className="w-full bg-primary/30 border border-primary rounded-lg my-2 mt-8 px-2 py-1 text-sm text-primary font-medium opacity-80">
-                            {labelVoiceLineType(vl.type as any)}
-                          </div>
+                          <div className="w-full bg-primary/30 rounded-lg my-2 mt-8 text-sm text-primary font-medium opacity-80"/>
                         )}
                         <Card className="border-default-200/60 hover:shadow-lg transition-shadow">
                           <CardBody className="relative">
