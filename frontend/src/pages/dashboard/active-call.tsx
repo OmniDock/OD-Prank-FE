@@ -126,6 +126,7 @@ function ActiveCallContent() {
 
     playGuardRef.current = true;
     clearPlayGuardTimeout();
+    setLoadingId(voiceLineId);
 
     try {
       if (result?.conference_name) {
@@ -146,6 +147,7 @@ function ActiveCallContent() {
         setIsPlaying(true);
         setIsPaused(false);
         setProgress(0);
+        setLoadingId(null);
 
         // Simulate progress using known duration when available
         const vl = scenario?.voice_lines.find(v => v.id === voiceLineId);
@@ -205,9 +207,11 @@ function ActiveCallContent() {
       } else {
         // Local preview mode: play with progress animation
         const voiceLine = scenario?.voice_lines.find(vl => vl.id === voiceLineId);
-        if (!voiceLine || !audioRef.current) return;
+        if (!voiceLine || !audioRef.current) {
+          setLoadingId(null);
+          return;
+        }
 
-        setLoadingId(voiceLineId);
         const audioUrlResponse = await getAudioUrl(voiceLine.id, scenario?.preferred_voice_id || undefined);
         if (audioUrlResponse.status === "PENDING") {
           setLoadingId(null);
@@ -241,6 +245,7 @@ function ActiveCallContent() {
         }
       }
     } catch (error) {
+      setLoadingId(null);
       if (result?.conference_name) {
         console.error("Failed to play voice line to conference:", error);
       } else {
@@ -304,6 +309,7 @@ function ActiveCallContent() {
       setProgress(0);
       setPlayingLineId(null);
       setIsPlaying(false);
+      setLoadingId(null);
       releasePlayGuard();
     } catch (error) {
       console.error("Failed to stop conference playback:", error);
@@ -445,6 +451,12 @@ function ActiveCallContent() {
                             }`}
                             onClick={() => playVoiceLine(vl.id)}
                           >
+                            {isLoading && (
+                              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 rounded-medium bg-white/80 text-default-600 pointer-events-none dark:bg-black/50">
+                                <Spinner size="sm" color="default" />
+                                <span className="text-xs font-semibold uppercase tracking-wide">Sending…</span>
+                              </div>
+                            )}
                             {/* Progress overlay (curtain) */}
                             {isActive && (
                               <div className="absolute inset-0 z-0 overflow-hidden rounded-medium pointer-events-none">
