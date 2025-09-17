@@ -52,7 +52,7 @@ export default function VoiceCard({
       <CardBody className="p-6 overflow-hidden">
         <div className="flex items-start gap-5">
           <motion.div
-            className="relative w-28 h-28 md:w-32 md:h-32 shrink-0 overflow-hidden"
+            className="relative w-28 h-28 md:w-32 md:h-32 shrink-0"
             animate={!isPlaying ? { y: [0, -3, 0] } : {}}
             transition={!isPlaying ? { duration: 3, repeat: Infinity } : {}}
           >
