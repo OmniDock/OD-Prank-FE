@@ -4,13 +4,13 @@ export enum SubscriptionTypes {
     YEARLY = "yearly"
   }
 
-export enum ProductNames {
-    SUBSCRIPTION = "Subscription",
+export enum ProductTypes {
+    SUBSCRIPTION = "subscription",
+    ONE_TIME = "oneTime",
 }
 
 export type Plan = {
     id: string;
-    name: string;
     tagline: string;
     price: number;
     interval: string;
@@ -18,4 +18,17 @@ export type Plan = {
     ctaLabel: string;
     ctaHref: string;
     popular?: boolean;
+    type: string;
+    displayName: string;
   };
+
+export const Products = {
+  Subscriptions: {
+    'weekly' : {label: 'Woche', displayName : 'Wöchentliches Abo'},
+    'monthly' : {label: 'Monat', displayName : 'Monatliches Abo'},
+  },
+  OneTimeProducts: {
+    'single' : {label: 'Prank', displayName : 'Einzelne Pranks'},
+  },
+}
+  

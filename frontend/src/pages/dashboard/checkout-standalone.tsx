@@ -9,7 +9,7 @@ import { Button } from "@heroui/button";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthProvider";
-import { Plan } from "@/types/products";
+import { Plan, ProductTypes } from "@/types/products";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import UserDropdown from "@/components/ui/userDropdown";
 
@@ -28,7 +28,7 @@ export default function CheckoutStandalonePage() {
   //TODO: Cleanup state management.
   // Get plan ID from URL parameter or localStorage
   const planId = searchParams.get('id') || localStorage.getItem('selectedPlanId');
-
+  const amount = searchParams.get('amount') || localStorage.getItem('selectedPlanAmount');
   // Check if user should be redirected to checkout after login
   useEffect(() => {
     const shouldShowCheckout = searchParams.get('checkout') === 'true';
@@ -36,7 +36,8 @@ export default function CheckoutStandalonePage() {
       // Set a default plan (starter plan)
       const defaultPlan: Plan = {
         id: "starter",
-        name: "Starter",
+        type: ProductTypes.SUBSCRIPTION,
+        displayName: "Starter",
         tagline: "For solo creators",
         price: 12,
         interval: "month",
@@ -70,7 +71,7 @@ export default function CheckoutStandalonePage() {
       },
       body: JSON.stringify({
         product_type: planId,
-        quantity: 1
+        quantity: amount
       }),
     })
       .then((res) => {
@@ -87,7 +88,7 @@ export default function CheckoutStandalonePage() {
   const options = {fetchClientSecret};
 
   const handleBackToDashboard = () => {
-    navigate("/dashboard");
+    navigate("/dashboard/pricing");
   };
 
   return (
@@ -102,7 +103,7 @@ export default function CheckoutStandalonePage() {
           onClick={handleBackToDashboard}
           startContent={<ArrowLeftIcon className="w-4 h-4" />}
         >
-          Dashboard
+          Preisübersicht
         </Button>
         <UserDropdown />
       </div>
@@ -116,7 +117,7 @@ export default function CheckoutStandalonePage() {
             Complete your purchase
           </h1>
           <p className="text-default-500 max-w-2xl mx-auto">
-            You're subscribing to the {selectedPlan?.name || "Starter"} plan
+            {selectedPlan?.displayName || 'Abonnement'} 
           </p>
         </div>
       </section>
