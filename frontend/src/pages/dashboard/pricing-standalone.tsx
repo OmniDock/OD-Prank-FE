@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import PlanCard from "@/components/pricing/PlanCard";
 import { Plan } from "@/types/products";
-import FAQ from "@/components/pricing/FAQ";
 import { useAuth } from "@/context/AuthProvider";
 import { getProductInfo } from "@/lib/api.stripe";
 import { getProfile } from "@/lib/api.profile";
@@ -142,9 +141,6 @@ export default function PricingStandalonePage() {
             ))}
           </div>
         )}
-      </section>
-      <section className="py-16">
-        <FAQ />
       </section>
     </div>
   );
