@@ -535,15 +535,18 @@ function WebRTCMonitor({ token, conference }: { token: string; conference: strin
   useEffect(() => {
     const audio = ringtoneRef.current;
     if (!audio) return;
-    if (connectionState === "connecting") {
+
+    const shouldRing = connectionState === "connecting" && !pstnJoined;
+    if (shouldRing) {
       audio.loop = true;
       audio.currentTime = 0;
       audio.play().catch(() => {});
     } else {
       audio.pause();
+      audio.loop = false;
       audio.currentTime = 0;
     }
-  }, [connectionState]);
+  }, [connectionState, pstnJoined]);
 
   const handleInterrupt = async () => {
     try {
