@@ -1,18 +1,52 @@
 import { NavLink } from "react-router-dom";
-import { SparklesIcon, ListBulletIcon } from "@heroicons/react/24/outline";
+import {
+  SparklesIcon,
+  ListBulletIcon,
+  ChevronDoubleLeftIcon,
+  ChevronDoubleRightIcon,
+} from "@heroicons/react/24/outline";
 import { Logo } from "@/components/icons";
-import { Tooltip } from "@heroui/react";
+import { Button, Tooltip } from "@heroui/react";
 import clsx from "clsx";
 
-export function Sidebar({ collapsed }: { collapsed: boolean }) {
+export function Sidebar({
+  collapsed,
+  onToggle,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <aside className={clsx("hidden lg:flex flex-col bg-transparent shadow-xl rounded-2xl m-1 shadow-primary-500/10")}> 
-      <div className={clsx("flex items-center gap-2.5", collapsed ? "h-14 px-3 justify-center" : "h-14 px-3")}> 
-        <Logo size={28} />
-        {!collapsed && <div className="text-base font-semibold truncate">Cally AI</div>}
+    <aside
+      className={clsx(
+        "hidden lg:flex flex-col bg-transparent shadow-xl rounded-2xl m-1 shadow-primary-500/10 transition-[width] duration-200",
+        collapsed ? "w-20" : "w-64"
+      )}
+    >
+      <div
+        className={clsx(
+          "flex items-center",
+          collapsed ? "h-14 px-2 justify-center" : "h-14 px-3 justify-between"
+        )}
+      >
+        <div className={clsx("flex items-center", collapsed ? "gap-1" : "gap-2.5")}> 
+          <Logo size={28} />
+          {!collapsed && <div className="text-base font-semibold truncate">Cally AI</div>}
+        </div>
+        {!collapsed && (
+          <Button
+            isIconOnly
+            size="sm"
+            variant="light"
+            onPress={onToggle}
+            aria-label="Collapse sidebar"
+          >
+            <ChevronDoubleLeftIcon className="h-5 w-5" />
+          </Button>
+        )}
       </div>
 
-      <nav className={clsx("flex-1 flex flex-col gap-1", collapsed ? "px-1 py-2" : "px-2.5 py-3")}> 
+      <nav className={clsx("flex-1 flex flex-col gap-1", collapsed ? "px-1 py-2" : "px-2.5 py-3")}>
         <NavItem to="/dashboard" icon={<SparklesIcon className="h-5 w-5" />} collapsed={collapsed} end>
           Übersicht
         </NavItem>
@@ -21,7 +55,19 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
         </NavItem>
       </nav>
 
-
+      {collapsed && (
+        <div className="px-1 pb-3 flex justify-center">
+          <Button
+            isIconOnly
+            size="sm"
+            variant="light"
+            onPress={onToggle}
+            aria-label="Expand sidebar"
+          >
+            <ChevronDoubleRightIcon className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
     </aside>
   );
 }
@@ -59,5 +105,3 @@ function NavItem({ to, icon, children, collapsed, end }: { to: string; icon: Rea
 }
 
 export default Sidebar;
-
-

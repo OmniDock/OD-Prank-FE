@@ -3,20 +3,27 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/components/navigation/sidebar";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import { Button } from "@heroui/react";
-import { ArrowLeftIcon} from "@heroicons/react/24/outline";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useLocation } from "react-router-dom";
 import UserDropdown from "@/components/ui/userDropdown";
 
 export default function DashboardLayout() {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState<boolean>(true);
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    const saved = localStorage.getItem("sidebar-collapsed");
+    return saved === "true";
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    if (saved === "true") setCollapsed(true);
-  }, []);
+    localStorage.setItem("sidebar-collapsed", collapsed ? "true" : "false");
+  }, [collapsed]);
 
+  const toggleSidebar = () => setCollapsed((prev) => !prev);
 
   // Function to get dynamic title based on path
   const getPageTitle = () => {
@@ -57,10 +64,12 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className={`h-screen w-screen grid grid-rows-[auto_1fr] grid-cols-1 lg:grid-rows-1 ${collapsed ? "lg:grid-cols-[auto_1fr]" : "lg:grid-cols-[10rem_1fr]"}`}>
+    <div
+      className={`h-screen w-screen grid grid-rows-[auto_1fr] grid-cols-1 lg:grid-rows-1 ${collapsed ? "lg:grid-cols-[5rem_1fr]" : "lg:grid-cols-[16rem_1fr]"}`}
+    >
       <AnimatedBackground variant="mixed" density={15} />
       {/* Sidebar */}
-      <Sidebar collapsed={collapsed} />
+      <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
 
       {/* Main */}
       <div className="flex  flex-col min-h-0">
