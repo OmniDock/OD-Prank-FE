@@ -68,7 +68,7 @@ export default function DashboardLayout() {
             <UserDropdown />
           </div>
         </header>
-        <main className="flex-1 overflow-auto px-4 pb-4 lg:px-6 lg:pb-6"><Outlet /></main>
+        <main className="flex-1 overflow-auto px-4 mb-8 lg:px-6 lg:pb-6"><Outlet /></main>
       </div>
     </div>
   );

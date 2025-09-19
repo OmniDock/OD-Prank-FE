@@ -52,7 +52,7 @@ export default function ScenariosPage() {
   }
 
   return (
-    <section className="space-y-4 h-full py-8">
+    <section className="space-y-4 h-full pb-8">
 
       {loading ? (
         <LoadingScreen message="Szenarien werden geladen..." />
@@ -62,7 +62,7 @@ export default function ScenariosPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
         >
-          <div>
+          <div className="py-8">
             {scenarios.length === 0 ? (
                 <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
                   <div className="text-default-500 text-4xl font-semibold text-gradient">Noch kein Szenario</div>
