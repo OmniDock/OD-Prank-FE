@@ -6,7 +6,7 @@ import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe
 import PlanCard from "@/components/pricing/PlanCard";
 import LoadingScreen from "@/components/LoadingScreen";
 import { getProfile } from "@/lib/api.profile";
-import { getProductInfo } from "@/lib/api.stripe";
+import { getProductInfo, cancelMySubscription, resumeMySubscription, getSubscriptionMeta } from "@/lib/api.stripe";
 import { apiFetch } from "@/lib/api";
 import type { Plan } from "@/types/products";
 import { ProductTypes } from "@/types/products";
@@ -80,6 +80,10 @@ export default function ProfilePage() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [selectedAmount, setSelectedAmount] = useState<number>(1);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [cancelPending, setCancelPending] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [resumeLoading, setResumeLoading] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const [searchParams] = useSearchParams();
 
@@ -89,6 +93,13 @@ export default function ProfilePage() {
         setProfileLoading(true);
         const profileData = await getProfile();
         setProfile(profileData);
+        // Load subscription meta (persisted cancel state)
+        try {
+          const meta = await getSubscriptionMeta();
+          if (meta?.cancel_at_period_end || meta?.cancel_at) {
+            setCancelPending(true);
+          }
+        } catch {}
       } catch (error: any) {
         setProfileError(error?.message || "Fehler beim Laden des Profils");
       } finally {
@@ -117,7 +128,16 @@ export default function ProfilePage() {
     loadPlans();
   }, []);
 
+  const hasActiveSubscription = Boolean(profile?.subscription_id);
+
   const plans = useMemo(() => products.map(buildPlan), [products]);
+  const visiblePlans = useMemo(() => {
+    if (!plans.length) return [] as Plan[];
+    if (hasActiveSubscription) {
+      return plans.filter((p) => p.type !== ProductTypes.SUBSCRIPTION);
+    }
+    return plans;
+  }, [plans, hasActiveSubscription]);
 
   useEffect(() => {
     if (!plans.length) {
@@ -142,7 +162,45 @@ export default function ProfilePage() {
     setSelectedAmount(selectedAmountFromSource(plan, amountParam));
   }, [plans, searchParams]);
 
-  const hasActiveSubscription = Boolean(profile?.subscription_id);
+  const handleCancelSubscription = async () => {
+    try {
+      setCancelLoading(true);
+      setCancelError(null);
+      const result = await cancelMySubscription(false);
+      if (result?.status === "cancelled_immediately") {
+        if (profile) {
+          setProfile({
+            ...profile,
+            subscription_id: null,
+            subscription_type: null,
+          });
+        }
+        setCancelPending(false);
+      } else {
+        // Default: scheduled at period end
+        setCancelPending(true);
+      }
+    } catch (e: any) {
+      setCancelError(e?.message || "Kündigung konnte nicht vorgemerkt werden");
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  const handleResumeCancellation = async () => {
+    try {
+      setResumeLoading(true);
+      setCancelError(null);
+      const result = await resumeMySubscription();
+      if (result?.status === "cancel_reverted") {
+        setCancelPending(false);
+      }
+    } catch (e: any) {
+      setCancelError(e?.message || "Kündigung konnte nicht zurückgenommen werden");
+    } finally {
+      setResumeLoading(false);
+    }
+  };
 
   const handlePlanSelect = (plan: Plan, amount: number) => {
     setSelectedPlan(plan);
@@ -218,7 +276,7 @@ export default function ProfilePage() {
     <div className="container mx-auto px-4 py-8 max-w-6xl space-y-8">
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="shadow-medium">
-          <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5">
+          <CardHeader className="bg-gradient-to-r from-warning/50 to-warning/25">
             <div>
               <h3 className="text-xl font-semibold">Kontoinformationen</h3>
               <p className="text-sm text-default-500">Deine persönlichen Daten</p>
@@ -237,7 +295,7 @@ export default function ProfilePage() {
         </Card>
 
         <Card className="shadow-medium">
-          <CardHeader className="bg-gradient-to-r from-success/10 to-success/5">
+          <CardHeader className="bg-gradient-to-r from-success/50 to-success/25">
             <div>
               <h3 className="text-xl font-semibold">Credits</h3>
               <p className="text-sm text-default-500">Dein aktuelles Guthaben</p>
@@ -263,7 +321,7 @@ export default function ProfilePage() {
       </div>
 
       <Card className="shadow-medium">
-        <CardHeader className="bg-gradient-to-r from-warning/10 to-warning/5">
+        <CardHeader className="bg-gradient-to-r from-primary/50 to-primary/25">
           <div>
             <h3 className="text-xl font-semibold">Abonnements & Checkout</h3>
             <p className="text-sm text-default-500">Wähle dein Paket und buche direkt im Dashboard</p>
@@ -271,24 +329,54 @@ export default function ProfilePage() {
         </CardHeader>
         <CardBody className="space-y-6">
           {hasActiveSubscription ? (
-            <div className="rounded-xl border border-success-200 bg-success-50 p-4 text-center">
-              <div className="text-success font-semibold mb-2">
-                Aktiver Plan: {getSubscriptionDisplayName(profile.subscription_type)}
-              </div>
-              {profile.cancel_at ? (
-                <div className="text-sm text-default-600">
-                  Läuft bis {formatDate(profile.cancel_at)}
+            <div className="rounded-2xl border border-primary-400 bg-primary-100 p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="text-left">
+                  <div className="text-xs uppercase tracking-wider text-primary-600">Aktives Abonnement</div>
+                  <div className="text-lg font-semibold text-primary-700">{getSubscriptionDisplayName(profile.subscription_type)}</div>
+                  {cancelPending ? (
+                    <div className="text-sm font-bold text-primary-700 mt-1">Kündigung vorgemerkt. Dein Abo läuft bis zum Periodenende weiter.</div>
+                  ) : (
+                    <div className="text-sm text-primary-600 mt-1">Du kannst zusätzlich Einmal-Credits unten kaufen.</div>
+                  )}
+                  {cancelError ? (
+                    <div className="mt-2 text-danger text-sm">{cancelError}</div>
+                  ) : null}
                 </div>
-              ) : (
-                <Button
-                  size="sm"
-                  color="primary"
-                  variant="solid"
-                  onPress={() => window.open(STRIPE_SUBSCRIPTION_PORTAL_URL, "_blank")}
-                >
-                  Abonnement verwalten
-                </Button>
-              )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {STRIPE_SUBSCRIPTION_PORTAL_URL ? (
+                    <Button
+                      size="sm"
+                      color="primary"
+                      variant="solid"
+                      onPress={() => window.open(STRIPE_SUBSCRIPTION_PORTAL_URL, "_blank")}
+                    >
+                      Verwalten
+                    </Button>
+                  ) : null}
+                  {cancelPending ? (
+                    <Button
+                      size="sm"
+                      color="warning"
+                      variant="flat"
+                      isLoading={resumeLoading}
+                      onPress={handleResumeCancellation}
+                    >
+                      Kündigung zurücknehmen
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      color="danger"
+                      variant="flat"
+                      isLoading={cancelLoading}
+                      onPress={handleCancelSubscription}
+                    >
+                      Kündigen (Periodenende)
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="rounded-xl border border-default-200 bg-default-50/60 p-4 text-center text-sm text-default-600">
@@ -297,27 +385,45 @@ export default function ProfilePage() {
           )}
 
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold">Verfügbare Optionen</h4>
+            <h4 className="text-lg font-semibold">{hasActiveSubscription ? 'Einmalige Zusatz-Credits' : 'Verfügbare Optionen'}</h4>
             {planLoading ? (
               <div className="text-default-500 text-sm">Tarife werden geladen...</div>
             ) : planError ? (
               <div className="text-danger text-sm">{planError}</div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {plans.map((plan) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    billing="monthly"
-                    onPlanSelect={handlePlanSelect}
-                    disabled={hasActiveSubscription}
-                  />
-                ))}
-              </div>
+              (() => {
+                const oneTimePlans = visiblePlans.filter(p => p.type === ProductTypes.ONE_TIME);
+                const bundles = hasActiveSubscription && oneTimePlans.length ? [1,5,10] : [];
+                const cards = hasActiveSubscription && bundles.length
+                  ? bundles.map((qty) => (
+                      <PlanCard
+                        key={`${oneTimePlans[0].id}-${qty}`}
+                        plan={oneTimePlans[0]}
+                        billing="monthly"
+                        onPlanSelect={handlePlanSelect}
+                        defaultAmount={qty}
+                      />
+                    ))
+                  : visiblePlans.map((plan) => (
+                      <PlanCard
+                        key={plan.id}
+                        plan={plan}
+                        billing="monthly"
+                        onPlanSelect={handlePlanSelect}
+                        disabled={hasActiveSubscription && plan.type === ProductTypes.SUBSCRIPTION}
+                      />
+                    ));
+                const isSingle = cards.length === 1;
+                return (
+                  <div className={`grid gap-4 ${isSingle ? 'grid-cols-1 max-w-md mx-auto' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'}`}>
+                    {cards}
+                  </div>
+                );
+              })()
             )}
           </div>
 
-          {selectedPlan && stripePromise ? (
+          {selectedPlan && (selectedPlan.type !== ProductTypes.SUBSCRIPTION || !hasActiveSubscription) ? (
             <div className="space-y-4 rounded-2xl border border-default-200 bg-default-50/60 p-4">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -351,9 +457,8 @@ export default function ProfilePage() {
               </div>
             </div>
           ) : (!planLoading && !planError) ? (
-            <div className="rounded-2xl border border-dashed border-default-200 p-4 text-center text-sm text-default-500">
-              Wähle einen Plan aus, um den Checkout zu starten.
-            </div>
+            <div></div>
+
           ) : null}
         </CardBody>
       </Card>

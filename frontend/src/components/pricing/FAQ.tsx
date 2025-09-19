@@ -6,7 +6,7 @@ export default function FAQ() {
       <h2 className="text-2xl md:text-4xl font-bold text-gradient tracking-tight text-center mb-8">
         Häufige gestellte Fragen
       </h2>
-      <Accordion variant="shadow">
+      <Accordion >
         <AccordionItem key="1" aria-label="Trial" title="Gibt es eine kostenlose Testversion?">
           Ja. Du kannst auf der Free-Version starten und jederzeit upgraden. Keine Kreditkarte ist erforderlich.
         </AccordionItem>

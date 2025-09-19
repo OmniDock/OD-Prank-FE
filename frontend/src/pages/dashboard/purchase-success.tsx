@@ -1,11 +1,13 @@
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import { useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useParams } from "react-router-dom";
+import { apiFetch } from "@/lib/api";
 import confetti from "canvas-confetti";
 
 // Use canvas-confetti for a richer celebration
 
 export default function SubscriptionSuccessPage() {
+  const { sessionId } = useParams();
   const [searchParams] = useSearchParams();
   const type = searchParams.get('type');
   const navigate = useNavigate();
@@ -91,21 +93,59 @@ export default function SubscriptionSuccessPage() {
     };
     snowRaf = requestAnimationFrame(snowFrame);
 
-    const id = setTimeout(() => {
-      navigate('/dashboard', { replace: true });
-    }, duration + 1500);
     return () => {
       clearInterval(interval);
-      clearTimeout(id);
       cancelAnimationFrame(snowRaf);
     };
   }, [navigate]);
+  
+  // Poll Stripe session status and navigate when complete; fallback after 20s
+  useEffect(() => {
+    let cancelled = false;
+
+    // If no sessionId in URL, fallback quick redirect
+    if (!sessionId) {
+      const id = setTimeout(() => navigate('/dashboard/profile', { replace: true }), 5000);
+      return () => clearTimeout(id);
+    }
+
+    const started = Date.now();
+    const interval = setInterval(async () => {
+      if (cancelled) return;
+      try {
+        const res = await apiFetch(`/payment/checkout/session-status?session_id=${sessionId}`);
+        const data = await res.json();
+        if (data?.status === 'complete') {
+          clearInterval(interval);
+          try {
+            await apiFetch(`/payment/checkout/finalize?session_id=${sessionId}`, { method: 'POST' });
+          } catch {}
+          setTimeout(() => {
+            if (!cancelled) navigate('/dashboard/profile', { replace: true });
+          }, 800);
+        } else if (Date.now() - started > 20000) {
+          clearInterval(interval);
+          navigate('/dashboard/profile', { replace: true });
+        }
+      } catch {
+        if (Date.now() - started > 20000) {
+          clearInterval(interval);
+          navigate('/dashboard/profile', { replace: true });
+        }
+      }
+    }, 2000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [sessionId, navigate]);
     
   return (
     <div>
       <AnimatedBackground variant="mixed" density={12} />
       <section className="relative min-h-[70vh] flex flex-col items-center justify-center gap-8 py-12">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4 p-3">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-gradient animate-in">
             {type === 'purchase' ? 'Kauf erfolgreich!' : 'Abo erfolgreich!'}
           </h1>
@@ -115,7 +155,7 @@ export default function SubscriptionSuccessPage() {
               : 'Dein Abonnement ist jetzt aktiv und Credits wurden zu deinem Konto hinzugefügt. Du kannst sofort mit dem Erstellen von Pranks und mit Anrufen beginnen.'
             }
           </p>
-          <p className="text-sm text-default-400">Du wirst gleich weitergeleitet …</p>
+          <p className="text-sm text-default-400">Wir prüfen deine Zahlung und leiten dich gleich weiter …</p>
         </div>
       </section>
     </div>

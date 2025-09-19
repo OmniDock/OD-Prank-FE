@@ -132,13 +132,15 @@ export default function PlanCard({
   plan,
   onPlanSelect,
   disabled = false,
+  defaultAmount,
 }: {
   plan: Plan;
   billing: "monthly" | "annual";
   onPlanSelect?: (plan: Plan, amount: number) => void;
   disabled?: boolean;
+  defaultAmount?: number;
 }) {
-  const [amount, setAmount] = useState(1);
+  const [amount, setAmount] = useState(defaultAmount ?? 1);
   const isSubscription = plan.type === ProductTypes.SUBSCRIPTION;
   const isDisabled = disabled && isSubscription;
 

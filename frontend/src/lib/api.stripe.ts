@@ -53,14 +53,23 @@ export async function createCustomer(
 }
 
 
-export async function cancelSubscription(
-  subscriptionId: string
-) {
-  const response = await apiFetch('/payment/cancel', {
+export async function cancelMySubscription(immediate = false) {
+  const response = await apiFetch(`/payment/subscription/cancel?immediate=${immediate ? 'true' : 'false'}`, {
     method: 'POST',
-    body: JSON.stringify({
-      subscription_id: subscriptionId
-    })
+  });
+  return response.json();
+}
+
+export async function resumeMySubscription() {
+  const response = await apiFetch(`/payment/subscription/resume`, {
+    method: 'POST',
+  });
+  return response.json();
+}
+
+export async function getSubscriptionMeta() {
+  const response = await apiFetch(`/payment/subscription/meta`, {
+    method: 'GET',
   });
   return response.json();
 }
