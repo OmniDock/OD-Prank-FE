@@ -15,8 +15,6 @@ import ImprintPage from "@/pages/imprint";
 import TermsPage from "@/pages/terms";
 import PrivacyPage from "@/pages/privacy";
 import PricingPage from "@/pages/pricing";
-import CheckoutStandalonePage from "@/pages/dashboard/checkout-standalone";
-import PricingStandalonePage from "@/pages/dashboard/pricing-standalone";
 import ProfilePage from "@/pages/profile";
 import SubscriptionSuccessPage from "@/pages/dashboard/purchase-success";
 import TemplateDetailPage from "@/pages/templates-detail";
@@ -31,6 +29,9 @@ function App() {
       <Route element={<PrivacyPage />} path="/privacy" />
       <Route element={<BlacklistPage />} path="/blacklist" />
       <Route element={<PricingPage />} path="/pricing" />
+      {/* Public success routes for Stripe return URLs */}
+      <Route element={<SubscriptionSuccessPage />} path="/subscription-success/:sessionId" />
+      <Route element={<SubscriptionSuccessPage />} path="/purchase-success/:sessionId" />
       <Route element={<Navigate to="/dashboard/profile" replace />} path="/profile" />
       <Route element={<TemplateDetailPage />} path="/templates/:id" />
       <Route element={<PublicOnlyRoute />}>
@@ -39,14 +40,14 @@ function App() {
       </Route>
 
       <Route element={<ProtectedRoute />}>
-        <Route element={<CheckoutStandalonePage />} path="/dashboard/checkout" />
-        <Route element={<PricingStandalonePage />} path="/dashboard/pricing" />
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardMain />} />
           <Route path="scenarios" element={<ScenariosPage />} />
           <Route path="scenarios/:id" element={<ScenarioDetailPage />} />
           <Route path="active-call" element={<ActiveCallPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="pricing" element={<Navigate to="/dashboard/profile" replace />} />
+          <Route path="checkout" element={<Navigate to="/dashboard/profile" replace />} />
           <Route path="purchase-success/:sessionId" element={<SubscriptionSuccessPage />} />
         </Route>
       </Route>

@@ -27,6 +27,7 @@ export default function DashboardLayout() {
       "/dashboard": "",
       "/dashboard/scenarios": "",
       "/dashboard/phone-call": "",
+      "/dashboard/profile": "Profil",
     };
     
     if (staticMappings[path]) {
@@ -41,10 +42,19 @@ export default function DashboardLayout() {
   };
 
   // Back icon only when nested beyond /dashboard/<section>
-  const segments = location.pathname.split("/").filter(Boolean);
-  const showBack = segments[0] === "dashboard" && segments.length > 2 && !location.pathname.includes("/purchase-success/");
+  const currentPath = location.pathname;
+  const segments = currentPath.split("/").filter(Boolean);
+  const customBackRoutes: Record<string, string> = {};
+  const customBackTarget = customBackRoutes[currentPath];
+  const showBack = !!customBackTarget || (segments[0] === "dashboard" && segments.length > 2 && !currentPath.includes("/purchase-success/"));
   const parentPath = "/" + segments.slice(0, segments.length - 1).join("/");
-  const handleBack = () => navigate(parentPath);
+  const handleBack = () => {
+    if (customBackTarget) {
+      navigate(customBackTarget);
+      return;
+    }
+    navigate(parentPath || "/dashboard");
+  };
 
   return (
     <div className={`h-screen w-screen grid grid-rows-[auto_1fr] grid-cols-1 lg:grid-rows-1 ${collapsed ? "lg:grid-cols-[auto_1fr]" : "lg:grid-cols-[10rem_1fr]"}`}>

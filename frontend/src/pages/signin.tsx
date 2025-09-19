@@ -45,8 +45,15 @@ export default function SignInPage() {
 			// Clear the flag and redirect to checkout page with saved plan ID
 			localStorage.removeItem("FromPricing");
 			const savedPlanId = localStorage.getItem("selectedPlanId");
-			const checkoutUrl = savedPlanId ? `/dashboard/checkout?id=${savedPlanId}` : "/dashboard/checkout";
-			navigate(checkoutUrl, { replace: true });
+			const savedAmount = localStorage.getItem("selectedPlanAmount");
+			let destination = "/dashboard/profile";
+			if (savedPlanId) {
+				destination = `/dashboard/profile?plan=${savedPlanId}`;
+				if (savedAmount) {
+					destination += `&amount=${savedAmount}`;
+				}
+			}
+			navigate(destination, { replace: true });
 			return;
 		}
 		const redirectTo = location.state?.from?.pathname ?? "/dashboard";

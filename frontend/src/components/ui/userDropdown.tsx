@@ -19,20 +19,6 @@ const items = [
             navigate("/dashboard/profile", { replace: true });
         }
     },
-    // {
-    //     key: "Settings",
-    //     label: "Settings",
-    //     action:() => {
-    //         navigate("/settings", { replace: true });
-    //     }
-    // },
-    {
-        key: "Pricing",
-        label: "Preise",
-        action:() => {
-            navigate("/dashboard/pricing", { replace: true });
-        }
-    },
     {
         key: "Logout",
         label: "Abmelden",
@@ -41,13 +27,6 @@ const items = [
             navigate("/signin", { replace: true });
         }
     },
-    // {
-    //     label: "Subscription",
-    //     key: "Subscription",
-    //     action:() => {
-    //         navigate("/subscription", { replace: true });
-    //     }
-    // }
 ]
 
 return (
