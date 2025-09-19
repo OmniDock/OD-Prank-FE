@@ -7,7 +7,7 @@ export default function LoadingScreen({ message = 'Loading...' }: { message?: st
       <AnimatedBackground density={10} variant="mixed" className="opacity-30" />
       <div className="z-10 flex flex-col items-center">
         <Spinner size="lg" color="primary" variant='wave' className="mb-4" />
-        <span className="text-lg text-gray-700 font-medium dark:text-gray-200 animate-pulse">{message}</span>
+        <span className="text-xl text-primary font-medium dark:text-gray-200 animate-pulse">{message}</span>
       </div>
     </div>
   );

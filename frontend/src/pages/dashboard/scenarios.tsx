@@ -52,7 +52,7 @@ export default function ScenariosPage() {
   }
 
   return (
-    <section className="space-y-4 h-full">
+    <section className="space-y-4 h-full py-8">
 
       {loading ? (
         <LoadingScreen message="Szenarien werden geladen..." />
