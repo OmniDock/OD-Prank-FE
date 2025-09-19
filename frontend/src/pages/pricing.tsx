@@ -27,17 +27,27 @@ export default function PricingPage() {
     return plans.map((product: any) => ({
       id: product.id,
       name: product.id.charAt(0).toUpperCase() + product.id.slice(1), // Capitalize first letter
+      displayName: product.displayName || product.name || product.id,
+      type: product.type || 'subscription',
       tagline: product.tagline,
       price: product.price,
       interval: product.interval,
       priceMonthly: null,
       priceAnnual: null,
       features: product.features,
+      amount: 1,
       ctaLabel: product.ctaLabel,
       ctaHref: product.ctaHref,
     }));
   }, [plans]);
 
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      window.location.href = "/dashboard/pricing";
+    }
+  }, [isLoggedIn]);
+  
   // Fetch product information and profile on mount
   useEffect(() => {
     const fetchProducts = async () => {

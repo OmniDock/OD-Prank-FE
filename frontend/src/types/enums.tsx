@@ -1,5 +1,10 @@
-export enum Products {
-  SINGLE = "single",
-  WEEKLY = "weekly",
-  MONTHLY = "monthly",
+
+export const Prouctsfr = {
+  Subscriptions: {
+    weekly : 'Woche',
+    monthly : 'Monat',
+  },
+  OneTimeProducts: {
+    single : 'Prank',
+  },
 }

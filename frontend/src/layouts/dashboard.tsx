@@ -42,7 +42,7 @@ export default function DashboardLayout() {
 
   // Back icon only when nested beyond /dashboard/<section>
   const segments = location.pathname.split("/").filter(Boolean);
-  const showBack = segments[0] === "dashboard" && segments.length > 2;
+  const showBack = segments[0] === "dashboard" && segments.length > 2 && !location.pathname.includes("/purchase-success/");
   const parentPath = "/" + segments.slice(0, segments.length - 1).join("/");
   const handleBack = () => navigate(parentPath);
 
