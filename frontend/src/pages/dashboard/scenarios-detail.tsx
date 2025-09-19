@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Card,
   CardBody,
+  Button,
   addToast,
 } from "@heroui/react";
 import { fetchScenario, updateScenarioPreferredVoice } from "@/lib/api.scenarios";
@@ -21,6 +22,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 
 export default function ScenarioDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
@@ -28,6 +30,20 @@ export default function ScenarioDetailPage() {
   const [voices, setVoices] = useState<VoiceItem[]>([]);
   const [tableKey, setTableKey] = useState(0);
   const [callCredits, setCallCredits] = useState<number | null>(null);
+  const [callCreditsError, setCallCreditsError] = useState<boolean>(false);
+
+  const refreshCallCredits = useCallback(async () => {
+    try {
+      const creditsData = await getCredits();
+      const amount = creditsData.call_credit_amount ?? 0;
+      setCallCredits(amount);
+      setCallCreditsError(false);
+    } catch (error) {
+      console.error('Failed to fetch call credits:', error);
+      setCallCredits(0);
+      setCallCreditsError(true);
+    }
+  }, []);
   
   const preferredVoice = useMemo(() => 
     voices.find(v => v.id === scenario?.preferred_voice_id) || null,
@@ -74,18 +90,11 @@ export default function ScenarioDetailPage() {
   }, []);
 
   useEffect(() => {
-    const fetchCallCredits = async () => {
-      try {
-        const creditsData = await getCredits();
-        setCallCredits(creditsData.call_credit_amount || 0);
-      } catch (error) {
-        console.error('Failed to fetch call credits:', error);
-        setCallCredits(0);
-      }
-    };
+    void refreshCallCredits();
+  }, [refreshCallCredits]);
 
-    fetchCallCredits();
-  }, []);
+  const callCreditsLoaded = callCredits !== null;
+  const hasCallCredits = callCreditsLoaded && (callCredits ?? 0) > 0;
 
   function onOpenPlayer(voiceLineId: number) {
     if (!scenario || !scenario.preferred_voice_id) {
@@ -189,8 +198,34 @@ export default function ScenarioDetailPage() {
       )}
 
       {/* Green Call Box between details and voice lines */}
-      {scenario.is_safe && scenario.preferred_voice_id && allAudiosReady && (
-        <CallStartBox scenario={scenario} callCredits={callCredits} preferredVoice={preferredVoice} />
+      {callCreditsError && (
+        <div className="bg-danger-50 text-danger-700 border border-danger-200 p-3 rounded-lg text-sm mt-3 max-w-md text-center">
+          <p className="font-medium">Fehler beim Laden der Call-Credits</p>
+          <p className="mt-1">Bitte lade die Seite neu oder versuche es später erneut.</p>
+        </div>
+      )}
+
+      {!callCreditsError && callCreditsLoaded && !hasCallCredits && (
+        <div className="bg-warning-50 text-warning-700 border border-warning-200 p-4 rounded-lg text-sm mt-4 mb-4 max-w-md text-center">
+          <p className="font-medium">Du hast keine Call-Credits mehr</p>
+          <Button
+            size="sm"
+            color="warning"
+            onPress={() => navigate('/dashboard/profile')}
+            className="mt-4 bg-gradient-primary text-white"
+          >
+            Zu den Abonnements
+          </Button>
+        </div>
+      )}
+
+      {scenario.is_safe && scenario.preferred_voice_id && allAudiosReady && hasCallCredits && !callCreditsError && (
+        <CallStartBox
+          scenario={scenario}
+          callCredits={callCredits}
+          preferredVoice={preferredVoice}
+          onCreditsRefresh={refreshCallCredits}
+        />
       )}
 
       {scenario.preferred_voice_id && (
@@ -227,5 +262,3 @@ export default function ScenarioDetailPage() {
     </motion.section>
   );
 }
-
-

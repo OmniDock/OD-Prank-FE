@@ -18,24 +18,27 @@ export default function ChatWindowWrapper({ onExpand }: Props) {
   const [prankCredits, setPrankCredits] = useState<number | null>(null);
   const [creditsError, setCreditsError] = useState<boolean>(false);
 
+  const refreshCredits = useCallback(async () => {
+    try {
+      console.log('Fetching credits...');
+      const creditsData = await getCredits();
+      console.log('Credits API response:', creditsData);
+      const prankAmount = creditsData.prank_credit_amount || 0;
+      setPrankCredits(prankAmount);
+      setCreditsError(false);
+      console.log('Set prankCredits to:', prankAmount);
+    } catch (error) {
+      console.error('Failed to fetch credits:', error);
+      setPrankCredits(0);
+      setCreditsError(true);
+      console.log('Set prankCredits to 0 due to error');
+    }
+  }, []);
+
   // Fetch credits on component mount
   useEffect(() => {
-    const fetchCredits = async () => {
-      try {
-        console.log('Fetching credits...');
-        const creditsData = await getCredits();
-        console.log('Credits API response:', creditsData);
-        setPrankCredits(creditsData.prank_credit_amount || 0);
-        console.log('Set prankCredits to:', creditsData.prank_credit_amount || 0);
-      } catch (error) {
-        console.error('Failed to fetch credits:', error);
-        setPrankCredits(0);
-        setCreditsError(true);
-        console.log('Set prankCredits to 0 due to error');
-      }
-    };
-    fetchCredits();
-  }, []);
+    void refreshCredits();
+  }, [refreshCredits]);
 
   const handleUserActivity = useCallback(() => {
     if (!hasUserInput && prankCredits !== null && prankCredits > 0) {
@@ -47,6 +50,7 @@ export default function ChatWindowWrapper({ onExpand }: Props) {
   // Handler for scenario creation result
   const handleScenarioResult = (result: { status: string; scenario_id?: number; error?: string }) => {
     setLoading(false);
+    void refreshCredits();
     if (result.status === 'complete' && result.scenario_id) {
       window.location.href = `/dashboard/scenarios/${result.scenario_id}`;
     } else if (result.status === 'error') {
@@ -54,8 +58,14 @@ export default function ChatWindowWrapper({ onExpand }: Props) {
     }
   };
 
-  // Check if credits are insufficient or there's an error
-  const hasInsufficientCredits = prankCredits !== null && prankCredits <= 0;
+  const creditsLoaded = prankCredits !== null;
+  const hasInsufficientCredits = creditsLoaded && (prankCredits ?? 0) <= 0;
+  const shouldLockChat = !creditsLoaded || hasInsufficientCredits;
+  const chatLockMessage = creditsError
+    ? 'Fehler beim Laden der Credits. Bitte versuche es später erneut.'
+    : (!creditsLoaded
+        ? 'Credits werden geladen...'
+        : 'Keine Prank-Credits verfügbar');
   
   // Debug logging
   console.log('ChatWindowWrapper Debug:', {
@@ -90,11 +100,11 @@ export default function ChatWindowWrapper({ onExpand }: Props) {
           {error && (
             <div className="bg-danger-50 text-danger p-3 rounded-lg text-sm mb-4">{error}</div>
           )}
-          {hasInsufficientCredits && !creditsError && (
-            <div className="bg-warning-50 text-warning-700 border border-warning-200 p-4 rounded-lg text-sm mb-4 max-w-md text-center">
+          {creditsLoaded && hasInsufficientCredits && !creditsError && (
+            <div className="bg-warning-50 text-warning-700 border border-warning-200 p-4 mt-4 rounded-lg text-sm mb-4 max-w-md text-center">
               <p className="font-medium">Keine Prank-Credits verfügbar</p>
               <p className="mt-1">Du benötigst Credits, um Szenarien zu erstellen. Schließe ein Abonnement ab um Credits zu erhalten.</p>
-              <Button size="sm" color="warning" onPress={() => navigate("/pricing")}>Zu den Abonnements</Button>  
+              <Button size="sm" color="warning" onPress={() => navigate("/dashboard/profile")} className="mt-4 bg-gradient-primary text-white" >Zu den Abonnements</Button>  
             </div>
           )}
           {creditsError && (
@@ -113,11 +123,11 @@ export default function ChatWindowWrapper({ onExpand }: Props) {
               setHasUserInput(false);
               setError(null);
             }}
-            disableScenarioCreation={hasInsufficientCredits || creditsError}
+            disableScenarioCreation={shouldLockChat || creditsError}
+            lockMessage={(shouldLockChat || creditsError) ? chatLockMessage : undefined}
           />
         </>
       )}
     </div>
   );
 }
-

@@ -33,7 +33,7 @@ function normalizeGermanNumber(input: string): string | null {
   return null;
 }
 
-export function CallStartBox({ scenario, callCredits, preferredVoice }: { scenario: Scenario; callCredits: number | null; preferredVoice?: VoiceItem | null }) {
+export function CallStartBox({ scenario, callCredits, preferredVoice, onCreditsRefresh }: { scenario: Scenario; callCredits: number | null; preferredVoice?: VoiceItem | null; onCreditsRefresh?: () => void | Promise<void>; }) {
   const [toNumber, setToNumber] = useState<string>("");
   const [loading, setLoading] = useState<"idle" | "dialing">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +58,11 @@ export function CallStartBox({ scenario, callCredits, preferredVoice }: { scenar
       });
     } catch (e: any) {
       setError(e?.message || "Call failed");
+      if (onCreditsRefresh) {
+        try {
+          await onCreditsRefresh();
+        } catch {}
+      }
     } finally {
       setLoading("idle");
     }
@@ -127,14 +132,6 @@ export function CallStartBox({ scenario, callCredits, preferredVoice }: { scenar
           </CardBody>
         )}
       </Card>
-        {hasNoCallCredits && (
-          <div className="bg-warning-50 text-warning-700 border border-warning-200 p-3 rounded-lg text-sm mt-3 max-w-md text-center">
-            <p>Du hast keine Call-Credits mehr</p>
-            <Button size="sm" color="warning" onPress={() => navigate("/pricing")} className="mt-2">Hol dir Welche!</Button>
-          </div>
-        )}
     </div>
   );
 }
-
-

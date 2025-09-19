@@ -19,9 +19,10 @@ interface ChatWindowProps {
   onScenarioResult?: (result: { status: string; scenario_id?: number; error?: string }) => void;
   onReset?: () => void;
   disableScenarioCreation?: boolean;
+  lockMessage?: string;
 }
 
-export default function ChatWindow({ onExpand, onStartTyping, loading, setLoading, onScenarioResult, onReset, disableScenarioCreation }: ChatWindowProps = {}) {
+export default function ChatWindow({ onExpand, onStartTyping, loading, setLoading, onScenarioResult, onReset, disableScenarioCreation, lockMessage }: ChatWindowProps = {}) {
   const { user } = useAuth();
   const userName = (user as any)?.user_metadata?.full_name || (user as any)?.user_metadata?.name || user?.email || "You";
   const userAvatar = (user as any)?.user_metadata?.avatar_url || (user as any)?.user_metadata?.picture || undefined;
@@ -55,28 +56,26 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   const lastRole = messages.length ? messages[messages.length - 1].role : undefined;
   const isUserTurn = !lastRole || lastRole === 'assistant';
 
+  const isChatLocked = !!disableScenarioCreation;
+  const lockMessageText = lockMessage || 'Keine Prank-Credits verfügbar.';
+  const lockSecondaryText = (() => {
+    const normalized = lockMessageText.toLowerCase();
+    if (normalized.includes('werden geladen')) {
+      return 'Bitte warte einen Moment, wir prüfen deine Credits.';
+    }
+    if (normalized.includes('fehler')) {
+      return 'Bitte lade die Seite neu oder versuche es später erneut.';
+    }
+    return 'Lade Credits nach oder versuche es später erneut. Bis dahin ist der Chat nur zur Ansicht verfügbar.';
+  })();
   const [ctaVisible, setCtaVisible] = useState(false);
   useEffect(() => {
-    if (canCreate) {
+    if (canCreate && !isChatLocked) {
       const t = setTimeout(() => setCtaVisible(true), 150);
       return () => clearTimeout(t);
     }
     setCtaVisible(false);
-  }, [canCreate]);
-  
-  // Auto-connect when user starts typing or on mount
-  useEffect(() => {
-    if (!wsRef.current && !isConnecting) {
-      connectWebSocket();
-    }
-    
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.disconnect();
-        wsRef.current = null;
-      }
-    };
-  }, []);
+  }, [canCreate, isChatLocked]);
   
   // Hydrate chat history from backend (Redis) on mount
   useEffect(() => {
@@ -105,7 +104,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
         // Ignore hydration errors silently
       }
     })();
-  }, []);
+  }, [onStartTyping]);
   
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -115,7 +114,7 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   // Inject saved initial prompt from landing page after login
   useEffect(() => {
     try {
-      if (hasInjectedInitialPromptRef.current) return;
+      if (hasInjectedInitialPromptRef.current || isChatLocked) return;
       const saved = localStorage.getItem("initialPrompt");
       if (saved && saved.trim()) {
         hasInjectedInitialPromptRef.current = true;
@@ -125,11 +124,11 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
         localStorage.removeItem("initialPrompt");
       }
     } catch {}
-  }, []);
+  }, [isChatLocked]);
   
   const connectWebSocket = async () => {
-    if (wsRef.current?.isConnected()) return;
-    
+    if (isChatLocked || wsRef.current?.isConnected()) return;
+
     setIsConnecting(true);
     setError(null);
     
@@ -161,7 +160,36 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
       setIsConnecting(false);
     }
   };
-  
+
+  useEffect(() => {
+    if (isChatLocked) {
+      if (wsRef.current) {
+        try {
+          wsRef.current.disconnect();
+        } catch {}
+        wsRef.current = null;
+      }
+      setIsConnecting(false);
+      setIsConnected(false);
+      setIsAiTyping(false);
+      setStreamingMessage("");
+      return;
+    }
+
+    setError(null);
+
+    if (!wsRef.current && !isConnecting) {
+      connectWebSocket();
+    }
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.disconnect();
+        wsRef.current = null;
+      }
+    };
+  }, [isChatLocked]);
+
   const handleWebSocketMessage = (data: any) => {
     if (data.type === 'typing') {
       // Show/hide typing indicator
@@ -218,6 +246,10 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   };
   
   const handleSendMessage = async (content?: string) => {
+    if (isChatLocked) {
+      setError(lockMessageText);
+      return;
+    }
     const messageContent = (content || input).trim();
     if (!messageContent) return;
     
@@ -260,6 +292,11 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   };
   
   const handleGenerateScenario = async (description: string) => {
+    if (isChatLocked) {
+      setError(lockMessageText);
+      if (onScenarioResult) onScenarioResult({ status: 'error', error: lockMessageText });
+      return;
+    }
     if (setLoading) setLoading(true);
     setError(null);
     try {
@@ -278,6 +315,10 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
   };
   
   const handleFinalize = () => {
+    if (isChatLocked) {
+      setError(lockMessageText);
+      return;
+    }
     // Instead of WebSocket finalize, use REST
     handleGenerateScenario(currentDraft || "");
   };
@@ -333,7 +374,13 @@ export default function ChatWindow({ onExpand, onStartTyping, loading, setLoadin
         </div>
       )}
       {/* Chat Container with Border */}
-      <div className="bg-background/60 backdrop-blur-md border border-divider rounded-2xl shadow-lg flex flex-col h-full min-h-0 overflow-hidden">
+      <div className="bg-background/60 backdrop-blur-md border border-divider rounded-2xl shadow-lg flex flex-col h-full min-h-0 overflow-hidden relative">
+        {isChatLocked && (
+          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-background/85 backdrop-blur-sm text-center px-6">
+            <p className="text-lg font-semibold text-foreground">{lockMessageText}</p>
+            <p className="mt-2 text-sm text-default-500 max-w-md">{lockSecondaryText}</p>
+          </div>
+        )}
         {/* Scrollable Content (messages + optional details) */}
         <div className="flex-1 min-h-0 px-6 pt-6 overflow-y-auto scrollbar-hide">
           {messages.map((message) => (
