@@ -27,7 +27,7 @@ export default function DashboardLayout() {
       "/dashboard": "",
       "/dashboard/scenarios": "",
       "/dashboard/phone-call": "",
-      "/dashboard/profile": "Profil",
+      "/dashboard/profile": "",
     };
     
     if (staticMappings[path]) {
