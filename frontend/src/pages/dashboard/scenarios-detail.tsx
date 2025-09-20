@@ -206,16 +206,18 @@ export default function ScenarioDetailPage() {
       )}
 
       {!callCreditsError && callCreditsLoaded && !hasCallCredits && (
-        <div className="bg-warning-50 text-warning-700 border border-warning-200 p-4 rounded-lg text-sm mt-4 mb-4 max-w-md text-center">
-          <p className="font-medium">Du hast keine Call-Credits mehr</p>
-          <Button
-            size="sm"
-            color="warning"
-            onPress={() => navigate('/dashboard/profile')}
-            className="mt-4 bg-gradient-primary text-white"
-          >
-            Zu den Abonnements
-          </Button>
+        <div className="flex flex-row w-full justify-center ">
+          <div className="bg-warning-50 text-warning-700 border border-warning-200 p-4 rounded-lg text-sm mt-4 mb-4 max-w-md text-center">
+            <p className="font-medium">Du hast keine Call-Credits mehr. Lade mehr Credits, um weitere Anrufe durchzuführen.</p>
+            <Button
+              size="sm"
+              color="warning"
+              onPress={() => navigate('/dashboard/profile')}
+              className="mt-4 bg-gradient-primary text-white"
+            >
+              Zu den Credits
+            </Button>
+          </div>
         </div>
       )}
 
